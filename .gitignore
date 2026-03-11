@@ -7,29 +7,32 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# build
+# build output
 dist
 dist-ssr
 *.local
+core/dist
+.turbo
 
-# deps
+# dependencies
 node_modules
 .npm
 
-# next
+# next.js
 .next
 out
 
-# env
+# environment — never commit real env files
 .env
 .env.*
 !.env.example
 
-# editors
+# editors and OS
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

@@ -4,18 +4,18 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@f1-telemetry/core": "workspace:*",
-    "@microsoft/signalr": "^8.0.0",
     "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/ws": "^8.5.10",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.0.0"
   }
 }

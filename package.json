@@ -3,18 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r dev"
+    "dev": "pnpm --filter backend --filter frontend -r dev",
+    "build": "pnpm --filter @f1-telemetry/core build && pnpm --filter backend --filter frontend build",
+    "lint": "pnpm -r lint"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.1.6",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
-    "eslint": "^8.57.1",
+    "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.57.0"
   }
 }

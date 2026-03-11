@@ -1,16 +1,19 @@
 import { create } from 'zustand';
-import { TelemetryEntry } from '@f1-telemetry/core';
 
 interface F1State {
-  telemetry: TelemetryEntry | null;
-  isConnected: boolean;
-  setTelemetry: (data: TelemetryEntry) => void;
-  setConnected: (status: boolean) => void;
+  isWsConnected: boolean;
+  isApiHealthy: boolean;
+  lastFrame: Record<string, unknown> | null;
+  setWsConnected: (v: boolean) => void;
+  setApiHealthy: (v: boolean) => void;
+  setLastFrame: (frame: Record<string, unknown>) => void;
 }
 
 export const useF1Store = create<F1State>((set) => ({
-  telemetry: null,
-  isConnected: false,
-  setTelemetry: (data) => set({ telemetry: data }),
-  setConnected: (status) => set({ isConnected: status }),
+  isWsConnected: false,
+  isApiHealthy: false,
+  lastFrame: null,
+  setWsConnected: (v) => set({ isWsConnected: v }),
+  setApiHealthy: (v) => set({ isApiHealthy: v }),
+  setLastFrame: (frame) => set({ lastFrame: frame }),
 }));

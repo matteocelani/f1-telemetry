@@ -1,25 +1,68 @@
-# 🏎️ F1 Telemetry
+# F1 Telemetry
 
-**F1 Telemetry** is an open-source dashboard for Formula 1 telemetry and live timing, designed to bring the pit wall experience directly to your screen, in real-time during every race.
+An open-source real-time dashboard for Formula 1 live timing and telemetry data.
 
-## 🌟 The Vision
+## Overview
 
-Formula 1 is a data-driven sport, but much of this information is often difficult to access live or visualize cleanly. The goal of this project is to democratize access to F1 telemetry by providing a modern, fast, and visually stunning dashboard.
+F1 Telemetry connects directly to the F1 Live Timing SignalR feed — the same stream that powers the official timing screens during race weekends — decodes the payload in real time, and serves it over WebSocket to a browser-based analytics dashboard.
 
-We connect to the "hidden" live data stream that powers the timing screens and radars during races, decode it on the fly, and display it in an intuitive and immediate interface. No slow middlemen: just you, the charts, and the track, like a real race engineer.
+The goal is to give anyone a clean, fast, and accurate view into what is happening on track: car telemetry, lap and sector times, race control messages, weather, and more.
 
-## ✨ Experience & Features
+## Features
 
-- **Live Telemetry**: Analyze speed, gears, engine RPM, throttle application, and brake inputs for every active car.
-- **Live Timing**: Constantly monitor lap times, gaps, sector performances, and the active tire compounds.
-- **Dynamic Track Map**: Follow the exact position of the cars drawn on the track using high-frequency spatial coordinates.
-- **Race Control**: Get instant alerts for flags, incidents, Safety Cars, and official race control messages.
-- **Weather Conditions**: Stay updated on atmospheric parameters and track temperatures to anticipate team strategy calls.
+- Live car telemetry: speed, RPM, gear, throttle, brake, and active aerodynamics per driver
+- Live timing: lap times, sector splits, gaps, and tyre compounds
+- Track map: high-frequency GPS coordinates for every car on circuit
+- Race control: instant updates for flags, safety car deployments, and official messages
+- Weather: air and track temperature, wind, humidity, and rainfall in real time
 
-## 🤝 Open Source & Community
+## Architecture
 
-This project lives and breathes open source. Being built around complex and ever-evolving live data streams, expanding and maintaining the system is a fantastic collective effort.
+This is a [pnpm](https://pnpm.io) monorepo with three packages:
 
-We built the "decoding engine" of the project to be **extremely lean, intuitive, and extensively documented**. This way, anyone in the community can easily read the code, grasp the underlying logic, and release swift updates should F1's data structures change in the future.
+| Package    | Path            | Description                                                                                 |
+| ---------- | --------------- | ------------------------------------------------------------------------------------------- |
+| `backend`  | `apps/backend`  | Node.js service that connects to F1 SignalR, decodes payloads, and broadcasts via WebSocket |
+| `frontend` | `apps/frontend` | Next.js analytics dashboard                                                                 |
+| `core`     | `core`          | Shared TypeScript types and constants                                                       |
 
-This is a dashboard made _by_ fans, _for_ fans. If code and motorsport are your passions, we'll see you at the pit wall!
+### Data flow
+
+```
+F1 SignalR (livetiming.formula1.com)
+    └── backend (Node.js + ws)
+          ├── /health  HTTP endpoint for frontend status polling
+          └── ws://    WebSocket broadcast to frontend clients
+```
+
+The backend subscribes to all ten available F1 channels. Compressed channels (`CarData.z`, `Position.z`) are decoded with raw DEFLATE. All channels are batched in 50ms windows before broadcast to reduce WebSocket frame volume.
+
+## Getting started
+
+```bash
+# Install dependencies
+pnpm install
+
+# Configure environment (defaults work out of the box)
+cp .env.example apps/backend/.env
+
+# Start backend and frontend in parallel
+pnpm dev
+```
+
+Backend runs on `ws://localhost:8080` (WebSocket) and `http://localhost:8081/health` (HTTP health check).  
+Frontend runs on `http://localhost:3000`.
+
+## Documentation
+
+- [F1 Live Timing payload types](docs/live-timing-types.md) — field reference for all ten subscribed channels, 2026 regulation notes, and maintenance guide
+
+## Contributing
+
+The live timing schema is reverse-engineered and may change between seasons. See [docs/live-timing-types.md](docs/live-timing-types.md) for guidance on keeping the types up to date.
+
+Issues and pull requests are welcome.
+
+## License
+
+MIT

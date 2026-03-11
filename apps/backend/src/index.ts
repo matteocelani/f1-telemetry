@@ -1,34 +1,55 @@
-import { WebSocketServer } from 'ws';
-import { F1_SERVER_URL, CHANNELS } from '@f1-telemetry/core';
+import { F1Client } from '@services/f1-client';
+import { HealthServer } from '@services/health-server';
+import { SocketServer } from '@services/socket-server';
+import { Logger } from '@utils/logger';
 
-const PORT = 8080;
-const wss = new WebSocketServer({ port: PORT });
+const WS_PORT = parseInt(process.env.PORT ?? '8080', 10);
+// Health and WS run on different ports to avoid conflicts on PaaS (Koyeb, Render)
+const HEALTH_PORT = parseInt(process.env.HEALTH_PORT ?? '8081', 10);
 
-console.log(`[Backend] WebSocket server started on ws://localhost:${PORT}`);
+let socketServer: SocketServer | null = null;
+let healthServer: HealthServer | null = null;
 
-// Mock connection logic to F1 SignalR
-console.log(`[Backend] Connecting to F1 Live Timing at ${F1_SERVER_URL}...`);
+async function bootstrap() {
+  Logger.info('Starting F1 Telemetry Backend...');
 
-wss.on('connection', (ws) => {
-  console.log('[Backend] Client connected to local WebSocket.');
+  socketServer = new SocketServer(WS_PORT);
+  socketServer.start();
 
-  // Simulate pushing a telemetry event every 2 seconds
-  const interval = setInterval(() => {
-    const mockTelemetry = {
-      channel: CHANNELS.TELEMETRY,
-      data: {
-        rpm: Math.floor(Math.random() * (12000 - 10000 + 1)) + 10000,
-        speed: Math.floor(Math.random() * (320 - 250 + 1)) + 250,
-        gear: 8,
-        throttle: 100,
-        brake: false,
-      },
-    };
-    ws.send(JSON.stringify(mockTelemetry));
-  }, 2000);
+  const f1Client = new F1Client(socketServer);
 
-  ws.on('close', () => {
-    console.log('[Backend] Client disconnected.');
-    clearInterval(interval);
-  });
+  healthServer = new HealthServer(
+    HEALTH_PORT,
+    () => socketServer?.clientCount ?? 0,
+    () => f1Client.connected
+  );
+  healthServer.start();
+
+  await f1Client.connect();
+}
+
+const shutdown = (signal: string) => {
+  Logger.info(`Received ${signal}. Shutting down gracefully...`);
+  healthServer?.stop();
+  socketServer?.stop();
+  process.exit(0);
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Log and exit — unhandled errors in production should be surfaced, not swallowed
+process.on('uncaughtException', (error) => {
+  Logger.error('Uncaught Exception', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  Logger.error('Unhandled Rejection', reason);
+  process.exit(1);
+});
+
+bootstrap().catch((error) => {
+  Logger.error('Bootstrap failed', error);
+  process.exit(1);
 });
