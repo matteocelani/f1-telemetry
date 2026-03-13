@@ -1,33 +1,37 @@
-import { Geist, Geist_Mono } from 'next/font/google';
+import type { ReactNode } from 'react';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
-import '@/app/globals.css';
+import { Providers } from '@/app/providers';
+import '@/assets/css/globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-sans',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const jbMono = JetBrains_Mono({
+  variable: '--font-mono',
   subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: 'F1 Telemetry',
-  description: 'Live F1 telemetry analytics dashboard',
+  title: 'F1 Telemetry — Live Dashboard',
+  description:
+    'Enterprise-grade real-time Formula 1 telemetry, timing and strategy dashboard for the 2026 season.',
+  keywords: ['F1', 'telemetry', 'live timing', 'formula 1', '2026'],
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${jbMono.variable} font-sans antialiased`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

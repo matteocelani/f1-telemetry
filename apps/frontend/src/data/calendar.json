@@ -1,0 +1,434 @@
+[
+  {
+    "id": "australian_gp_2026",
+    "name": "FORMULA 1 ROLEX AUSTRALIAN GRAND PRIX 2026",
+    "location": "Melbourne",
+    "country": "Australia",
+    "countryFlag": "\ud83c\udde6\ud83c\uddfa",
+    "circuitKey": 1,
+    "circuitName": "Albert Park Circuit",
+    "round": 1,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-03-06T01:30:00Z",
+      "fp2": "2026-03-06T05:00:00Z",
+      "fp3": "2026-03-07T01:30:00Z",
+      "qualy": "2026-03-07T05:00:00Z",
+      "race": "2026-03-08T04:00:00Z"
+    }
+  },
+  {
+    "id": "chinese_gp_2026",
+    "name": "FORMULA 1 CHINESE GRAND PRIX 2026",
+    "location": "Shanghai",
+    "country": "China",
+    "countryFlag": "\ud83c\udde8\ud83c\uddf3",
+    "circuitKey": 14,
+    "circuitName": "Shanghai International Circuit",
+    "round": 2,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-03-13T03:30:00Z",
+      "sprintQualy": "2026-03-13T07:30:00Z",
+      "sprint": "2026-03-14T03:00:00Z",
+      "qualy": "2026-03-14T07:00:00Z",
+      "race": "2026-03-15T07:00:00Z"
+    }
+  },
+  {
+    "id": "japanese_gp_2026",
+    "name": "FORMULA 1 MSC CRUISES JAPANESE GRAND PRIX 2026",
+    "location": "Suzuka",
+    "country": "Japan",
+    "countryFlag": "\ud83c\uddef\ud83c\uddf5",
+    "circuitKey": 15,
+    "circuitName": "Suzuka International Racing Course",
+    "round": 3,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-03-27T02:30:00Z",
+      "fp2": "2026-03-27T06:00:00Z",
+      "fp3": "2026-03-28T02:30:00Z",
+      "qualy": "2026-03-28T06:00:00Z",
+      "race": "2026-03-29T05:00:00Z"
+    }
+  },
+  {
+    "id": "bahrain_gp_2026",
+    "name": "FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2026",
+    "location": "Sakhir",
+    "country": "Bahrain",
+    "countryFlag": "\ud83c\udde7\ud83c\udded",
+    "circuitKey": 2,
+    "circuitName": "Bahrain International Circuit",
+    "round": 4,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-04-10T11:30:00Z",
+      "fp2": "2026-04-10T15:00:00Z",
+      "fp3": "2026-04-11T11:30:00Z",
+      "qualy": "2026-04-11T15:00:00Z",
+      "race": "2026-04-12T15:00:00Z"
+    }
+  },
+  {
+    "id": "saudi_arabian_gp_2026",
+    "name": "FORMULA 1 STC SAUDI ARABIAN GRAND PRIX 2026",
+    "location": "Jeddah",
+    "country": "Saudi Arabia",
+    "countryFlag": "\ud83c\uddf8\ud83c\udde6",
+    "circuitKey": 53,
+    "circuitName": "Jeddah Corniche Circuit",
+    "round": 5,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-04-17T13:30:00Z",
+      "fp2": "2026-04-17T17:00:00Z",
+      "fp3": "2026-04-18T13:30:00Z",
+      "qualy": "2026-04-18T17:00:00Z",
+      "race": "2026-04-19T17:00:00Z"
+    }
+  },
+  {
+    "id": "miami_gp_2026",
+    "name": "FORMULA 1 CRYPTO.COM MIAMI GRAND PRIX 2026",
+    "location": "Miami",
+    "country": "United States",
+    "countryFlag": "\ud83c\uddfa\ud83c\uddf8",
+    "circuitKey": 65,
+    "circuitName": "Miami International Autodrome",
+    "round": 6,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-05-01T16:30:00Z",
+      "sprintQualy": "2026-05-01T20:30:00Z",
+      "sprint": "2026-05-02T16:00:00Z",
+      "qualy": "2026-05-02T20:00:00Z",
+      "race": "2026-05-03T20:00:00Z"
+    }
+  },
+  {
+    "id": "canadian_gp_2026",
+    "name": "FORMULA 1 ARAMCO GRAND PRIX DU CANADA 2026",
+    "location": "Montreal",
+    "country": "Canada",
+    "countryFlag": "\ud83c\udde8\ud83c\udde6",
+    "circuitKey": 3,
+    "circuitName": "Circuit Gilles-Villeneuve",
+    "round": 7,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-05-22T17:30:00Z",
+      "sprintQualy": "2026-05-22T21:30:00Z",
+      "sprint": "2026-05-23T16:00:00Z",
+      "qualy": "2026-05-23T20:00:00Z",
+      "race": "2026-05-24T18:00:00Z"
+    }
+  },
+  {
+    "id": "monaco_gp_2026",
+    "name": "FORMULA 1 GRAND PRIX DE MONACO 2026",
+    "location": "Monaco",
+    "country": "Monaco",
+    "countryFlag": "\ud83c\uddf2\ud83c\udde8",
+    "circuitKey": 6,
+    "circuitName": "Circuit de Monaco",
+    "round": 8,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-06-05T11:30:00Z",
+      "fp2": "2026-06-05T15:00:00Z",
+      "fp3": "2026-06-06T10:30:00Z",
+      "qualy": "2026-06-06T14:00:00Z",
+      "race": "2026-06-07T13:00:00Z"
+    }
+  },
+  {
+    "id": "spanish_gp_2026_bcn",
+    "name": "FORMULA 1 ARAMCO GRAN PREMIO DE ESPA\u00d1A 2026",
+    "location": "Barcelona",
+    "country": "Spain",
+    "countryFlag": "\ud83c\uddea\ud83c\uddf8",
+    "circuitKey": 4,
+    "circuitName": "Circuit de Barcelona-Catalunya",
+    "round": 9,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-06-12T11:30:00Z",
+      "fp2": "2026-06-12T15:00:00Z",
+      "fp3": "2026-06-13T10:30:00Z",
+      "qualy": "2026-06-13T14:00:00Z",
+      "race": "2026-06-14T13:00:00Z"
+    }
+  },
+  {
+    "id": "austrian_gp_2026",
+    "name": "FORMULA 1 GROSSER PREIS VON \u00d6STERREICH 2026",
+    "location": "Spielberg",
+    "country": "Austria",
+    "countryFlag": "\ud83c\udde6\ud83c\uddf9",
+    "circuitKey": 9,
+    "circuitName": "Red Bull Ring",
+    "round": 10,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-06-26T11:30:00Z",
+      "fp2": "2026-06-26T15:00:00Z",
+      "fp3": "2026-06-27T10:30:00Z",
+      "qualy": "2026-06-27T14:00:00Z",
+      "race": "2026-06-28T13:00:00Z"
+    }
+  },
+  {
+    "id": "british_gp_2026",
+    "name": "FORMULA 1 QATAR AIRWAYS BRITISH GRAND PRIX 2026",
+    "location": "Silverstone",
+    "country": "Great Britain",
+    "countryFlag": "\ud83c\uddec\ud83c\udde7",
+    "circuitKey": 10,
+    "circuitName": "Silverstone Circuit",
+    "round": 11,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-07-03T12:30:00Z",
+      "sprintQualy": "2026-07-03T16:30:00Z",
+      "sprint": "2026-07-04T11:00:00Z",
+      "qualy": "2026-07-04T15:00:00Z",
+      "race": "2026-07-05T14:00:00Z"
+    }
+  },
+  {
+    "id": "belgian_gp_2026",
+    "name": "FORMULA 1 ROLEX BELGIAN GRAND PRIX 2026",
+    "location": "Spa-Francorchamps",
+    "country": "Belgium",
+    "countryFlag": "\ud83c\udde7\ud83c\uddea",
+    "circuitKey": 7,
+    "circuitName": "Circuit de Spa-Francorchamps",
+    "round": 12,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-07-17T11:30:00Z",
+      "fp2": "2026-07-17T15:00:00Z",
+      "fp3": "2026-07-18T10:30:00Z",
+      "qualy": "2026-07-18T14:00:00Z",
+      "race": "2026-07-19T13:00:00Z"
+    }
+  },
+  {
+    "id": "hungarian_gp_2026",
+    "name": "FORMULA 1 HUNGARIAN GRAND PRIX 2026",
+    "location": "Budapest",
+    "country": "Hungary",
+    "countryFlag": "\ud83c\udded\ud83c\uddfa",
+    "circuitKey": 11,
+    "circuitName": "Hungaroring",
+    "round": 13,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-07-24T11:30:00Z",
+      "fp2": "2026-07-24T15:00:00Z",
+      "fp3": "2026-07-25T10:30:00Z",
+      "qualy": "2026-07-25T14:00:00Z",
+      "race": "2026-07-26T13:00:00Z"
+    }
+  },
+  {
+    "id": "dutch_gp_2026",
+    "name": "FORMULA 1 HEINEKEN DUTCH GRAND PRIX 2026",
+    "location": "Zandvoort",
+    "country": "Netherlands",
+    "countryFlag": "\ud83c\uddf3\ud83c\uddf1",
+    "circuitKey": 21,
+    "circuitName": "Circuit Zandvoort",
+    "round": 14,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-08-21T10:30:00Z",
+      "sprintQualy": "2026-08-21T14:30:00Z",
+      "sprint": "2026-08-22T10:00:00Z",
+      "qualy": "2026-08-22T14:00:00Z",
+      "race": "2026-08-23T13:00:00Z"
+    }
+  },
+  {
+    "id": "italian_gp_2026",
+    "name": "FORMULA 1 PIRELLI GRAN PREMIO D'ITALIA 2026",
+    "location": "Monza",
+    "country": "Italy",
+    "countryFlag": "\ud83c\uddee\ud83c\uddf9",
+    "circuitKey": 13,
+    "circuitName": "Autodromo Nazionale Monza",
+    "round": 15,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-09-04T11:30:00Z",
+      "fp2": "2026-09-04T15:00:00Z",
+      "fp3": "2026-09-05T10:30:00Z",
+      "qualy": "2026-09-05T14:00:00Z",
+      "race": "2026-09-06T13:00:00Z"
+    }
+  },
+  {
+    "id": "spanish_gp_2026_madrid",
+    "name": "FORMULA 1 GRAN PREMIO DE ESPA\u00d1A MADRID 2026",
+    "location": "Madrid",
+    "country": "Spain",
+    "countryFlag": "\ud83c\uddea\ud83c\uddf8",
+    "circuitKey": 89,
+    "circuitName": "IFEMA Madrid Circuit",
+    "round": 16,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-09-11T11:30:00Z",
+      "fp2": "2026-09-11T15:00:00Z",
+      "fp3": "2026-09-12T10:30:00Z",
+      "qualy": "2026-09-12T14:00:00Z",
+      "race": "2026-09-13T13:00:00Z"
+    }
+  },
+  {
+    "id": "azerbaijan_gp_2026",
+    "name": "FORMULA 1 QATAR AIRWAYS AZERBAIJAN GRAND PRIX 2026",
+    "location": "Baku",
+    "country": "Azerbaijan",
+    "countryFlag": "\ud83c\udde6\ud83c\uddff",
+    "circuitKey": 149,
+    "circuitName": "Baku City Circuit",
+    "round": 17,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-09-25T07:30:00Z",
+      "fp2": "2026-09-25T11:00:00Z",
+      "fp3": "2026-09-26T08:30:00Z",
+      "qualy": "2026-09-26T12:00:00Z",
+      "race": "2026-09-27T11:00:00Z"
+    }
+  },
+  {
+    "id": "singapore_gp_2026",
+    "name": "FORMULA 1 SINGAPORE AIRLINES SINGAPORE GRAND PRIX 2026",
+    "location": "Singapore",
+    "country": "Singapore",
+    "countryFlag": "\ud83c\uddf8\ud83c\uddec",
+    "circuitKey": 16,
+    "circuitName": "Marina Bay Street Circuit",
+    "round": 18,
+    "isSprint": true,
+    "sessions": {
+      "fp1": "2026-10-09T09:30:00Z",
+      "sprintQualy": "2026-10-09T13:30:00Z",
+      "sprint": "2026-10-10T09:00:00Z",
+      "qualy": "2026-10-10T13:00:00Z",
+      "race": "2026-10-11T12:00:00Z"
+    }
+  },
+  {
+    "id": "united_states_gp_2026",
+    "name": "FORMULA 1 PIRELLI UNITED STATES GRAND PRIX 2026",
+    "location": "Austin",
+    "country": "United States",
+    "countryFlag": "\ud83c\uddfa\ud83c\uddf8",
+    "circuitKey": 12,
+    "circuitName": "Circuit of The Americas",
+    "round": 19,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-10-23T17:30:00Z",
+      "fp2": "2026-10-23T21:00:00Z",
+      "fp3": "2026-10-24T18:30:00Z",
+      "qualy": "2026-10-24T22:00:00Z",
+      "race": "2026-10-25T19:00:00Z"
+    }
+  },
+  {
+    "id": "mexico_gp_2026",
+    "name": "FORMULA 1 GRAN PREMIO DE LA CIUDAD DE M\u00c9XICO 2026",
+    "location": "Mexico City",
+    "country": "Mexico",
+    "countryFlag": "\ud83c\uddf2\ud83c\uddfd",
+    "circuitKey": 19,
+    "circuitName": "Aut\u00f3dromo Hermanos Rodr\u00edguez",
+    "round": 20,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-10-30T18:30:00Z",
+      "fp2": "2026-10-30T22:00:00Z",
+      "fp3": "2026-10-31T17:30:00Z",
+      "qualy": "2026-10-31T21:00:00Z",
+      "race": "2026-11-01T20:00:00Z"
+    }
+  },
+  {
+    "id": "sao_paulo_gp_2026",
+    "name": "FORMULA 1 LENOVO GRANDE PR\u00caMIO DE S\u00c3O PAULO 2026",
+    "location": "S\u00e3o Paulo",
+    "country": "Brazil",
+    "countryFlag": "\ud83c\udde7\ud83c\uddf7",
+    "circuitKey": 18,
+    "circuitName": "Aut\u00f3dromo Jos\u00e9 Carlos Pace",
+    "round": 21,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-11-06T14:30:00Z",
+      "fp2": "2026-11-06T18:00:00Z",
+      "fp3": "2026-11-07T14:30:00Z",
+      "qualy": "2026-11-07T18:00:00Z",
+      "race": "2026-11-08T17:00:00Z"
+    }
+  },
+  {
+    "id": "las_vegas_gp_2026",
+    "name": "FORMULA 1 HEINEKEN SILVER LAS VEGAS GRAND PRIX 2026",
+    "location": "Las Vegas",
+    "country": "United States",
+    "countryFlag": "\ud83c\uddfa\ud83c\uddf8",
+    "circuitKey": 152,
+    "circuitName": "Las Vegas Strip Circuit",
+    "round": 22,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-11-20T04:30:00Z",
+      "fp2": "2026-11-20T08:00:00Z",
+      "fp3": "2026-11-21T04:30:00Z",
+      "qualy": "2026-11-21T08:00:00Z",
+      "race": "2026-11-22T06:00:00Z"
+    }
+  },
+  {
+    "id": "qatar_gp_2026",
+    "name": "FORMULA 1 QATAR AIRWAYS QATAR GRAND PRIX 2026",
+    "location": "Lusail",
+    "country": "Qatar",
+    "countryFlag": "\ud83c\uddf6\ud83c\udde6",
+    "circuitKey": 150,
+    "circuitName": "Lusail International Circuit",
+    "round": 23,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-11-27T11:30:00Z",
+      "fp2": "2026-11-27T15:00:00Z",
+      "fp3": "2026-11-28T12:30:00Z",
+      "qualy": "2026-11-28T16:00:00Z",
+      "race": "2026-11-29T16:00:00Z"
+    }
+  },
+  {
+    "id": "abu_dhabi_gp_2026",
+    "name": "FORMULA 1 ETIHAD AIRWAYS ABU DHABI GRAND PRIX 2026",
+    "location": "Yas Island",
+    "country": "Abu Dhabi",
+    "countryFlag": "\ud83c\udde6\ud83c\uddea",
+    "circuitKey": 22,
+    "circuitName": "Yas Marina Circuit",
+    "round": 24,
+    "isSprint": false,
+    "sessions": {
+      "fp1": "2026-12-04T05:30:00Z",
+      "fp2": "2026-12-04T09:00:00Z",
+      "fp3": "2026-12-05T06:30:00Z",
+      "qualy": "2026-12-05T10:00:00Z",
+      "race": "2026-12-06T09:00:00Z"
+    }
+  }
+]

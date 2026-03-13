@@ -7,7 +7,7 @@ interface HealthPayload {
   status: HealthStatus;
   uptime: number;
   connectedClients: number;
-  f1Connected: boolean;
+  isF1Connected: boolean;
   timestamp: string;
 }
 
@@ -43,7 +43,7 @@ export class HealthServer {
           status: isF1Connected ? 'ok' : 'degraded',
           uptime: Math.floor(process.uptime()),
           connectedClients: this.getClientCount(),
-          f1Connected: isF1Connected,
+          isF1Connected,
           timestamp: new Date().toISOString(),
         };
 

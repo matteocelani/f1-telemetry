@@ -1,103 +1,89 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useF1Store } from '@/store/useF1Store';
+import { useState, useEffect } from 'react';
+import { Footer } from '@/components/layout/Footer';
+import { Hero } from '@/app/home/sections/Hero';
+import { Schedule } from '@/app/home/sections/Schedule';
+import calendarData from '@/data/calendar.json';
+import circuitsData from '@/data/circuits.json';
 
-const WS_URL = 'ws://localhost:8080';
-const HEALTH_URL = 'http://localhost:8081/health';
-const HEALTH_POLL_MS = 5_000;
+interface RaceEntry {
+  id: string;
+  name: string;
+  location: string;
+  country: string;
+  countryFlag: string;
+  circuitName: string;
+  round: number;
+  isSprint: boolean;
+  sessions: Record<string, string>;
+}
 
-export default function Home() {
-  const {
-    isWsConnected,
-    isApiHealthy,
-    lastFrame,
-    setWsConnected,
-    setApiHealthy,
-    setLastFrame,
-  } = useF1Store();
+const LIVE_THRESHOLD_MS = 60 * 60 * 1000;
 
-  // WebSocket connection to the backend
+const races = calendarData as unknown as RaceEntry[];
+
+function getCurrentGrandPrix(): RaceEntry {
+  const now = new Date();
+  const current = races.find((race) => {
+    const sessionDates = Object.values(race.sessions).map((s) =>
+      new Date(s).getTime()
+    );
+    const lastSession = new Date(Math.max(...sessionDates));
+    return lastSession > now;
+  });
+  return current || races[races.length - 1];
+}
+
+export default function HomePage() {
+  const [isClient, setIsClient] = useState(false);
+  const currentGp = getCurrentGrandPrix();
+
+  const circuitInfo = circuitsData.find((c) => c.circuitId === currentGp.id);
+
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
+    setIsClient(true);
+  }, []);
 
-    ws.onopen = () => setWsConnected(true);
-    ws.onclose = () => setWsConnected(false);
-    ws.onerror = () => setWsConnected(false);
+  const sessionEntries = Object.entries(currentGp.sessions).sort(
+    (a, b) => new Date(a[1]).getTime() - new Date(b[1]).getTime()
+  );
 
-    ws.onmessage = (event: MessageEvent<string>) => {
-      try {
-        const frame = JSON.parse(event.data) as {
-          updates: Record<string, unknown>;
-        };
-        if (frame.updates) {
-          console.info('[F1 WS] frame received', frame.updates);
-          setLastFrame(frame.updates);
-        }
-      } catch {
-        // Malformed frame — discard silently in the test page
-      }
-    };
+  const now = new Date().getTime();
+  const nextSession = sessionEntries.find(
+    ([, iso]) => new Date(iso).getTime() > now
+  );
+  const targetDate = nextSession
+    ? new Date(nextSession[1])
+    : new Date(sessionEntries[sessionEntries.length - 1][1]);
 
-    return () => ws.close();
-  }, [setWsConnected, setLastFrame]);
-
-  // Health polling every 5s
-  useEffect(() => {
-    const poll = async () => {
-      try {
-        const res = await fetch(HEALTH_URL);
-        setApiHealthy(res.ok);
-      } catch {
-        setApiHealthy(false);
-      }
-    };
-
-    poll();
-    const id = setInterval(poll, HEALTH_POLL_MS);
-    return () => clearInterval(id);
-  }, [setApiHealthy]);
+  const isLiveActive = nextSession
+    ? targetDate.getTime() - now <= LIVE_THRESHOLD_MS
+    : false;
 
   return (
-    <main
-      style={{
-        fontFamily: 'monospace',
-        padding: '2rem',
-        background: '#0a0a0a',
-        minHeight: '100vh',
-        color: '#fff',
-      }}
-    >
-      <h1>🏎️ F1 Telemetry — Pipe Test</h1>
+    <div className="flex min-h-dvh flex-col bg-background selection:bg-foreground/10 text-foreground relative font-sans">
+      {/* Fixed Dotted Background */}
+      <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_center,currentColor_1px,transparent_1px)] bg-size-(--spacing-dot-pattern) opacity-10 dark:opacity-15 pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-dashboard-glow pointer-events-none" />
 
-      <p>
-        API Health:{' '}
-        <strong style={{ color: isApiHealthy ? '#22c55e' : '#ef4444' }}>
-          {isApiHealthy ? '🟢 OK' : '🔴 Offline'}
-        </strong>
-      </p>
+      {/* Hero */}
+      <main className="z-10 flex flex-col items-center p-6 md:p-12 w-full max-w-6xl mx-auto">
+        <Hero
+          currentGp={currentGp}
+          targetDate={targetDate}
+          nextSession={nextSession}
+          isLiveActive={isLiveActive}
+          isClient={isClient}
+          circuitInfo={circuitInfo}
+        />
+      </main>
 
-      <p>
-        WebSocket:{' '}
-        <strong style={{ color: isWsConnected ? '#22c55e' : '#ef4444' }}>
-          {isWsConnected ? '🟢 Connected' : '🔴 Disconnected'}
-        </strong>
-      </p>
+      {/* Schedule */}
+      <Schedule sessionEntries={sessionEntries} />
 
-      <hr style={{ borderColor: '#333', margin: '1rem 0' }} />
-
-      <h2>Last batch frame</h2>
-      <pre
-        style={{
-          background: '#111',
-          padding: '1rem',
-          borderRadius: '8px',
-          overflowX: 'auto',
-          fontSize: '0.75rem',
-        }}
-      >
-        {lastFrame ? JSON.stringify(lastFrame, null, 2) : 'Waiting for data...'}
-      </pre>
-    </main>
+      {/* Footer */}
+      <Footer />
+    </div>
   );
 }

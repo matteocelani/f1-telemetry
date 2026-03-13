@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "lint": "tsc --noEmit",
     "build": "tsc"
   },
   "dependencies": {

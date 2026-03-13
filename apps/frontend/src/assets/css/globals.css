@@ -1,0 +1,213 @@
+@import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+
+  /* F1 Semantic Mappings (Tailwind v4) */
+  --color-f1-red: var(--primary);
+  --color-f1-sector-purple: var(--f1-sector-purple);
+  --color-f1-sector-green: var(--f1-sector-green);
+  --color-f1-sector-yellow: var(--f1-sector-yellow);
+  --color-f1-sector-red: var(--f1-sector-red);
+
+  --color-f1-tyre-soft: var(--f1-tyre-soft);
+  --color-f1-tyre-medium: var(--f1-tyre-medium);
+  --color-f1-tyre-hard: var(--f1-tyre-hard);
+  --color-f1-tyre-inter: var(--f1-tyre-inter);
+  --color-f1-tyre-wet: var(--f1-tyre-wet);
+
+  --color-f1-flag-red: var(--f1-flag-red);
+  --color-f1-flag-yellow: var(--f1-flag-yellow);
+  --color-f1-flag-green: var(--f1-flag-green);
+  --color-f1-flag-blue: var(--f1-flag-blue);
+  --color-f1-flag-sc: var(--f1-flag-sc);
+
+  --color-team-ferrari: #E80020;
+  --color-team-mclaren: #FF8000;
+  --color-team-mercedes: #27F4D2;
+  --color-team-redbull: #3671C6;
+  --color-team-astonmartin: #229971;
+  --color-team-alpine: #0093CC;
+  --color-team-williams: #64C4FF;
+  --color-team-vcarb: #6692FF;
+  --color-team-haas: #B6BABD;
+  --color-team-audi: #F91B1B;
+  --color-team-cadillac: #000000;
+
+  --spacing-dot-pattern: 24px;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: hsl(357 100% 45%); /* #e10600 - F1 Red */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* F1 Semantic Colors - Light Mode (hsl based for legacy tailwind compatibility or raw hsl) */
+  --f1-sector-purple: hsl(284 100% 64%);
+  --f1-sector-green: hsl(135 59% 49%);
+  --f1-sector-yellow: hsl(48 100% 50%);
+  --f1-sector-red: hsl(0 100% 50%);
+
+  --f1-tyre-soft: hsl(0 100% 50%);
+  --f1-tyre-medium: hsl(48 100% 50%);
+  --f1-tyre-hard: hsl(0 0% 100%);
+  --f1-tyre-inter: hsl(135 59% 49%);
+  --f1-tyre-wet: hsl(210 100% 50%);
+
+  --f1-flag-red: hsl(0 100% 50%);
+  --f1-flag-yellow: hsl(48 100% 50%);
+  --f1-flag-green: hsl(135 59% 49%);
+  --f1-flag-blue: hsl(210 100% 50%);
+  --f1-flag-sc: hsl(30 100% 50%);
+
+
+}
+
+.dark {
+  --background: hsl(240 18% 10%); /* #15151e - Pit Wall Black */
+  --foreground: oklch(0.985 0 0);
+  --card: hsl(240 18% 12%);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: hsl(240 18% 12%);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: hsl(357 100% 45%); /* #e10600 - F1 Red */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /* F1 Semantic Colors - Dark Mode (identical semantics, just mapping) */
+  --f1-sector-purple: hsl(284 100% 64%);
+  --f1-sector-green: hsl(135 59% 49%);
+  --f1-sector-yellow: hsl(48 100% 50%);
+  --f1-sector-red: hsl(0 100% 50%);
+
+  --f1-tyre-soft: hsl(0 100% 50%);
+  --f1-tyre-medium: hsl(48 100% 50%);
+  --f1-tyre-hard: hsl(0 0% 100%);
+  --f1-tyre-inter: hsl(135 59% 49%);
+  --f1-tyre-wet: hsl(210 100% 50%);
+
+  --f1-flag-red: hsl(0 100% 50%);
+  --f1-flag-yellow: hsl(48 100% 50%);
+  --f1-flag-green: hsl(135 59% 49%);
+  --f1-flag-blue: hsl(210 100% 50%);
+  --f1-flag-sc: hsl(30 100% 50%);
+
+
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .bg-dashboard-glow {
+    background-image: radial-gradient(
+      ellipse 100% 100% at 50% 0%,
+      color-mix(in srgb, var(--color-foreground), transparent 90%),
+      transparent 60%
+    );
+  }
+}

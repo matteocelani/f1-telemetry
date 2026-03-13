@@ -154,24 +154,36 @@ export class F1Client {
         if (!frame.M?.length) return;
 
         for (const message of frame.M) {
-          if (message.M !== 'feed' || !message.A?.[0]) continue;
+          if (!message.A?.length) continue;
 
-          const feedPayload = JSON.parse(message.A[0]) as Record<
-            string,
-            unknown
-          >;
+          const firstArg = message.A[0];
+          const secondArg = message.A[1];
 
-          for (const channelName in feedPayload) {
-            const rawData = feedPayload[channelName];
+          // Case 1: Direct channel update [ChannelName, Payload]
+          if (
+            typeof firstArg === 'string' &&
+            secondArg !== undefined &&
+            message.A.length >= 2
+          ) {
+            this.processUpdate(firstArg, secondArg);
+            continue;
+          }
 
-            // Channels ending in '.z' are raw DEFLATE-compressed blobs
-            if (channelName.endsWith('.z')) {
-              const decompressed = decompressPayload(rawData as string);
-              if (decompressed !== null) {
-                this.localSocketServer.broadcast(channelName, decompressed);
+          // Case 2: Bulk feed payload [JSON_String_of_Object]
+          if (typeof firstArg === 'string' && firstArg.startsWith('{')) {
+            try {
+              const feedPayload = JSON.parse(firstArg) as Record<
+                string,
+                unknown
+              >;
+              for (const channelName in feedPayload) {
+                this.processUpdate(channelName, feedPayload[channelName]);
               }
-            } else {
-              this.localSocketServer.broadcast(channelName, rawData);
+            } catch (err) {
+              Logger.error(
+                `Failed to parse bulk feed payload: ${firstArg.substring(0, 50)}...`,
+                err
+              );
             }
           }
         }
@@ -194,6 +206,18 @@ export class F1Client {
     });
   }
 
+  private processUpdate(channelName: string, rawData: unknown) {
+    // Channels ending in '.z' are raw DEFLATE-compressed blobs
+    if (channelName.endsWith('.z') && typeof rawData === 'string') {
+      const decompressed = decompressPayload(rawData);
+      if (decompressed !== null) {
+        this.localSocketServer.broadcast(channelName, decompressed);
+      }
+    } else {
+      this.localSocketServer.broadcast(channelName, rawData);
+    }
+  }
+
   private sendSubscribe() {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
@@ -214,7 +238,7 @@ export class F1Client {
     setTimeout(() => this.connect(), RECONNECT_DELAY_MS);
   }
 
-  public get connected(): boolean {
+  public get isConnectedToF1(): boolean {
     return this.isConnected;
   }
 }

@@ -1,0 +1,101 @@
+{
+  "mclaren": {
+    "name": "McLaren F1 Team",
+    "base": "Woking, United Kingdom",
+    "principal": "Andrea Stella",
+    "colorHex": "#FF8000",
+    "textColorHex": "#000000",
+    "cssVar": "team-mclaren",
+    "carImageUrl": "/images/teams/mclaren.avif"
+  },
+  "mercedes": {
+    "name": "Mercedes-AMG PETRONAS F1 Team",
+    "base": "Brackley, United Kingdom",
+    "principal": "Toto Wolff",
+    "colorHex": "#27F4D2",
+    "textColorHex": "#000000",
+    "cssVar": "team-mercedes",
+    "carImageUrl": "/images/teams/mercedes.avif"
+  },
+  "red_bull": {
+    "name": "Oracle Red Bull Racing",
+    "base": "Milton Keynes, United Kingdom",
+    "principal": "Christian Horner",
+    "colorHex": "#3671C6",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-redbull",
+    "carImageUrl": "/images/teams/red_bull.avif"
+  },
+  "ferrari": {
+    "name": "Scuderia Ferrari",
+    "base": "Maranello, Italy",
+    "principal": "Frédéric Vasseur",
+    "colorHex": "#E80020",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-ferrari",
+    "carImageUrl": "/images/teams/ferrari.avif"
+  },
+  "aston_martin": {
+    "name": "Aston Martin Aramco F1 Team",
+    "base": "Silverstone, United Kingdom",
+    "principal": "Mike Krack",
+    "colorHex": "#229971",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-astonmartin",
+    "carImageUrl": "/images/teams/aston_martin.avif"
+  },
+  "haas": {
+    "name": "MoneyGram Haas F1 Team",
+    "base": "Kannapolis, United States",
+    "principal": "Ayao Komatsu",
+    "colorHex": "#B6BABD",
+    "textColorHex": "#000000",
+    "cssVar": "team-haas",
+    "carImageUrl": "/images/teams/haas.avif"
+  },
+  "alpine": {
+    "name": "BWT Alpine F1 Team",
+    "base": "Enstone, United Kingdom",
+    "principal": "Oliver Oakes",
+    "colorHex": "#0093CC",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-alpine",
+    "carImageUrl": "/images/teams/alpine.avif"
+  },
+  "racing_bulls": {
+    "name": "Visa Cash App RB F1 Team",
+    "base": "Faenza, Italy",
+    "principal": "Laurent Mekies",
+    "colorHex": "#6692FF",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-vcarb",
+    "carImageUrl": "/images/teams/racing_bulls.avif"
+  },
+  "williams": {
+    "name": "Williams Racing",
+    "base": "Grove, United Kingdom",
+    "principal": "James Vowles",
+    "colorHex": "#64C4FF",
+    "textColorHex": "#000000",
+    "cssVar": "team-williams",
+    "carImageUrl": "/images/teams/williams.avif"
+  },
+  "audi": {
+    "name": "Audi F1 Team",
+    "base": "Neuburg, Germany",
+    "principal": "Mattia Binotto",
+    "colorHex": "#F91B1B",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-audi",
+    "carImageUrl": "/images/teams/audi.avif"
+  },
+  "cadillac": {
+    "name": "Cadillac F1 Team",
+    "base": "Fishers, United States",
+    "principal": "Colin Cowherd",
+    "colorHex": "#000000",
+    "textColorHex": "#FFFFFF",
+    "cssVar": "team-cadillac",
+    "carImageUrl": "/images/teams/cadillac.avif"
+  }
+}

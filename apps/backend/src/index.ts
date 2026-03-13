@@ -21,7 +21,7 @@ async function bootstrap() {
   healthServer = new HealthServer(
     HEALTH_PORT,
     () => socketServer?.clientCount ?? 0,
-    () => f1Client.connected
+    () => f1Client.isConnectedToF1
   );
   healthServer.start();
 
