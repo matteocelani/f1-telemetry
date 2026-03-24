@@ -17,9 +17,12 @@ export const useRaceControl = create<RaceControlState>((set) => ({
   trackStatus: null,
 
   appendMessages: (incoming) =>
-    set((state) => ({
-      messages: [...state.messages, ...incoming],
-    })),
+    set((state) => {
+      const normalized = Array.isArray(incoming)
+        ? incoming
+        : (Object.values(incoming) as RaceControlMessage[]);
+      return { messages: [...state.messages, ...normalized] };
+    }),
 
   setTrackStatus: (status) => set({ trackStatus: status }),
 

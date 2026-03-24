@@ -1,21 +1,19 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { Toaster } from '@/components/ui/sonner';
+import { LiveTimingProvider } from '@/modules/timing/Context';
 
-/**
- * Live layout intentionally strips all standard navigation/chrome.
- * Full-screen liquid layout for the pit-wall experience.
- */
+// Full-screen pit-wall layout with WS lifecycle and toast notifications.
 export default function LiveLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="h-dvh w-screen overflow-hidden bg-background text-foreground relative font-sans">
-      {/* Background Decorative Patterns (Consistent with Home/Calendar) */}
-      <div className="fixed inset-0 z-0 bg-dot-pattern opacity-10 dark:opacity-15 pointer-events-none" />
-      <div className="fixed inset-0 z-0 bg-dashboard-glow opacity-50 pointer-events-none" />
-
-      <div className="relative z-10 h-full w-full flex flex-col">
-        {children}
+    <LiveTimingProvider>
+      <div className="h-dvh w-screen overflow-hidden bg-background text-foreground font-sans">
+        <div className="h-full w-full flex flex-col">
+          {children}
+        </div>
+        <Toaster position="top-center" />
       </div>
-    </div>
+    </LiveTimingProvider>
   );
 }

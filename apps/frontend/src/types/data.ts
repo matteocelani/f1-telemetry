@@ -24,7 +24,8 @@ export interface DriverMeta {
   lastName: string;
   teamId: string;
   countryCode: string;
+  countryFlag?: string;
   imageUrl?: string;
 }
 
-export type TeamsMap = Record<string, { colorHex: string; name: string }>;
+export type TeamsMap = Record<string, { colorHex: string; name: string; carImageUrl?: string }>;
