@@ -13,7 +13,8 @@ interface ReplayFrame {
 }
 
 function loadReplayData(): ReplayFrame[] {
-  const filePath = process.argv[2] ?? resolve(__dirname, '../data/china.json');
+  const filePath =
+    process.argv[2] ?? resolve(__dirname, '../data/china-enriched.json');
   Logger.info(`Loading replay data from ${filePath}`);
 
   const raw = readFileSync(filePath, 'utf-8');
