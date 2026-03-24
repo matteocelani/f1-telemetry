@@ -6,6 +6,7 @@ import { CircuitSvg } from '@/app/home/components/CircuitSvg';
 import { CountdownTimer } from '@/app/home/components/CountdownTimer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { RaceEntry, CircuitInfo } from '@/types/data';
 
 const sessionLabels: Record<string, string> = {
   fp1: 'Practice 1',
@@ -29,24 +30,6 @@ const itemVariant: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
-
-interface RaceEntry {
-  id: string;
-  name: string;
-  location: string;
-  country: string;
-  countryFlag: string;
-  circuitName: string;
-  round: number;
-  isSprint: boolean;
-  sessions: Record<string, string>;
-}
-
-interface CircuitInfo {
-  circuitId: string;
-  path: string;
-  viewBox: string;
-}
 
 interface HeroProps {
   currentGp: RaceEntry;

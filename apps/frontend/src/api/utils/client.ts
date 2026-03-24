@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
 
@@ -13,12 +13,6 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-// configures request interceptor for authentication
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // placeholder for auth token logic if needed in the future
-  return config;
 });
 
 // configures response interceptor to unwrap data and handle errors

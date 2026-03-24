@@ -4,7 +4,7 @@ import { useMemo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { StatusDot } from '@/components/global/StatusDot';
 import { cn } from '@/lib/utils';
-import type { RaceEntry } from '@/@types/calendar';
+import type { RaceEntry } from '@/types/data';
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 
@@ -13,14 +13,47 @@ const MS_PER_HOUR = 3_600_000;
 const MS_PER_MINUTE = 60_000;
 const MS_PER_SECOND = 1000;
 
+interface RacingDot {
+  id: string;
+  color: string;
+  duration: number;
+  keyPoints: string;
+  keyTimes: string;
+}
+
+const DOT_RADIUS = 5;
+
+// Each dot starts at a different point on the circuit (0%, 33%, 66%)
+const RACING_DOTS: RacingDot[] = [
+  {
+    id: 'ferrari',
+    color: 'var(--color-team-ferrari)',
+    duration: 6,
+    keyPoints: '0;1',
+    keyTimes: '0;1',
+  },
+  {
+    id: 'mclaren',
+    color: 'var(--color-team-mclaren)',
+    duration: 6.3,
+    keyPoints: '0.33;1;0;0.33',
+    keyTimes: '0;0.67;0.67;1',
+  },
+  {
+    id: 'redbull',
+    color: 'var(--color-team-redbull)',
+    duration: 6.6,
+    keyPoints: '0.66;1;0;0.66',
+    keyTimes: '0;0.34;0.34;1',
+  },
+];
+
 const races = calendarData as unknown as RaceEntry[];
 
-// Logic Helpers
-
 const GRACE_PERIOD_MS = 4 * MS_PER_HOUR;
+const SESSION_ENDED_THRESHOLD_MS = 2 * MS_PER_HOUR;
 
-function getNextSession() {
-  const now = new Date();
+function getNextSession(now: Date) {
   for (const race of races) {
     const sessionEntries = Object.entries(race.sessions).sort(
       (a, b) => new Date(a[1]).getTime() - new Date(b[1]).getTime()
@@ -28,7 +61,6 @@ function getNextSession() {
 
     for (const [sessionKey, sessionDateStr] of sessionEntries) {
       const sessionDate = new Date(sessionDateStr);
-      // If the session is in the future OR it started recently (within 4h), pick it.
       if (
         sessionDate > now ||
         now.getTime() - sessionDate.getTime() < GRACE_PERIOD_MS
@@ -53,7 +85,7 @@ export function LiveOfflineFallback() {
     return () => clearInterval(timer);
   }, []);
 
-  const nextEvent = useMemo(() => getNextSession(), []);
+  const nextEvent = useMemo(() => getNextSession(now), [now]);
 
   if (!nextEvent) {
     return (
@@ -71,10 +103,11 @@ export function LiveOfflineFallback() {
 
   const { race, sessionKey, date } = nextEvent;
   const diffMs = date.getTime() - now.getTime();
+  const elapsedMs = now.getTime() - date.getTime();
 
-  // A session is "starting" or "live" if we are past the start time
-  // OR very close to it (e.g. 5 mins before)
-  const isLive = diffMs <= 0;
+  const isUpcoming = diffMs > 0;
+  const isLive = !isUpcoming && elapsedMs < SESSION_ENDED_THRESHOLD_MS;
+  const isSessionEnded = !isUpcoming && elapsedMs >= SESSION_ENDED_THRESHOLD_MS;
   const circuitSvg = (
     circuitsData as {
       circuitId: string;
@@ -120,7 +153,11 @@ export function LiveOfflineFallback() {
               className={cn('h-2 w-2', isLive && 'animate-pulse')}
             />
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              {isLive ? 'Waiting for Signal' : 'Offline Mode'}
+              {isSessionEnded
+                ? 'Session Ended'
+                : isLive
+                  ? 'Waiting for Signal'
+                  : 'Offline Mode'}
             </span>
           </div>
 
@@ -140,34 +177,52 @@ export function LiveOfflineFallback() {
               viewBox={circuitSvg.viewBox}
               className="h-full w-full object-contain filter drop-shadow-sm"
             >
-              <motion.path
-                d={circuitSvg.path}
+              <defs>
+                <path id="circuit-path" d={circuitSvg.path} />
+              </defs>
+              {/* Static track outline */}
+              <use
+                href="#circuit-path"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{
-                  duration: 3,
-                  ease: 'easeInOut',
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                }}
+                opacity="0.3"
               />
+              {/* Racing dots moving along the circuit */}
+              {RACING_DOTS.map((dot) => (
+                <circle
+                  key={dot.id}
+                  r={DOT_RADIUS}
+                  fill={dot.color}
+                  opacity="1"
+                >
+                  <animateMotion
+                    dur={`${dot.duration}s`}
+                    keyPoints={dot.keyPoints}
+                    keyTimes={dot.keyTimes}
+                    calcMode="linear"
+                    repeatCount="indefinite"
+                  >
+                    <mpath href="#circuit-path" />
+                  </animateMotion>
+                </circle>
+              ))}
             </svg>
           </div>
         )}
 
         <div className="flex flex-col items-center gap-6 w-full">
           <p className="text-xs font-bold uppercase tracking-widest text-primary">
-            {isLive
-              ? `LIVE: ${sessionKey} — Broadcasting soon`
-              : `Upcoming Session: ${sessionKey}`}
+            {isSessionEnded
+              ? `${sessionKey} — Completed`
+              : isLive
+                ? `LIVE: ${sessionKey} — Broadcasting soon`
+                : `Upcoming Session: ${sessionKey}`}
           </p>
 
-          {!isLive && (
+          {isUpcoming && (
             <div className="grid grid-cols-4 gap-6 md:gap-10 w-full max-w-sm">
               {countdownUnits.map((unit) => (
                 <div
@@ -196,6 +251,12 @@ export function LiveOfflineFallback() {
                 Waiting for telemetry data from the track...
               </p>
             </div>
+          )}
+
+          {isSessionEnded && (
+            <p className="text-sm text-muted-foreground">
+              The next session will appear here automatically.
+            </p>
           )}
         </div>
       </motion.div>

@@ -6,7 +6,7 @@ import { motion, Variants } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import type { RaceEntry } from '@/@types/calendar';
+import type { RaceEntry } from '@/types/data';
 import { RaceCard } from '@/app/calendar/components/RaceCard';
 import calendarData from '@/data/calendar.json';
 
@@ -44,7 +44,7 @@ export default function CalendarPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background selection:bg-foreground/10 text-foreground font-sans relative">
       {/* Background Decorative Patterns */}
-      <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_center,currentColor_1px,transparent_1px)] bg-size-(--spacing-dot-pattern) opacity-10 dark:opacity-15 pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-dot-pattern opacity-10 dark:opacity-15 pointer-events-none" />
       <div className="fixed inset-0 z-0 bg-dashboard-glow pointer-events-none" />
 
       <main className="z-10 flex flex-col p-6 md:p-12 w-full max-w-6xl mx-auto flex-1">

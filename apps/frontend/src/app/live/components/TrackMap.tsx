@@ -2,17 +2,15 @@
 
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import type { DriverMeta, TeamsMap } from '@/types/data';
 import { cn } from '@/lib/utils';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
 import { useTiming } from '@/store/timing';
 import { useTrack } from '@/store/track';
 
-type TeamsMap = Record<string, { colorHex: string }>;
-type DriverMeta = { driverNumber: string; teamId: string; tla: string };
-
-const teams = teamsData as TeamsMap;
-const staticDrivers = driversData as DriverMeta[];
+const teams = teamsData as unknown as TeamsMap;
+const staticDrivers = driversData as unknown as DriverMeta[];
 
 const TRACK_PADDING = 40;
 const DOT_RADIUS = 6;

@@ -1,21 +1,12 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import type { DriverMeta } from '@/types/data';
 import driversData from '@/data/drivers.json';
 import type { UITimingRow, SectorColorClass } from '@/modules/timing/types';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
 
-type DriverMeta = {
-  driverNumber: string;
-  tla: string;
-  firstName: string;
-  lastName: string;
-  teamId: string;
-  countryCode: string;
-  imageUrl?: string;
-};
-
-const staticDrivers = driversData as DriverMeta[];
+const staticDrivers = driversData as unknown as DriverMeta[];
 
 function resolveSectorColor(
   value: string | undefined,

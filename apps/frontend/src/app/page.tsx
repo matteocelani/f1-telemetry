@@ -4,20 +4,9 @@ import { useState, useEffect } from 'react';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/app/home/sections/Hero';
 import { Schedule } from '@/app/home/sections/Schedule';
+import type { RaceEntry } from '@/types/data';
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
-
-interface RaceEntry {
-  id: string;
-  name: string;
-  location: string;
-  country: string;
-  countryFlag: string;
-  circuitName: string;
-  round: number;
-  isSprint: boolean;
-  sessions: Record<string, string>;
-}
 
 const LIVE_THRESHOLD_MS = 60 * 60 * 1000;
 
@@ -64,7 +53,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background selection:bg-foreground/10 text-foreground relative font-sans">
       {/* Fixed Dotted Background */}
-      <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_center,currentColor_1px,transparent_1px)] bg-size-(--spacing-dot-pattern) opacity-10 dark:opacity-15 pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-dot-pattern opacity-10 dark:opacity-15 pointer-events-none" />
       <div className="fixed inset-0 z-0 bg-dashboard-glow pointer-events-none" />
 
       {/* Hero */}

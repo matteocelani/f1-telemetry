@@ -55,21 +55,28 @@ export default function LivePage() {
       <div className="flex h-dvh w-full flex-col bg-background text-foreground">
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 bg-card/50 px-6 backdrop-blur-md">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-xs font-bold uppercase tracking-widest text-foreground group-hover:text-primary transition-colors">
+            <Link
+              href="/"
+              className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Home
+            </Link>
+            <div className="h-4 w-px bg-border/40" />
+            <div className="flex items-center gap-2">
+              <StatusDot
+                variant={
+                  connectionStatus === 'connecting'
+                    ? 'reconnecting'
+                    : connectionStatus === 'connected'
+                      ? 'connected'
+                      : 'disconnected'
+                }
+                className="h-2 w-2"
+              />
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground">
                 F1 Live
               </span>
-            </Link>
-            <StatusDot
-              variant={
-                connectionStatus === 'connecting'
-                  ? 'reconnecting'
-                  : connectionStatus === 'connected'
-                    ? 'connected'
-                    : 'disconnected'
-              }
-              className="h-2 w-2"
-            />
+            </div>
           </div>
         </header>
 

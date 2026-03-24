@@ -2,17 +2,15 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import type { DriverMeta, TeamsMap } from '@/types/data';
 import { cn } from '@/lib/utils';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
 import { useTelemetryChart } from '@/modules/timing/hooks/useTelemetryChart';
 import { useTiming } from '@/store/timing';
 
-type TeamsMap = Record<string, { colorHex: string; name: string }>;
-type DriverMeta = { driverNumber: string; tla: string; teamId: string };
-
-const teams = teamsData as TeamsMap;
-const staticDrivers = driversData as DriverMeta[];
+const teams = teamsData as unknown as TeamsMap;
+const staticDrivers = driversData as unknown as DriverMeta[];
 
 const DEFAULT_DRIVER_NO = '44';
 
@@ -93,12 +91,8 @@ export function TelemetryPanel({ className }: TelemetryPanelProps) {
         {currentDriver && (
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/5 border border-border/40">
             <span
-              className="h-2 w-2 rounded-full shrink-0 shadow-sm bg-(--team-color)"
-              style={
-                {
-                  '--team-color': currentDriver.teamColor,
-                } as React.CSSProperties
-              }
+              className="h-2 w-2 rounded-full shrink-0 shadow-sm"
+              style={{ backgroundColor: currentDriver.teamColor }}
             />
             <span className="text-xs font-black tracking-tight">
               {currentDriver.tla}

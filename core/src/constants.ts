@@ -1,5 +1,5 @@
-export const F1_SERVER_URL = 'https://livetiming.formula1.com/signalr';
-export const F1_HUB_NAME = 'Streaming';
+export const F1_SERVER_URL = 'https://livetiming.formula1.com/signalr' as const;
+export const F1_HUB_NAME = 'Streaming' as const;
 
 export const CHANNELS = {
   TELEMETRY: 'CarData.z',

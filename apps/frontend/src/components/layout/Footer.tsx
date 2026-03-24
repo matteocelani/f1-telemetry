@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { GitHub } from '@/assets/icons';
 import { ThemeToggle } from '@/components/global/ThemeToggle';
+import { GitHub } from '@/assets/icons';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -12,11 +12,11 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 md:flex-row">
         <div className="flex flex-col items-center gap-2 md:items-start">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tighter text-foreground">
-              F1 TELEMETRY
-            </span>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-              BETA
+            <span className="text-sm font-light tracking-tight flex gap-2 text-muted-foreground">
+              <span className="font-semibold text-foreground">F1</span>{' '}
+              <span className="tracking-widest opacity-80 uppercase">
+                Telemetry
+              </span>
             </span>
           </div>
           <p className="text-xs text-muted-foreground">

@@ -202,12 +202,19 @@
   }
 }
 
-@layer utilities {
-  .bg-dashboard-glow {
-    background-image: radial-gradient(
-      ellipse 100% 100% at 50% 0%,
-      color-mix(in srgb, var(--color-foreground), transparent 90%),
-      transparent 60%
-    );
-  }
+@utility bg-dot-pattern {
+  background-image: radial-gradient(
+    circle at center,
+    currentColor 1px,
+    transparent 1px
+  );
+  background-size: var(--spacing-dot-pattern) var(--spacing-dot-pattern);
+}
+
+@utility bg-dashboard-glow {
+  background-image: radial-gradient(
+    ellipse 100% 100% at 50% 0%,
+    color-mix(in srgb, var(--color-foreground), transparent 90%),
+    transparent 60%
+  );
 }

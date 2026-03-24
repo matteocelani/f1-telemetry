@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, MapPin, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { RaceEntry } from '@/@types/calendar';
+import type { RaceEntry } from '@/types/data';
 
 interface RaceCardProps {
   race: RaceEntry;
