@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "dev:replay": "ts-node -r tsconfig-paths/register src/replay.ts",
     "lint": "tsc --noEmit",
     "build": "tsc"
   },

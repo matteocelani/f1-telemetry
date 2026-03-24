@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter backend --filter frontend -r dev",
+    "dev:replay": "pnpm --filter backend dev:replay & pnpm --filter frontend dev",
     "build": "pnpm --filter @f1-telemetry/core build && pnpm --filter backend --filter frontend build",
     "lint": "pnpm -r lint"
   },

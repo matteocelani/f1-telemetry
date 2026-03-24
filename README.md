@@ -50,11 +50,20 @@ cp .env.example apps/backend/.env
 pnpm dev
 ```
 
-Backend runs on `ws://localhost:8080` (WebSocket) and `http://localhost:8081/health` (HTTP health check).  
+Backend runs on `ws://localhost:8080` (WebSocket) and `http://localhost:8081/health` (HTTP health check).
 Frontend runs on `http://localhost:3000`.
+
+### Replay mode (no live session needed)
+
+```bash
+pnpm dev:replay
+```
+
+This replays a pre-recorded session through the WebSocket server so you can work on the frontend outside of race weekends. See [docs/replay-mode.md](docs/replay-mode.md) for details on adding your own recordings.
 
 ## Documentation
 
+- [Replay mode](docs/replay-mode.md) — how to develop and test the live dashboard without an active F1 session
 - [F1 Live Timing payload types](docs/live-timing-types.md) — field reference for all ten subscribed channels, 2026 regulation notes, and maintenance guide
 
 ## Contributing
