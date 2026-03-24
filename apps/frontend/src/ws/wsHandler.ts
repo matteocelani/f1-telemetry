@@ -2,20 +2,28 @@ import { CHANNELS, type ChannelValue } from '@f1-telemetry/core';
 import type {
   TimingDataPayload,
   TimingAppDataPayload,
+  TimingStatsPayload,
   PositionPayload,
   CarDataPayload,
   SessionInfoPayload,
+  SessionDataPayload,
   WeatherDataPayload,
   RaceControlMessagesPayload,
   TrackStatusPayload,
   DriverListPayload,
+  ExtrapolatedClockPayload,
+  LapCountPayload,
   CarTelemetry,
 } from '@f1-telemetry/core';
+import { useClock } from '@/store/clock';
+import { useConnection } from '@/store/connection';
+import { useLapCount } from '@/store/lap-count';
 import { useRaceControl } from '@/store/race-control';
 import { useSession } from '@/store/session';
 import { useTelemetry } from '@/store/telemetry';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
+import { useTimingStats } from '@/store/timing-stats';
 import { useTrack } from '@/store/track';
 import { useWeather } from '@/store/weather';
 
@@ -52,6 +60,7 @@ export function dispatchToStores(frame: F1Frame): void {
   const { channel, data } = frame;
 
   switch (channel) {
+    case CHANNELS.TIMING_F1:
     case CHANNELS.TIMING: {
       const payload = data as TimingDataPayload;
       useTiming.getState().updateLines(payload.Lines);
@@ -110,6 +119,38 @@ export function dispatchToStores(frame: F1Frame): void {
     case CHANNELS.TRACK_STATUS: {
       const payload = data as TrackStatusPayload;
       useRaceControl.getState().setTrackStatus(payload);
+      break;
+    }
+
+    case CHANNELS.TIMING_STATS: {
+      const payload = data as TimingStatsPayload;
+      useTimingStats.getState().updateLines(payload.Lines);
+      if (payload.SessionType) {
+        useTimingStats.getState().setSessionType(payload.SessionType);
+      }
+      break;
+    }
+
+    case CHANNELS.EXTRAPOLATED_CLOCK: {
+      const payload = data as ExtrapolatedClockPayload;
+      useClock.getState().setClock(payload);
+      break;
+    }
+
+    case CHANNELS.LAP_COUNT: {
+      const payload = data as LapCountPayload;
+      useLapCount.getState().setLapCount(payload);
+      break;
+    }
+
+    case CHANNELS.SESSION_DATA: {
+      const payload = data as SessionDataPayload;
+      useSession.getState().setSessionData(payload);
+      break;
+    }
+
+    case CHANNELS.HEARTBEAT: {
+      useConnection.getState().setLastHeartbeat();
       break;
     }
 

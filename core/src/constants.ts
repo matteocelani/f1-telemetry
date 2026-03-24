@@ -5,6 +5,7 @@ export const CHANNELS = {
   TELEMETRY: 'CarData.z',
   POSITION: 'Position.z',
   TIMING: 'TimingData',
+  TIMING_F1: 'TimingDataF1',
   TIMING_APP_DATA: 'TimingAppData',
   TIMING_STATS: 'TimingStats',
   TRACK_STATUS: 'TrackStatus',
@@ -12,6 +13,10 @@ export const CHANNELS = {
   DRIVER_LIST: 'DriverList',
   WEATHER_DATA: 'WeatherData',
   RACE_CONTROL_MESSAGES: 'RaceControlMessages',
+  EXTRAPOLATED_CLOCK: 'ExtrapolatedClock',
+  LAP_COUNT: 'LapCount',
+  SESSION_DATA: 'SessionData',
+  HEARTBEAT: 'Heartbeat',
 } as const;
 
 export type ChannelKey = keyof typeof CHANNELS;

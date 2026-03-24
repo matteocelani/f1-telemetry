@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { SocketServer } from '@services/socket-server';
 import { HealthServer } from '@services/health-server';
+import { SocketServer } from '@services/socket-server';
 import { Logger } from '@utils/logger';
 
 const WS_PORT = parseInt(process.env.PORT ?? '8080', 10);
@@ -43,7 +43,9 @@ function startReplay(socketServer: SocketServer, frames: ReplayFrame[]): void {
   };
 
   setInterval(tick, REPLAY_INTERVAL_MS);
-  Logger.info(`Replaying at ${REPLAY_INTERVAL_MS}ms per frame (${frames.length} frames, loops forever)`);
+  Logger.info(
+    `Replaying at ${REPLAY_INTERVAL_MS}ms per frame (${frames.length} frames, loops forever)`
+  );
 }
 
 const socketServer = new SocketServer(WS_PORT);
