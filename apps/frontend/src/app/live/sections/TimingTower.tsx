@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DriverRow } from '@/app/live/components/DriverRow';
 import { DriverRowExpanded } from '@/app/live/components/DriverRowExpanded';
+import { ROW_EXPAND_DURATION, ROW_LAYOUT_DURATION } from '@/constants/numbers';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 
 const H =
@@ -148,7 +149,7 @@ export function TimingTower({ className }: TimingTowerProps) {
             <motion.div
               key={row.driverNo}
               layout
-              transition={{ duration: 0.3 }}
+              transition={{ duration: ROW_LAYOUT_DURATION }}
               className={cn('relative', !isExpanded && 'flex-1')}
             >
               <DriverRow
@@ -163,7 +164,7 @@ export function TimingTower({ className }: TimingTowerProps) {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: ROW_EXPAND_DURATION }}
                     className="overflow-hidden pb-3"
                   >
                     <DriverRowExpanded row={row} />

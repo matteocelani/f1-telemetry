@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { SegmentDots } from '@/app/live/components/SegmentDots';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
-import { NO_POSITION } from '@/modules/timing/constants';
+import { NO_POSITION } from '@/constants/numbers';
 import type { UITimingRow, SectorColorClass } from '@/modules/timing/types';
 
 const GHOST = 'text-muted-foreground/15';

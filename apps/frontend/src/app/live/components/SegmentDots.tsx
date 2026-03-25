@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { PLACEHOLDER_DOT_COUNT } from '@/modules/timing/constants';
+import { PLACEHOLDER_DOT_COUNT } from '@/constants/numbers';
 import type { SegmentColorClass } from '@/modules/timing/types';
 
 const SEGMENT_CLASSES: Record<SegmentColorClass, string> = {
@@ -16,7 +16,6 @@ interface SegmentDotsProps {
   segments: SegmentColorClass[];
 }
 
-/** Row of micro-sector colored dots. Shows placeholder dots when no data. */
 export function SegmentDots({ segments }: SegmentDotsProps) {
   const isEmpty = segments.length === 0;
 

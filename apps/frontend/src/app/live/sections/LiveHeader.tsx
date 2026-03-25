@@ -13,11 +13,11 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { LapTimer } from '@/app/live/components/LapTimer';
 import { TrackStatusBadge } from '@/app/live/components/TrackStatusBadge';
+import { INTL_LOCALE, WEATHER_FRACTION_DIGITS } from '@/constants/numbers';
 import { SESSION_SHORT } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { countryFlag } from '@/modules/timing/utils';
 
-/** Top bar: track status, session info, timer, weather, theme toggle, live dot. */
 export function LiveHeader() {
   const { isConnected, header, isDetailedView, setDetailedView } =
     useLiveTiming();
@@ -37,11 +37,9 @@ export function LiveHeader() {
 
   return (
     <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
-      {/* Left: track status + session identity */}
       <div className="flex items-center gap-2.5 overflow-hidden md:gap-3">
         {trackStatus && <TrackStatusBadge status={trackStatus} />}
 
-        {/* Mobile: flag + short session label */}
         <div className="flex items-center gap-1.5 sm:hidden">
           {flag && (
             <span className="text-base" role="img" aria-label={countryCode}>
@@ -55,7 +53,6 @@ export function LiveHeader() {
           )}
         </div>
 
-        {/* Tablet+: flag + session name on two lines */}
         <div className="hidden min-w-0 items-center gap-2.5 sm:flex">
           {flag && (
             <span
@@ -79,7 +76,6 @@ export function LiveHeader() {
         </div>
       </div>
 
-      {/* Center: prominent timer/lap — always visible */}
       <div className="absolute left-1/2 -translate-x-1/2">
         <LapTimer
           isRace={isRace}
@@ -88,15 +84,13 @@ export function LiveHeader() {
         />
       </div>
 
-      {/* Right: weather + view toggle + theme + live */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Weather — desktop only */}
         {weather && (
           <div className="hidden items-center gap-2 xl:flex">
             <div className="flex items-center gap-1.5">
               <Thermometer className="size-3.5 text-orange-500" />
               <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(
+                {Intl.NumberFormat(INTL_LOCALE, { maximumFractionDigits: WEATHER_FRACTION_DIGITS }).format(
                   weather.airTemp
                 )}
                 <span className="text-foreground/50">&#176;C</span>
@@ -118,7 +112,7 @@ export function LiveHeader() {
             <div className="flex items-center gap-1.5">
               <Wind className="size-3.5 text-sky-500" />
               <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(
+                {Intl.NumberFormat(INTL_LOCALE, { maximumFractionDigits: WEATHER_FRACTION_DIGITS }).format(
                   weather.windSpeed
                 )}
                 <span className="text-foreground/50"> m/s</span>
@@ -127,7 +121,6 @@ export function LiveHeader() {
           </div>
         )}
 
-        {/* View toggle — below xl only */}
         <button
           type="button"
           onClick={() => setDetailedView(!isDetailedView)}
@@ -146,7 +139,6 @@ export function LiveHeader() {
           )}
         </button>
 
-        {/* Theme toggle */}
         <button
           type="button"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -157,7 +149,6 @@ export function LiveHeader() {
           <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
         </button>
 
-        {/* Live indicator — always visible */}
         <button
           type="button"
           className="flex items-center gap-1.5"

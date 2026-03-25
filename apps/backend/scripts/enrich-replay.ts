@@ -7,7 +7,7 @@
  * Default: data/china.json → data/china-enriched.json
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 
 interface ReplayFrame {
@@ -18,8 +18,36 @@ const INPUT_PATH = process.argv[2] ?? resolve(__dirname, '../data/china.json');
 const OUTPUT_PATH =
   process.argv[3] ?? resolve(__dirname, '../data/china-enriched.json');
 
-const raw = readFileSync(INPUT_PATH, 'utf-8');
-const frames: ReplayFrame[] = JSON.parse(raw);
+function loadInput(path: string): { raw: string; frames: ReplayFrame[] } {
+  if (!existsSync(path)) {
+    throw new Error(`Input file not found: ${path}`);
+  }
+  let raw: string;
+  try {
+    raw = readFileSync(path, 'utf-8');
+  } catch (err) {
+    throw new Error(`Failed to read input file: ${path}`, { cause: err });
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Invalid JSON in input file: ${path}`, { cause: err });
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new Error(`Input file must contain a non-empty JSON array: ${path}`);
+  }
+  return { raw, frames: parsed as ReplayFrame[] };
+}
+
+const { raw, frames } = (() => {
+  try {
+    return loadInput(INPUT_PATH);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
+    return process.exit(1);
+  }
+})();
 
 const TOTAL_FRAMES = frames.length;
 const FRAME_INTERVAL_MS = 100;
@@ -224,7 +252,13 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
 }
 
 const output = JSON.stringify(frames);
-writeFileSync(OUTPUT_PATH, output, 'utf-8');
+
+try {
+  writeFileSync(OUTPUT_PATH, output, 'utf-8');
+} catch (err) {
+  console.error(`Failed to write output file: ${OUTPUT_PATH}`, err);
+  process.exit(1);
+}
 
 const inputSize = (raw.length / 1024).toFixed(0);
 const outputSize = (output.length / 1024).toFixed(0);

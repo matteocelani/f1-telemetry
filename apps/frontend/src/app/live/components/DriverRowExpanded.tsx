@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
-import { NO_POSITION } from '@/modules/timing/constants';
+import { NO_POSITION } from '@/constants/numbers';
 import type { UITimingRow, SectorColorClass } from '@/modules/timing/types';
 
 const PLACEHOLDER = 'text-muted-foreground/20';

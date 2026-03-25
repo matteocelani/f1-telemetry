@@ -57,7 +57,9 @@ You are an expert Senior Developer. You must strictly adhere to the following ru
 
 ## 8. NAMING CONVENTIONS & MAGIC NUMBERS
 
-- **No Magic Values:** NEVER use hardcoded "magic numbers" or "magic strings" in the logic or JSX. Extract them into descriptive constants (e.g., `const MAX_RETRIES = 3;`).
+- **No Magic Values:** NEVER use hardcoded "magic numbers" or "magic strings" in business logic, computations, or conditions. Extract them into descriptive constants in `src/constants/` or the relevant module's `constants.ts` (e.g., `const MAX_RETRIES = 3;`, `const SECONDS_PER_HOUR = 3600;`).
+- **What IS a magic number:** time durations, thresholds, API status codes, protocol values, format strings, locale identifiers, mathematical multipliers — any literal whose meaning is not immediately obvious from context.
+- **What is NOT a magic number:** Tailwind CSS class values (`w-8`, `gap-2`, `grid-cols-4`), SVG attributes (`viewBox`, `cx`, `strokeWidth`, `d` paths), Framer Motion transition configs, `padStart(2, '0')`, and trivial `0`/`1` in boolean-like expressions. These are presentational values and stay inline.
 - **Booleans:** Boolean variables must always start with a descriptive prefix like `is`, `has`, `should`, or `can` (e.g., `isValid`, `hasError`).
 
 ## 9. STYLING (STRICT TAILWIND CSS)

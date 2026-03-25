@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { SegmentDots } from '@/app/live/components/SegmentDots';
+import { DEFAULT_SECTOR_TIME } from '@/constants/numbers';
 import type { SectorColorClass, UISector } from '@/modules/timing/types';
 
 const SECTOR_COLOR: Record<SectorColorClass, string> = {
@@ -28,14 +29,14 @@ export function SectorBlock({ sector, label }: SectorBlockProps) {
           sector.value ? SECTOR_COLOR[sector.color] : SECTOR_COLOR.none
         )}
       >
-        {sector.value || '0.000'}
+        {sector.value || DEFAULT_SECTOR_TIME}
       </span>
       {sector.previousValue ? (
         <span className="text-2xs tabular-nums text-muted-foreground">
           prev {sector.previousValue}
         </span>
       ) : (
-        <span className="text-2xs text-muted-foreground/20">prev 0.000</span>
+        <span className="text-2xs text-muted-foreground/20">prev {DEFAULT_SECTOR_TIME}</span>
       )}
       <SegmentDots segments={sector.segments} />
     </div>

@@ -1,19 +1,17 @@
-import { ALPHA3_TO_ALPHA2, GRACE_PERIOD_MS } from '@/modules/timing/constants';
+import { GRACE_PERIOD_MS, REGIONAL_INDICATOR_OFFSET } from '@/constants/numbers';
+import { ALPHA3_TO_ALPHA2 } from '@/modules/timing/constants';
 import type { RaceEntry } from '@/types/data';
 
-/** Converts ISO 3166-1 alpha-3 country code to a flag emoji. */
 export function countryFlag(code: string): string {
   if (!code) return '';
   const alpha2 =
     ALPHA3_TO_ALPHA2[code.toUpperCase()] ?? code.slice(0, 2).toUpperCase();
-  const OFFSET = 0x1f1e6 - 65;
   return String.fromCodePoint(
-    alpha2.charCodeAt(0) + OFFSET,
-    alpha2.charCodeAt(1) + OFFSET
+    alpha2.charCodeAt(0) + REGIONAL_INDICATOR_OFFSET,
+    alpha2.charCodeAt(1) + REGIONAL_INDICATOR_OFFSET
   );
 }
 
-/** Finds the next upcoming (or currently live) session from the calendar. */
 export function getNextSession(
   now: Date,
   races: RaceEntry[]

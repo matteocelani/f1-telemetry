@@ -1,6 +1,7 @@
 'use client';
 
 import { Flag } from 'lucide-react';
+import { TIMER_PLACEHOLDER } from '@/constants/numbers';
 
 interface LapTimerProps {
   isRace: boolean;
@@ -8,7 +9,6 @@ interface LapTimerProps {
   remainingTime: string | null;
 }
 
-/** Prominent display of lap count (Race/Sprint) or countdown timer (Practice/Qualifying). */
 export function LapTimer({ isRace, lapText, remainingTime }: LapTimerProps) {
   if (isRace && lapText) {
     return (
@@ -34,7 +34,7 @@ export function LapTimer({ isRace, lapText, remainingTime }: LapTimerProps) {
 
   return (
     <span className="text-lg font-black tabular-nums tracking-tight text-foreground/20 md:text-xl">
-      --:--:--
+      {TIMER_PLACEHOLDER}
     </span>
   );
 }

@@ -2,14 +2,18 @@
 
 import { useMemo, useEffect, useState } from 'react';
 import { StatusDot } from '@/components/global/StatusDot';
-import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE, MS_PER_SECOND } from '@/modules/timing/constants';
+import {
+  MS_PER_DAY,
+  MS_PER_HOUR,
+  MS_PER_MINUTE,
+  MS_PER_SECOND,
+} from '@/constants/numbers';
+import calendarData from '@/data/calendar.json';
 import { getNextSession } from '@/modules/timing/utils';
 import type { RaceEntry } from '@/types/data';
-import calendarData from '@/data/calendar.json';
 
 const races = calendarData as unknown as RaceEntry[];
 
-/** Shown when WebSocket is not connected or has no activity. Displays countdown to next session. */
 export function LiveOfflineFallback() {
   const [now, setNow] = useState<Date | null>(null);
 
@@ -21,7 +25,7 @@ export function LiveOfflineFallback() {
 
   const nextEvent = useMemo(
     () => (now ? getNextSession(now, races) : null),
-    [now],
+    [now]
   );
 
   if (!now || !nextEvent) {
@@ -83,7 +87,10 @@ export function LiveOfflineFallback() {
         {!isLive && (
           <div className="grid grid-cols-4 gap-6">
             {units.map((unit) => (
-              <div key={unit.label} className="flex flex-col items-center gap-1">
+              <div
+                key={unit.label}
+                className="flex flex-col items-center gap-1"
+              >
                 <span className="text-3xl font-black tabular-nums tracking-tighter">
                   {unit.value.toString().padStart(2, '0')}
                 </span>

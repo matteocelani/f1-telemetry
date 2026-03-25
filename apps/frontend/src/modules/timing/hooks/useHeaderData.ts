@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { RAINFALL_INDICATOR } from '@/constants/numbers';
 import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
 import { useCountdown } from '@/modules/timing/hooks/useCountdown';
 import type { UIHeaderData, UIWeatherData } from '@/modules/timing/types';
@@ -8,7 +9,6 @@ import { useRaceControl } from '@/store/race-control';
 import { useSession } from '@/store/session';
 import { useWeather } from '@/store/weather';
 
-/** Aggregates session, lap/timer, track status and weather into a single header object. */
 export function useHeaderData(): UIHeaderData {
   const sessionInfo = useSession(useShallow((s) => s.sessionInfo));
   const lapCount = useLapCount(useShallow((s) => s.lapCount));
@@ -35,7 +35,7 @@ export function useHeaderData(): UIHeaderData {
         airTemp: parseFloat(rawWeather.AirTemp),
         trackTemp: parseFloat(rawWeather.TrackTemp),
         humidity: parseFloat(rawWeather.Humidity),
-        isRaining: rawWeather.Rainfall === '1',
+        isRaining: rawWeather.Rainfall === RAINFALL_INDICATOR,
         windSpeed: parseFloat(rawWeather.WindSpeed),
         windDirection: parseFloat(rawWeather.WindDirection),
       };
