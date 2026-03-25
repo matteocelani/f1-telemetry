@@ -99,6 +99,11 @@ export function TimingTower({ className }: TimingTowerProps) {
               className="min-w-20 flex-1 shrink-0 text-right"
             />
             <ColumnHeader
+              label="GAP"
+              tip="Gap to leader"
+              className="hidden min-w-16 flex-1 shrink-0 text-right md:block lg:hidden"
+            />
+            <ColumnHeader
               label="LAST"
               tip={COLUMN_HELP.LAST}
               className="min-w-16 md:min-w-24 flex-1 shrink-0 text-right"

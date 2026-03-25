@@ -3,6 +3,10 @@
  * captured in the original recording. This allows full UI testing without a
  * live F1 session.
  *
+ * Time is mapped 1:1 to wall clock — each frame = 100ms of replay time.
+ * This ensures the ExtrapolatedClock, LapCount, etc. progress linearly
+ * when played back at the default 100ms interval.
+ *
  * Usage: npx tsx scripts/enrich-replay.ts [input.json] [output.json]
  * Default: data/china.json → data/china-enriched.json
  */
@@ -52,8 +56,13 @@ const { raw, frames } = (() => {
 const TOTAL_FRAMES = frames.length;
 const FRAME_INTERVAL_MS = 100;
 
-// Sprint Qualifying is ~44 minutes (2640 seconds)
-const SESSION_DURATION_SECONDS = 2640;
+// Wall-clock replay duration in seconds (1146 frames × 100ms ≈ 114.6s)
+const REPLAY_DURATION_SECONDS = (TOTAL_FRAMES * FRAME_INTERVAL_MS) / 1000;
+
+// Race simulation: 56 laps over the replay duration
+const TOTAL_LAPS = 56;
+const SECONDS_PER_LAP = REPLAY_DURATION_SECONDS / TOTAL_LAPS;
+
 const SESSION_START = new Date('2026-03-13T15:30:00Z');
 
 // Track status events at specific frame percentages
@@ -70,75 +79,68 @@ const TRACK_STATUS_EVENTS: Array<{
   { framePct: 0.67, status: '1', message: 'AllClear' },
 ];
 
-// 20 drivers with realistic circuit positions (Shanghai approximate coordinates)
 const DRIVER_NUMBERS = [
   '1', '4', '11', '12', '14', '16', '18', '22', '23', '27',
   '31', '41', '44', '55', '63', '77', '81', '87', '10', '24',
 ];
 
-const TEAM_COLOURS: Record<string, string> = {
-  '1': 'FF0000', '16': 'FF0000',
-  '4': 'FF8000', '81': 'FF8000',
-  '11': '3671C6', '22': '3671C6',
-  '44': '27F4D2', '63': '27F4D2',
-  '14': '229971', '18': '229971',
-  '31': 'B6BABD', '87': 'B6BABD',
-  '10': 'FF87BC', '41': 'FF87BC',
-  '23': '6692FF', '12': '6692FF',
-  '55': '64C4FF', '77': '64C4FF',
-  '27': 'FFD700', '24': 'FFD700',
-};
-
-// Shanghai circuit path — rough oval for GPS simulation
-const CIRCUIT_POINTS = 200;
-
 function getCircuitPosition(
   progress: number
 ): { X: number; Y: number; Z: number } {
-  // Shanghai-like figure-8 path
   const t = progress * Math.PI * 2;
   const X = Math.sin(t) * 4000 + Math.sin(t * 2) * 1500;
   const Y = Math.cos(t) * 3000 + Math.cos(t * 3) * 800;
   return { X: Math.round(X), Y: Math.round(Y), Z: 0 };
 }
 
+// Wall-clock seconds elapsed at this frame
+function frameToSeconds(frameIndex: number): number {
+  return (frameIndex * FRAME_INTERVAL_MS) / 1000;
+}
+
 function getTimestamp(frameIndex: number): string {
-  const elapsed =
-    (frameIndex / TOTAL_FRAMES) * SESSION_DURATION_SECONDS * 1000;
-  return new Date(SESSION_START.getTime() + elapsed).toISOString();
+  const elapsedMs = frameIndex * FRAME_INTERVAL_MS;
+  return new Date(SESSION_START.getTime() + elapsedMs).toISOString();
 }
 
-function getRemainingTime(frameIndex: number): string {
-  const elapsed = (frameIndex / TOTAL_FRAMES) * SESSION_DURATION_SECONDS;
-  const remaining = Math.max(0, SESSION_DURATION_SECONDS - elapsed);
-  const h = Math.floor(remaining / 3600);
-  const m = Math.floor((remaining % 3600) / 60);
-  const s = Math.floor(remaining % 60);
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+function formatRemaining(remainingSeconds: number): string {
+  const clamped = Math.max(0, remainingSeconds);
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = Math.floor(clamped % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Current track status based on frame
 let currentTrackStatus = { Status: '1', Message: 'AllClear' };
 
 for (let i = 0; i < TOTAL_FRAMES; i++) {
   const frame = frames[i];
   if (!frame.updates) frame.updates = {};
 
+  const wallSeconds = frameToSeconds(i);
   const pct = i / TOTAL_FRAMES;
   const utc = getTimestamp(i);
+  const remaining = REPLAY_DURATION_SECONDS - wallSeconds;
 
-  // Heartbeat every ~30 frames (~3 seconds)
+  // Heartbeat every 30 frames (3 seconds)
   if (i % 30 === 0) {
     frame.updates['Heartbeat'] = { Utc: utc };
   }
 
-  // ExtrapolatedClock every ~10 frames (~1 second)
+  // ExtrapolatedClock every 10 frames (1 second) — counts down linearly
   if (i % 10 === 0) {
     frame.updates['ExtrapolatedClock'] = {
       Utc: utc,
-      Remaining: getRemainingTime(i),
+      Remaining: formatRemaining(remaining),
       Extrapolating: true,
     };
+  }
+
+  // LapCount: progresses linearly through laps
+  const currentLap = Math.min(TOTAL_LAPS, Math.floor(wallSeconds / SECONDS_PER_LAP) + 1);
+  // Emit LapCount when the lap changes or at frame 0
+  if (i === 0 || currentLap !== Math.min(TOTAL_LAPS, Math.floor(frameToSeconds(i - 1) / SECONDS_PER_LAP) + 1)) {
+    frame.updates['LapCount'] = { CurrentLap: currentLap, TotalLaps: TOTAL_LAPS };
   }
 
   // TrackStatus at scripted events
@@ -150,7 +152,7 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
     }
   }
 
-  // SessionInfo at start so the header has session data immediately
+  // SessionInfo at frame 0
   if (i === 0 && !frame.updates['SessionInfo']) {
     frame.updates['SessionInfo'] = {
       Meeting: {
@@ -163,19 +165,13 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
         Circuit: { Key: 49, ShortName: 'Shanghai' },
       },
       Key: 11236,
-      Type: 'Qualifying',
-      Name: 'Sprint Qualifying',
+      Type: 'Race',
+      Name: 'Race',
       StartDate: '2026-03-13T15:30:00',
-      EndDate: '2026-03-13T16:14:00',
+      EndDate: '2026-03-13T17:30:00',
       GmtOffset: '08:00:00',
-      Path: '2026/2026-03-13_Chinese_Grand_Prix/2026-03-13_Sprint_Qualifying/',
+      Path: '2026/2026-03-13_Chinese_Grand_Prix/2026-03-13_Race/',
     };
-  }
-
-  // LapCount every ~50 frames to keep lap data fresh
-  if (i % 50 === 0) {
-    const currentLap = Math.min(56, Math.floor(pct * 56) + 1);
-    frame.updates['LapCount'] = { CurrentLap: currentLap, TotalLaps: 56 };
   }
 
   // SessionData at start and end
@@ -198,13 +194,10 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
   if (i % 3 === 0) {
     const entries: Record<string, { X: number; Y: number; Z: number }> = {};
     DRIVER_NUMBERS.forEach((driverNo, idx) => {
-      // Each driver has an offset so they're spread around the circuit
       const driverOffset = idx / DRIVER_NUMBERS.length;
-      // Speed variance per driver (leaders are faster)
       const speedFactor = 1 + (DRIVER_NUMBERS.length - idx) * 0.001;
       const progress =
         ((pct * 15 * speedFactor + driverOffset) % 1 + 1) % 1;
-      // Add some noise for realism
       const pos = getCircuitPosition(progress);
       pos.X += Math.round((Math.random() - 0.5) * 20);
       pos.Y += Math.round((Math.random() - 0.5) * 20);
@@ -220,7 +213,6 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
   if (i % 3 === 0) {
     const cars: Record<string, { Channels: Record<string, number> }> = {};
     DRIVER_NUMBERS.forEach((driverNo) => {
-      // Simulate realistic telemetry patterns
       const phase = (pct * 50 + Math.random() * 0.1) % 1;
       const isInCorner = Math.sin(phase * Math.PI * 8) > 0.3;
       const isBraking = Math.sin(phase * Math.PI * 8 + 1) > 0.7;
@@ -265,5 +257,8 @@ const outputSize = (output.length / 1024).toFixed(0);
 console.info(
   `Enriched ${TOTAL_FRAMES} frames: ${inputSize}KB → ${outputSize}KB`
 );
-console.info(`Added: ExtrapolatedClock, Heartbeat, TrackStatus, SessionData, Position.z, CarData.z`);
+console.info(`Replay duration: ${REPLAY_DURATION_SECONDS.toFixed(1)}s (${TOTAL_FRAMES} frames × ${FRAME_INTERVAL_MS}ms)`);
+console.info(`Clock: counts down from ${formatRemaining(REPLAY_DURATION_SECONDS)} to 00:00:00`);
+console.info(`Laps: 1→${TOTAL_LAPS} (~${SECONDS_PER_LAP.toFixed(1)}s per lap)`);
+console.info(`Session type: Race (for lap sync testing)`);
 console.info(`Output: ${OUTPUT_PATH}`);

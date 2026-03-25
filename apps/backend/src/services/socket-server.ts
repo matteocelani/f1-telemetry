@@ -70,12 +70,8 @@ export class SocketServer {
 
   private flush() {
     if (this.batchBuffer.size === 0) return;
-    if (!this.wss || this.wss.clients.size === 0) {
-      this.batchBuffer.clear();
-      return;
-    }
 
-    // Build the diff: only include channels whose data has actually changed
+    // Always update the delta cache so snapshots work even if no clients are connected yet
     const updates: Record<string, unknown> = {};
     let hasChanges = false;
 
@@ -88,7 +84,8 @@ export class SocketServer {
     }
 
     this.batchBuffer.clear();
-    if (!hasChanges) return;
+
+    if (!hasChanges || !this.wss || this.wss.clients.size === 0) return;
 
     // Serialise once — shared across all clients in this flush cycle
     const frame = JSON.stringify({ updates });

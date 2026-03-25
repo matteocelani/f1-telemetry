@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 type Breakpoint = 'mobile' | 'tablet' | 'desktop';
 
-const MD_BREAKPOINT = 768;
+const MD_BREAKPOINT = 1024;
 const XL_BREAKPOINT = 1280;
 
 const tabletQuery =

@@ -37,10 +37,10 @@ export function LiveHeader() {
 
   return (
     <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
-      <div className="flex items-center gap-2.5 overflow-hidden md:gap-3">
+      <div className="flex max-w-[40%] items-center gap-2.5 overflow-hidden md:gap-3">
         {trackStatus && <TrackStatusBadge status={trackStatus} />}
 
-        <div className="flex items-center gap-1.5 sm:hidden">
+        <div className="flex items-center gap-1.5 lg:hidden">
           {flag && (
             <span className="text-base" role="img" aria-label={countryCode}>
               {flag}
@@ -53,7 +53,7 @@ export function LiveHeader() {
           )}
         </div>
 
-        <div className="hidden min-w-0 items-center gap-2.5 sm:flex">
+        <div className="hidden min-w-0 items-center gap-2.5 lg:flex">
           {flag && (
             <span
               className="shrink-0 text-lg"
@@ -86,13 +86,13 @@ export function LiveHeader() {
 
       <div className="flex items-center gap-2 md:gap-3">
         {weather && (
-          <div className="hidden items-center gap-2 xl:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             <div className="flex items-center gap-1.5">
               <Thermometer className="size-3.5 text-orange-500" />
               <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat(INTL_LOCALE, { maximumFractionDigits: WEATHER_FRACTION_DIGITS }).format(
-                  weather.airTemp
-                )}
+                {Intl.NumberFormat(INTL_LOCALE, {
+                  maximumFractionDigits: WEATHER_FRACTION_DIGITS,
+                }).format(weather.airTemp)}
                 <span className="text-foreground/50">&#176;C</span>
               </span>
             </div>
@@ -112,9 +112,9 @@ export function LiveHeader() {
             <div className="flex items-center gap-1.5">
               <Wind className="size-3.5 text-sky-500" />
               <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat(INTL_LOCALE, { maximumFractionDigits: WEATHER_FRACTION_DIGITS }).format(
-                  weather.windSpeed
-                )}
+                {Intl.NumberFormat(INTL_LOCALE, {
+                  maximumFractionDigits: WEATHER_FRACTION_DIGITS,
+                }).format(weather.windSpeed)}
                 <span className="text-foreground/50"> m/s</span>
               </span>
             </div>
@@ -149,6 +149,7 @@ export function LiveHeader() {
           <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
         </button>
 
+        {/* Live indicator */}
         <button
           type="button"
           className="flex items-center gap-1.5"

@@ -87,7 +87,7 @@ export function DriverRow({
         />
       </div>
 
-      {/* INT */}
+      {/* INT — on mobile stacks gap below, on md+ gap has its own column */}
       <div className="min-w-20 flex-1 shrink-0 text-right">
         {!hasTimingData ? (
           <span className={cn('text-sm font-bold tabular-nums', GHOST)}>
@@ -108,7 +108,7 @@ export function DriverRow({
               {row.interval || row.gap || '0.000'}
             </span>
             {row.gap && row.interval && (
-              <span className="text-xs tabular-nums leading-tight text-muted-foreground">
+              <span className="text-xs tabular-nums leading-tight text-muted-foreground md:hidden">
                 {row.gap}
               </span>
             )}
@@ -116,7 +116,24 @@ export function DriverRow({
         )}
       </div>
 
-      {/* LAST: always visible, compact on mobile */}
+      {/* GAP — separate column, visible md → lg only */}
+      <div className={cn('hidden min-w-16 flex-1 shrink-0 text-right md:block lg:hidden')}>
+        {!hasTimingData ? (
+          <span className={cn('text-sm font-bold tabular-nums', GHOST)}>
+            +0.000
+          </span>
+        ) : isLeader ? (
+          <span className="text-sm font-bold tabular-nums text-muted-foreground">
+            —
+          </span>
+        ) : (
+          <span className="text-sm font-bold tabular-nums text-muted-foreground">
+            {row.gap || '0.000'}
+          </span>
+        )}
+      </div>
+
+      {/* LAST */}
       <div className="min-w-16 md:min-w-24 flex-1 shrink-0 text-right">
         <div className="flex flex-col items-end">
           <span
