@@ -4,18 +4,17 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
+import { NO_POSITION } from '@/modules/timing/constants';
 import type { UITimingRow, SectorColorClass } from '@/modules/timing/types';
 
-const NO_POSITION = 999;
+const PLACEHOLDER = 'text-muted-foreground/20';
 
 const LAP_COLOR: Record<SectorColorClass, string> = {
   purple: 'text-violet-500',
   green: 'text-emerald-500',
   yellow: 'text-foreground',
   none: 'text-muted-foreground',
-} as const;
-
-const PLACEHOLDER = 'text-muted-foreground/20';
+};
 
 interface DriverRowExpandedProps {
   row: UITimingRow;

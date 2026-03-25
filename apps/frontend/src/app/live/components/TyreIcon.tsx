@@ -10,9 +10,8 @@ const TYRE_CONFIG: Record<TyreCompound, { label: string; arc: string }> = {
   INTERMEDIATE: { label: 'I', arc: 'text-green-500' },
   WET: { label: 'W', arc: 'text-blue-500' },
   UNKNOWN: { label: '?', arc: 'text-muted-foreground/60' },
-} as const;
+};
 
-// SVG arcs matching the official F1 tyre sidewall shape.
 const LEFT_ARC =
   'M70 19C40.6787 26.58 19 53.4792 19 85.5C19 117.521 40.6787 144.42 70 152';
 const RIGHT_ARC =
@@ -42,18 +41,8 @@ export function TyreIcon({ compound, age = 0, isNew, showAge = true }: TyreIconP
           aria-hidden="true"
         >
           <circle cx="86" cy="86" r="86" className="fill-black" />
-          <path
-            d={LEFT_ARC}
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-          />
-          <path
-            d={RIGHT_ARC}
-            stroke="currentColor"
-            strokeWidth="20"
-            fill="none"
-          />
+          <path d={LEFT_ARC} stroke="currentColor" strokeWidth="20" fill="none" />
+          <path d={RIGHT_ARC} stroke="currentColor" strokeWidth="20" fill="none" />
         </svg>
         <span className="relative text-xs font-black text-white">
           {config.label}

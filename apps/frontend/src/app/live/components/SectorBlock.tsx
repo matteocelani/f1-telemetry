@@ -2,14 +2,14 @@
 
 import { cn } from '@/lib/utils';
 import { SegmentDots } from '@/app/live/components/SegmentDots';
-import type { UISector } from '@/modules/timing/types';
+import type { SectorColorClass, UISector } from '@/modules/timing/types';
 
-const SECTOR_COLOR = {
+const SECTOR_COLOR: Record<SectorColorClass, string> = {
   purple: 'text-violet-500',
   green: 'text-emerald-500',
   yellow: 'text-foreground',
   none: 'text-muted-foreground/30',
-} as const;
+};
 
 interface SectorBlockProps {
   sector: UISector;

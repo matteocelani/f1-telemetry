@@ -2,47 +2,29 @@
 
 import { useMemo, useEffect, useState } from 'react';
 import { StatusDot } from '@/components/global/StatusDot';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE, MS_PER_SECOND } from '@/modules/timing/constants';
+import { getNextSession } from '@/modules/timing/utils';
 import type { RaceEntry } from '@/types/data';
 import calendarData from '@/data/calendar.json';
 
-const MS_PER_DAY = 86_400_000;
-const MS_PER_HOUR = 3_600_000;
-const MS_PER_MINUTE = 60_000;
-const MS_PER_SECOND = 1000;
-const GRACE_PERIOD_MS = 4 * MS_PER_HOUR;
-
 const races = calendarData as unknown as RaceEntry[];
-
-function getNextSession(now: Date) {
-  for (const race of races) {
-    const sessionEntries = Object.entries(race.sessions).sort(
-      (a, b) => new Date(a[1]).getTime() - new Date(b[1]).getTime()
-    );
-    for (const [sessionKey, sessionDateStr] of sessionEntries) {
-      const sessionDate = new Date(sessionDateStr);
-      if (
-        sessionDate > now ||
-        now.getTime() - sessionDate.getTime() < GRACE_PERIOD_MS
-      ) {
-        return { race, sessionKey: sessionKey.toUpperCase(), date: sessionDate };
-      }
-    }
-  }
-  return null;
-}
 
 /** Shown when WebSocket is not connected or has no activity. Displays countdown to next session. */
 export function LiveOfflineFallback() {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), MS_PER_SECOND);
     return () => clearInterval(timer);
   }, []);
 
-  const nextEvent = useMemo(() => getNextSession(now), [now]);
+  const nextEvent = useMemo(
+    () => (now ? getNextSession(now, races) : null),
+    [now],
+  );
 
-  if (!nextEvent) {
+  if (!now || !nextEvent) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
         <StatusDot variant="disconnected" className="mb-6 size-4" />

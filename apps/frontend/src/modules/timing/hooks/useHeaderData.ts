@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
+import { useCountdown } from '@/modules/timing/hooks/useCountdown';
 import type { UIHeaderData, UIWeatherData } from '@/modules/timing/types';
-import { useClock } from '@/store/clock';
 import { useLapCount } from '@/store/lap-count';
 import { useRaceControl } from '@/store/race-control';
 import { useSession } from '@/store/session';
@@ -12,7 +12,7 @@ import { useWeather } from '@/store/weather';
 export function useHeaderData(): UIHeaderData {
   const sessionInfo = useSession(useShallow((s) => s.sessionInfo));
   const lapCount = useLapCount(useShallow((s) => s.lapCount));
-  const clock = useClock(useShallow((s) => s.clock));
+  const remainingTime = useCountdown();
   const trackStatus = useRaceControl(useShallow((s) => s.trackStatus));
   const rawWeather = useWeather(useShallow((s) => s.weather));
 
@@ -23,14 +23,11 @@ export function useHeaderData(): UIHeaderData {
     );
 
     const meetingName = sessionInfo?.Meeting?.Name ?? '';
-    const sessionName = sessionInfo?.Name
-      ? `${meetingName} — ${sessionInfo.Name}`
-      : meetingName || 'Waiting for session...';
+    const sessionTypeName = sessionInfo?.Name ?? '';
+    const countryCode = sessionInfo?.Meeting?.Country?.Code ?? '';
 
     const lapText =
-      lapCount ? `Lap ${lapCount.CurrentLap}/${lapCount.TotalLaps}` : null;
-
-    const remainingTime = clock?.Remaining ?? null;
+      lapCount ? `${lapCount.CurrentLap}/${lapCount.TotalLaps}` : null;
 
     let weather: UIWeatherData | null = null;
     if (rawWeather) {
@@ -45,8 +42,10 @@ export function useHeaderData(): UIHeaderData {
     }
 
     return {
-      sessionName,
+      meetingName,
+      sessionTypeName,
       sessionType,
+      countryCode,
       isRace,
       lapText,
       remainingTime,
@@ -54,5 +53,5 @@ export function useHeaderData(): UIHeaderData {
       trackStatusMessage: trackStatus?.Message ?? null,
       weather,
     };
-  }, [sessionInfo, lapCount, clock, trackStatus, rawWeather]);
+  }, [sessionInfo, lapCount, remainingTime, trackStatus, rawWeather]);
 }

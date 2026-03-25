@@ -29,6 +29,9 @@ export class SocketServer {
     this.wss.on('connection', (ws: WebSocket) => {
       Logger.info(`Client connected. Active: ${this.wss!.clients.size}`);
 
+      // Send a snapshot of the latest known state so the client doesn't wait for delta changes
+      this.sendSnapshot(ws);
+
       ws.on('close', () => {
         Logger.info(
           `Client disconnected. Active: ${this.wss?.clients.size ?? 0}`
@@ -107,5 +110,19 @@ export class SocketServer {
 
   public get clientCount(): number {
     return this.wss?.clients.size ?? 0;
+  }
+
+  // Sends the full cached state to a newly connected client
+  private sendSnapshot(ws: WebSocket): void {
+    if (this.deltaCache.size === 0) return;
+
+    const updates: Record<string, unknown> = {};
+    for (const [channel, serialised] of this.deltaCache) {
+      updates[channel] = JSON.parse(serialised);
+    }
+
+    const frame = JSON.stringify({ updates });
+    ws.send(frame);
+    Logger.info(`Sent snapshot (${this.deltaCache.size} channels) to new client`);
   }
 }

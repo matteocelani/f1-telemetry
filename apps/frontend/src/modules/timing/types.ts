@@ -44,8 +44,10 @@ export interface UITimingRow {
 // Header
 
 export interface UIHeaderData {
-  sessionName: string;
+  meetingName: string;
+  sessionTypeName: string;
   sessionType: string;
+  countryCode: string;
   isRace: boolean;
   lapText: string | null;
   remainingTime: string | null;

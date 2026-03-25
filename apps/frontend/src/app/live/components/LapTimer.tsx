@@ -1,6 +1,6 @@
 'use client';
 
-import { Timer, Flag } from 'lucide-react';
+import { Flag } from 'lucide-react';
 
 interface LapTimerProps {
   isRace: boolean;
@@ -8,13 +8,16 @@ interface LapTimerProps {
   remainingTime: string | null;
 }
 
-/** Displays lap count (Race/Sprint) or countdown timer (Practice/Qualifying). */
+/** Prominent display of lap count (Race/Sprint) or countdown timer (Practice/Qualifying). */
 export function LapTimer({ isRace, lapText, remainingTime }: LapTimerProps) {
   if (isRace && lapText) {
     return (
-      <div className="flex items-center gap-1.5">
-        <Flag className="size-3.5 text-muted-foreground" />
-        <span className="text-sm font-black tabular-nums tracking-tight">
+      <div className="flex items-center gap-2">
+        <Flag className="size-4 text-foreground/60" />
+        <span className="text-2xs font-bold uppercase tracking-wider text-foreground/60">
+          Lap
+        </span>
+        <span className="text-lg font-black tabular-nums tracking-tight text-foreground md:text-2xl">
           {lapText}
         </span>
       </div>
@@ -23,14 +26,15 @@ export function LapTimer({ isRace, lapText, remainingTime }: LapTimerProps) {
 
   if (remainingTime) {
     return (
-      <div className="flex items-center gap-1.5">
-        <Timer className="size-3.5 text-muted-foreground" />
-        <span className="text-sm font-black tabular-nums tracking-tight">
-          {remainingTime}
-        </span>
-      </div>
+      <span className="text-lg font-black tabular-nums tracking-tight text-foreground md:text-2xl">
+        {remainingTime}
+      </span>
     );
   }
 
-  return <span className="text-xs text-muted-foreground">Waiting...</span>;
+  return (
+    <span className="text-lg font-black tabular-nums tracking-tight text-foreground/20 md:text-xl">
+      --:--:--
+    </span>
+  );
 }

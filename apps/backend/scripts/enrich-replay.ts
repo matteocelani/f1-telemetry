@@ -122,6 +122,34 @@ for (let i = 0; i < TOTAL_FRAMES; i++) {
     }
   }
 
+  // SessionInfo at start so the header has session data immediately
+  if (i === 0 && !frame.updates['SessionInfo']) {
+    frame.updates['SessionInfo'] = {
+      Meeting: {
+        Key: 1280,
+        Name: 'Chinese Grand Prix',
+        OfficialName: 'FORMULA 1 HEINEKEN CHINESE GRAND PRIX 2026',
+        Location: 'Shanghai',
+        Number: 2,
+        Country: { Key: 53, Code: 'CHN', Name: 'China' },
+        Circuit: { Key: 49, ShortName: 'Shanghai' },
+      },
+      Key: 11236,
+      Type: 'Qualifying',
+      Name: 'Sprint Qualifying',
+      StartDate: '2026-03-13T15:30:00',
+      EndDate: '2026-03-13T16:14:00',
+      GmtOffset: '08:00:00',
+      Path: '2026/2026-03-13_Chinese_Grand_Prix/2026-03-13_Sprint_Qualifying/',
+    };
+  }
+
+  // LapCount every ~50 frames to keep lap data fresh
+  if (i % 50 === 0) {
+    const currentLap = Math.min(56, Math.floor(pct * 56) + 1);
+    frame.updates['LapCount'] = { CurrentLap: currentLap, TotalLaps: 56 };
+  }
+
   // SessionData at start and end
   if (i === 0) {
     frame.updates['SessionData'] = {
