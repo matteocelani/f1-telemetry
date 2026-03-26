@@ -65,6 +65,35 @@ export interface UIWeatherData {
   windDirection: number;
 }
 
+// Race Control
+
+export type RCBadgeVariant =
+  | 'yellow'
+  | 'red'
+  | 'green'
+  | 'safetyCar'
+  | 'chequered'
+  | 'info';
+
+export type RCIconVariant =
+  | 'flag-red'
+  | 'flag-yellow'
+  | 'flag-green'
+  | 'flag-chequered'
+  | 'flag-bw'
+  | 'siren'
+  | 'none';
+
+export interface UIRaceControlMessage {
+  id: string;
+  utc: string;
+  lap: number | null;
+  message: string;
+  badge: RCBadgeVariant;
+  badgeLabel: string;
+  icon: RCIconVariant;
+}
+
 // Context
 
 export type CenterTab = 'map' | 'telemetry' | 'raceControl';

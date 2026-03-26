@@ -12,6 +12,8 @@ export const MS_PER_DAY = 86_400_000;
 export const GRACE_PERIOD_MS = 4 * MS_PER_HOUR;
 export const SESSION_ENDED_THRESHOLD_MS = 2 * MS_PER_HOUR;
 export const TICK_INTERVAL_MS = 100;
+export const TOAST_CRITICAL_DURATION_MS = 8_000;
+export const TOAST_WARNING_DURATION_MS = 6_000;
 
 // Telemetry limits
 export const SECTOR_COUNT = 3;

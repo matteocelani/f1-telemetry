@@ -1,0 +1,48 @@
+'use client';
+
+import { Radio } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { RaceControlMessage } from '@/app/live/components/RaceControlMessage';
+import { useRaceControlFeed } from '@/modules/timing/hooks/useRaceControlFeed';
+
+interface RaceControlFeedProps {
+  className?: string;
+}
+
+export function RaceControlFeed({ className }: RaceControlFeedProps) {
+  const messages = useRaceControlFeed();
+  const hasMessages = messages.length > 0;
+
+  return (
+    <div className={cn('flex h-full flex-col', className)}>
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3">
+        <Radio className="size-3 text-foreground" />
+        <span className="text-2xs font-bold uppercase tracking-widest text-foreground">
+          Race Control
+        </span>
+        {hasMessages && (
+          <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-2xs font-bold tabular-nums text-foreground">
+            {messages.length}
+          </span>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {hasMessages ? (
+          <div className="divide-y divide-border">
+            {messages.map((msg) => (
+              <RaceControlMessage key={msg.id} message={msg} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+            <Radio className="size-5 text-muted-foreground/40" />
+            <p className="text-xs text-muted-foreground">
+              No messages yet
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

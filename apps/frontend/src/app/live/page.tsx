@@ -9,6 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
+import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
 import { TimingTower } from '@/app/live/sections/TimingTower';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 
@@ -59,12 +60,20 @@ export default function LivePage() {
                   ))}
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-hidden p-3">
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    {activeTab === 'map' && 'Track Map (Fase 4)'}
-                    {activeTab === 'raceControl' && 'Race Control (Fase 3)'}
-                    {activeTab === 'telemetry' && 'Telemetry (Fase 6)'}
-                  </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  {activeTab === 'map' && (
+                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                      Track Map (Fase 4)
+                    </div>
+                  )}
+                  {activeTab === 'raceControl' && (
+                    <RaceControlFeed className="h-full" />
+                  )}
+                  {activeTab === 'telemetry' && (
+                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                      Telemetry (Fase 6)
+                    </div>
+                  )}
                 </div>
               </div>
             </ResizablePanel>
@@ -90,11 +99,7 @@ export default function LivePage() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize="50%" minSize="25%" maxSize="75%">
-                  <div className="h-full overflow-y-auto p-4">
-                    <span className="text-xs text-muted-foreground">
-                      Race Control (Fase 3)
-                    </span>
-                  </div>
+                  <RaceControlFeed className="h-full" />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
@@ -130,11 +135,7 @@ export default function LivePage() {
             <ResizableHandle withHandle />
 
             <ResizablePanel defaultSize="15%" minSize="10%" maxSize="30%">
-              <div className="h-full overflow-y-auto p-4">
-                <span className="text-xs text-muted-foreground">
-                  Race Control (Fase 3)
-                </span>
-              </div>
+              <RaceControlFeed className="h-full" />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
