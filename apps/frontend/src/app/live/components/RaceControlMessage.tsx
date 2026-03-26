@@ -76,7 +76,7 @@ export function RaceControlMessage({ message }: RaceControlMessageProps) {
         )}
       </div>
 
-      <p className="text-xs leading-snug text-foreground xl:text-sm">
+      <p className="text-xs leading-snug text-foreground xl:text-sm font-medium">
         {message.message}
       </p>
     </div>

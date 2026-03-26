@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
+import { TrackMap } from '@/app/live/sections/TrackMap';
 import { TimingTower } from '@/app/live/sections/TimingTower';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 
@@ -62,9 +63,7 @@ export default function LivePage() {
 
                 <div className="flex-1 min-h-0 overflow-hidden">
                   {activeTab === 'map' && (
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      Track Map (Fase 4)
-                    </div>
+                    <TrackMap className="h-full" />
                   )}
                   {activeTab === 'raceControl' && (
                     <RaceControlFeed className="h-full" />
@@ -91,9 +90,7 @@ export default function LivePage() {
             <ResizablePanel defaultSize="45%" minSize="25%" maxSize="65%">
               <ResizablePanelGroup orientation="vertical">
                 <ResizablePanel defaultSize="50%" minSize="25%" maxSize="75%">
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    Track Map (Fase 4)
-                  </div>
+                  <TrackMap className="h-full" />
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
@@ -117,9 +114,7 @@ export default function LivePage() {
             <ResizablePanel defaultSize="40%" minSize="20%" maxSize="55%">
               <ResizablePanelGroup orientation="vertical">
                 <ResizablePanel defaultSize="60%" minSize="25%" maxSize="80%">
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    Track Map (Fase 4)
-                  </div>
+                  <TrackMap className="h-full" />
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
