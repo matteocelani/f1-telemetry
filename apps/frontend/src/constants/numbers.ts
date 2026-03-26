@@ -10,6 +10,7 @@ export const MS_PER_MINUTE = 60_000;
 export const MS_PER_HOUR = 3_600_000;
 export const MS_PER_DAY = 86_400_000;
 export const GRACE_PERIOD_MS = 4 * MS_PER_HOUR;
+export const SESSION_ENDED_THRESHOLD_MS = 2 * MS_PER_HOUR;
 export const TICK_INTERVAL_MS = 100;
 
 // Telemetry limits

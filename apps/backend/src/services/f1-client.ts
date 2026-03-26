@@ -198,6 +198,8 @@ export class F1Client {
 
     this.ws.on('close', (code: number) => {
       this.isConnected = false;
+      // Stale cache from a finished session must not leak into the next client snapshot
+      this.localSocketServer.clearCache();
       Logger.warn(
         `F1 SignalR closed (code ${code}). Reconnecting in ${RECONNECT_DELAY_MS / 1000}s...`
       );

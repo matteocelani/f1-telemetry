@@ -21,3 +21,12 @@ export const CHANNELS = {
 
 export type ChannelKey = keyof typeof CHANNELS;
 export type ChannelValue = (typeof CHANNELS)[ChannelKey];
+
+// Excludes Heartbeat and WeatherData which F1 may broadcast between sessions.
+export const SESSION_ACTIVITY_CHANNELS: ReadonlySet<string> = new Set<ChannelValue>([
+  CHANNELS.TIMING_F1,
+  CHANNELS.TIMING,
+  CHANNELS.DRIVER_LIST,
+  CHANNELS.SESSION_INFO,
+  CHANNELS.EXTRAPOLATED_CLOCK,
+]);

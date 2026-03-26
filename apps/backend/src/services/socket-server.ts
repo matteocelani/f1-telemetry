@@ -105,6 +105,13 @@ export class SocketServer {
     }
   }
 
+  // Discards all cached state so new clients start with a clean slate
+  public clearCache(): void {
+    this.batchBuffer.clear();
+    this.deltaCache.clear();
+    Logger.info('Delta cache cleared — no active F1 session data');
+  }
+
   public get clientCount(): number {
     return this.wss?.clients.size ?? 0;
   }

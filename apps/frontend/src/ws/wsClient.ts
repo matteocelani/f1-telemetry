@@ -1,4 +1,4 @@
-import type { ChannelValue } from '@f1-telemetry/core';
+import { SESSION_ACTIVITY_CHANNELS, type ChannelValue } from '@f1-telemetry/core';
 import { useConnection } from '@/store/connection';
 import { delayBuffer } from '@/ws/wsBuffer';
 
@@ -43,8 +43,15 @@ class F1WebSocketClient {
         const parsed = JSON.parse(raw) as { updates?: Record<string, unknown> };
 
         if (parsed.updates) {
-          // Mark activity as soon as we get a valid update frame
-          useConnection.getState().setHasActivity(true);
+          const channels = Object.keys(parsed.updates);
+          const hasSessionData = channels.some((ch) =>
+            SESSION_ACTIVITY_CHANNELS.has(ch)
+          );
+
+          // Only flag live activity when the frame carries real session data
+          if (hasSessionData) {
+            useConnection.getState().setHasActivity(true);
+          }
 
           for (const [channel, data] of Object.entries(parsed.updates)) {
             delayBuffer.push(channel as ChannelValue, data);

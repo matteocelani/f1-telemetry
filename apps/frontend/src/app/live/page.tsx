@@ -23,14 +23,7 @@ export default function LivePage() {
   const breakpoint = useBreakpoint();
 
   if (!isLive) {
-    return (
-      <div className="flex h-full flex-col">
-        <LiveHeader />
-        <main className="flex-1 overflow-hidden">
-          <LiveOfflineFallback />
-        </main>
-      </div>
-    );
+    return <LiveOfflineFallback />;
   }
 
   return (
