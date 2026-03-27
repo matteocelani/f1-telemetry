@@ -22,6 +22,7 @@ const WS_TRANSPORT = 'webSockets';
 const CONNECTION_DATA = encodeURIComponent(`[{"name":"${F1_HUB_NAME}"}]`);
 const BATCH_INTERVAL_MS = 100;
 
+// Subscribe to every known channel so recordings are complete for future use.
 const SUBSCRIBE_CHANNELS = [
   CHANNELS.TELEMETRY,
   CHANNELS.POSITION,
@@ -38,6 +39,17 @@ const SUBSCRIBE_CHANNELS = [
   CHANNELS.LAP_COUNT,
   CHANNELS.SESSION_DATA,
   CHANNELS.HEARTBEAT,
+  'TeamRadio',
+  'PitLaneTimeCollection',
+  'PitStopSeries',
+  'ChampionshipPrediction',
+  'DriverRaceInfo',
+  'LapSeries',
+  'TopThree',
+  'CurrentTyres',
+  'TyreStintSeries',
+  'OvertakeSeries',
+  'TlaRcm',
 ] as const;
 
 interface ReplayFrame {
@@ -73,7 +85,7 @@ function save(): void {
 
 type NegotiateResponse = { ConnectionToken: string };
 type SignalRMessage = { M: string; A: [string, ...unknown[]] };
-type SignalRFrame = { M?: SignalRMessage[] };
+type SignalRFrame = { M?: SignalRMessage[]; R?: Record<string, unknown> };
 
 async function connect(): Promise<void> {
   Logger.info(`Negotiating with F1 SignalR at ${F1_SERVER_URL}...`);
@@ -135,6 +147,15 @@ async function connect(): Promise<void> {
       if (messageStr.length < 3) return;
 
       const frame = JSON.parse(messageStr) as SignalRFrame;
+
+      // Handle initial subscribe snapshot (F1 sends full state in the R field)
+      if (frame.R && typeof frame.R === 'object') {
+        for (const [channel, data] of Object.entries(frame.R)) {
+          processUpdate(channel, data);
+        }
+        flushBatch();
+      }
+
       if (!frame.M?.length) return;
 
       for (const message of frame.M) {

@@ -4,9 +4,11 @@ import type { LapCountPayload } from '@f1-telemetry/core';
 interface LapCountState {
   lapCount: LapCountPayload | null;
   setLapCount: (data: LapCountPayload) => void;
+  reset: () => void;
 }
 
 export const useLapCount = create<LapCountState>((set) => ({
   lapCount: null,
   setLapCount: (data) => set({ lapCount: data }),
+  reset: () => set({ lapCount: null }),
 }));

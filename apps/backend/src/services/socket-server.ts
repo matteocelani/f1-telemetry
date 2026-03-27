@@ -1,4 +1,5 @@
 import { WebSocket, WebSocketServer } from 'ws';
+import { deepMerge } from '@utils/deepMerge';
 import { Logger } from '@utils/logger';
 
 // Batch window: flush accumulated updates every 50ms (≈20fps) to avoid high-frequency frame storms
@@ -17,6 +18,9 @@ export class SocketServer {
 
   // Holds the last serialised value per channel for delta comparison
   private readonly deltaCache = new Map<string, string>();
+
+  // Deep-merged accumulated state per channel — used for complete snapshots on new connections
+  private readonly stateCache = new Map<string, unknown>();
 
   constructor(port: number = 8080) {
     this.port = port;
@@ -71,7 +75,7 @@ export class SocketServer {
   private flush() {
     if (this.batchBuffer.size === 0) return;
 
-    // Always update the delta cache so snapshots work even if no clients are connected yet
+    // Always update caches so snapshots work even if no clients are connected yet
     const updates: Record<string, unknown> = {};
     let hasChanges = false;
 
@@ -79,6 +83,11 @@ export class SocketServer {
       const serialised = JSON.stringify(data);
       if (this.deltaCache.get(channel) === serialised) continue;
       this.deltaCache.set(channel, serialised);
+
+      // Deep-merge into stateCache so snapshots contain the full accumulated state
+      const existing = this.stateCache.get(channel);
+      this.stateCache.set(channel, deepMerge(existing, data));
+
       updates[channel] = data;
       hasChanges = true;
     }
@@ -109,6 +118,7 @@ export class SocketServer {
   public clearCache(): void {
     this.batchBuffer.clear();
     this.deltaCache.clear();
+    this.stateCache.clear();
     Logger.info('Delta cache cleared — no active F1 session data');
   }
 
@@ -116,17 +126,18 @@ export class SocketServer {
     return this.wss?.clients.size ?? 0;
   }
 
-  // Sends the full cached state to a newly connected client
+  // Sends the full accumulated state to a newly connected client
   private sendSnapshot(ws: WebSocket): void {
-    if (this.deltaCache.size === 0) return;
+    if (this.stateCache.size === 0) return;
 
     const updates: Record<string, unknown> = {};
-    for (const [channel, serialised] of this.deltaCache) {
-      updates[channel] = JSON.parse(serialised);
+    for (const [channel, state] of this.stateCache) {
+      updates[channel] = state;
     }
 
-    const frame = JSON.stringify({ updates });
+    // Mark as snapshot so the frontend can reset stale stores before applying
+    const frame = JSON.stringify({ snapshot: true, updates });
     ws.send(frame);
-    Logger.info(`Sent snapshot (${this.deltaCache.size} channels) to new client`);
+    Logger.info(`Sent snapshot (${this.stateCache.size} channels) to new client`);
   }
 }

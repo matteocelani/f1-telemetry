@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { MS_PER_DAY } from '@/constants/numbers';
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import driversData from '@/data/drivers.json';
@@ -42,8 +43,8 @@ interface TrackMapData {
   hasData: boolean;
 }
 
-const MIN_DRIVERS_FOR_BOUNDS = 10;
-const WARMUP_FRAMES = 30;
+const MIN_DRIVERS_FOR_BOUNDS = 5;
+const WARMUP_FRAMES = 3;
 // Max distance (in SVG units) to snap a dot to the nearest path point.
 const SNAP_RADIUS = 40;
 
@@ -62,10 +63,42 @@ for (const driver of driversData) {
   }
 }
 
+// Finds the closest race happening now or next based on session dates.
+function findCurrentRace(): RaceEntry | undefined {
+  const now = Date.now();
+  // Window around a race weekend where we consider it "current"
+  const WEEKEND_BUFFER_DAYS = 2;
+  const WEEKEND_BUFFER_MS = WEEKEND_BUFFER_DAYS * MS_PER_DAY;
+
+  for (const race of races) {
+    const sessionDates = Object.values(race.sessions).map((s) => new Date(s).getTime());
+    const earliest = Math.min(...sessionDates);
+    const latest = Math.max(...sessionDates);
+    if (now >= earliest - WEEKEND_BUFFER_MS && now <= latest + WEEKEND_BUFFER_MS) {
+      return race;
+    }
+  }
+
+  // Fallback: next upcoming race
+  return races.find((race) => {
+    const sessionDates = Object.values(race.sessions).map((s) => new Date(s).getTime());
+    return Math.max(...sessionDates) > now;
+  });
+}
+
 function findCircuit(meetingName: string | undefined): CircuitData | null {
-  if (!meetingName) return null;
-  const nameLower = meetingName.toLowerCase();
-  const race = races.find((r) => r.name.toLowerCase().includes(nameLower));
+  let race: RaceEntry | undefined;
+
+  if (meetingName) {
+    const nameLower = meetingName.toLowerCase();
+    race = races.find((r) => r.name.toLowerCase().includes(nameLower));
+  }
+
+  // Fallback to current/next race when session info is unavailable
+  if (!race) {
+    race = findCurrentRace();
+  }
+
   if (!race) return null;
   return circuits.find((c) => c.circuitId === race.id) ?? null;
 }
@@ -127,6 +160,12 @@ export function useTrackMap(): TrackMapData {
   );
 
   const entries = Object.entries(positions);
+
+  // Clear stale transform when positions are wiped (store reset between sessions)
+  if (entries.length === 0 && transformRef.current) {
+    transformRef.current = null;
+    accumRef.current = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, frameCount: 0 };
+  }
 
   // Accumulate GPS bounds across frames, then lock the affine transform.
   if (!transformRef.current && entries.length >= MIN_DRIVERS_FOR_BOUNDS && circuit) {

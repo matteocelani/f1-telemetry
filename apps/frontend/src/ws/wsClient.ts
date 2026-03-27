@@ -1,6 +1,7 @@
 import { SESSION_ACTIVITY_CHANNELS, type ChannelValue } from '@f1-telemetry/core';
 import { useConnection } from '@/store/connection';
 import { delayBuffer } from '@/ws/wsBuffer';
+import { dispatchToStores, resetAllStores } from '@/ws/wsHandler';
 
 const MAX_RETRY_DELAY_MS = 10_000;
 const BASE_RETRY_DELAY_MS = 1_000;
@@ -40,22 +41,35 @@ class F1WebSocketClient {
     this.ws.onmessage = (event: MessageEvent) => {
       try {
         const raw = typeof event.data === 'string' ? event.data : '';
-        const parsed = JSON.parse(raw) as { updates?: Record<string, unknown> };
+        const parsed = JSON.parse(raw) as {
+          snapshot?: boolean;
+          updates?: Record<string, unknown>;
+        };
 
-        if (parsed.updates) {
-          const channels = Object.keys(parsed.updates);
-          const hasSessionData = channels.some((ch) =>
-            SESSION_ACTIVITY_CHANNELS.has(ch)
-          );
+        if (!parsed.updates) return;
 
-          // Only flag live activity when the frame carries real session data
-          if (hasSessionData) {
-            useConnection.getState().setHasActivity(true);
-          }
-
+        // Snapshot: reset all stores then apply full state synchronously (no delay buffer)
+        if (parsed.snapshot) {
+          resetAllStores();
           for (const [channel, data] of Object.entries(parsed.updates)) {
-            delayBuffer.push(channel as ChannelValue, data);
+            dispatchToStores({ channel: channel as ChannelValue, data });
           }
+          useConnection.getState().setHasActivity(true);
+          return;
+        }
+
+        const channels = Object.keys(parsed.updates);
+        const hasSessionData = channels.some((ch) =>
+          SESSION_ACTIVITY_CHANNELS.has(ch)
+        );
+
+        // Only flag live activity when the frame carries real session data
+        if (hasSessionData) {
+          useConnection.getState().setHasActivity(true);
+        }
+
+        for (const [channel, data] of Object.entries(parsed.updates)) {
+          delayBuffer.push(channel as ChannelValue, data);
         }
       } catch (error) {
         // Malformed frame — drop and continue

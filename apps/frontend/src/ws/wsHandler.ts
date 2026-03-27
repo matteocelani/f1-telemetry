@@ -32,6 +32,20 @@ interface F1Frame {
   data: unknown;
 }
 
+// Wipes every data store so a fresh snapshot starts from a clean slate.
+export function resetAllStores(): void {
+  useTiming.getState().reset();
+  useTimingApp.getState().reset();
+  useTimingStats.getState().reset();
+  useTelemetry.getState().reset();
+  useTrack.getState().reset();
+  useSession.getState().reset();
+  useRaceControl.getState().reset();
+  useClock.getState().reset();
+  useWeather.getState().reset();
+  useLapCount.getState().reset();
+}
+
 // Normalise raw channel entries into typed CarTelemetry
 function normaliseCarData(raw: CarDataPayload): Record<string, CarTelemetry> {
   const result: Record<string, CarTelemetry> = {};

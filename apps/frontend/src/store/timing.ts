@@ -26,7 +26,10 @@ export const useTiming = create<TimingState>((set) => ({
       return { lines: nextLines };
     }),
 
-  setDriverList: (list) => set({ driverList: list }),
+  setDriverList: (list) =>
+    set((state) => ({
+      driverList: { ...state.driverList, ...list },
+    })),
 
   reset: () => set({ lines: {}, driverList: {} }),
 }));

@@ -62,6 +62,7 @@ type SignalRMessage = {
 
 type SignalRFrame = {
   M?: SignalRMessage[];
+  R?: Record<string, unknown>;
 };
 
 export class F1Client {
@@ -155,6 +156,14 @@ export class F1Client {
         if (messageStr.length < 3) return;
 
         const frame = JSON.parse(messageStr) as SignalRFrame;
+
+        // Handle initial subscribe snapshot (F1 sends full state in the R field)
+        if (frame.R && typeof frame.R === 'object') {
+          for (const [channel, data] of Object.entries(frame.R)) {
+            this.processUpdate(channel, data);
+          }
+        }
+
         if (!frame.M?.length) return;
 
         for (const message of frame.M) {

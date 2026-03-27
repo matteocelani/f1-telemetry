@@ -15,9 +15,9 @@ const TRACK_STROKE_WIDTH = 3;
 const TRANSITION_MS = 300;
 
 export function TrackMap({ className }: TrackMapProps) {
-  const { dots, circuit, hasData } = useTrackMap();
+  const { dots, circuit } = useTrackMap();
 
-  if (!hasData || !circuit) {
+  if (!circuit) {
     return (
       <div
         className={cn(
