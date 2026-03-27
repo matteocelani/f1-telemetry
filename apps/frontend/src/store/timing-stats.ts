@@ -19,9 +19,9 @@ export const useTimingStats = create<TimingStatsState>((set) => ({
       const nextLines = { ...state.lines };
       for (const [driverNo, delta] of Object.entries(deltaLines)) {
         nextLines[driverNo] = mergeDeltaUpdate(
-          nextLines[driverNo] ?? ({} as DriverTimingStats),
+          nextLines[driverNo] ?? {},
           delta
-        );
+        ) as DriverTimingStats;
       }
       return { lines: nextLines };
     }),

@@ -6,7 +6,8 @@ import { Logger } from '@utils/logger';
 
 // F1 Live Timing runs on legacy ASP.NET SignalR — Origin must match the official site
 const F1_ORIGIN_URL = 'https://www.formula1.com';
-const RECONNECT_DELAY_MS = 5_000;
+const BASE_RECONNECT_DELAY_MS = 5_000;
+const MAX_RECONNECT_DELAY_MS = 60_000;
 const CLIENT_PROTOCOL = '1.5';
 const WS_TRANSPORT = 'webSockets';
 
@@ -71,6 +72,7 @@ export class F1Client {
   private sessionCookie: string = '';
   private isReconnecting: boolean = false;
   private isConnected: boolean = false;
+  private reconnectAttempts: number = 0;
   private readonly localSocketServer: SocketServer;
 
   constructor(localSocketServer: SocketServer) {
@@ -127,6 +129,7 @@ export class F1Client {
       Logger.info('Connected to F1 SignalR WebSocket.');
       this.isReconnecting = false;
       this.isConnected = true;
+      this.reconnectAttempts = 0;
 
       try {
         // SignalR requires an explicit /start call after the WebSocket is open
@@ -209,9 +212,7 @@ export class F1Client {
       this.isConnected = false;
       // Stale cache from a finished session must not leak into the next client snapshot
       this.localSocketServer.clearCache();
-      Logger.warn(
-        `F1 SignalR closed (code ${code}). Reconnecting in ${RECONNECT_DELAY_MS / 1000}s...`
-      );
+      Logger.warn(`F1 SignalR closed (code ${code}). Scheduling reconnect...`);
       this.scheduleReconnect();
     });
 
@@ -250,7 +251,15 @@ export class F1Client {
     this.isReconnecting = true;
     this.isConnected = false;
     this.ws = null;
-    setTimeout(() => this.connect(), RECONNECT_DELAY_MS);
+
+    const delay = Math.min(
+      BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts),
+      MAX_RECONNECT_DELAY_MS
+    );
+    this.reconnectAttempts++;
+
+    Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`);
+    setTimeout(() => this.connect(), delay);
   }
 
   public get isConnectedToF1(): boolean {

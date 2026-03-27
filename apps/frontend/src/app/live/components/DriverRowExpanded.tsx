@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { NO_POSITION } from '@/constants/numbers';
-import type { UITimingRow, SectorColorClass } from '@/modules/timing/types';
+import type { UITimingRow, SectorColorClass, UISpeedEntry } from '@/modules/timing/types';
 
 const PLACEHOLDER = 'text-muted-foreground/20';
 
@@ -14,6 +14,22 @@ const LAP_COLOR: Record<SectorColorClass, string> = {
   green: 'text-emerald-500',
   yellow: 'text-foreground',
   none: 'text-muted-foreground',
+};
+
+const SPEED_COLOR: Record<SectorColorClass, string> = {
+  purple: 'text-violet-500',
+  green: 'text-emerald-500',
+  yellow: 'text-foreground',
+  none: 'text-muted-foreground/30',
+};
+
+const TYRE_BG: Record<string, string> = {
+  SOFT: 'bg-red-500',
+  MEDIUM: 'bg-yellow-500',
+  HARD: 'bg-white',
+  INTERMEDIATE: 'bg-emerald-500',
+  WET: 'bg-blue-500',
+  UNKNOWN: 'bg-muted-foreground',
 };
 
 interface DriverRowExpandedProps {
@@ -184,6 +200,66 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
             </div>
           </div>
         </div>
+
+        {/* Speed Traps */}
+        <div className="flex flex-col gap-2">
+          <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
+            Speed Traps
+          </span>
+          <div className="flex flex-col gap-1.5 rounded-md bg-white/5 p-2">
+            {([
+              ['Speed Trap', row.speeds.st],
+              ['Finish Line', row.speeds.fl],
+              ['Intermediate 1', row.speeds.i1],
+              ['Intermediate 2', row.speeds.i2],
+            ] as [string, UISpeedEntry][]).map(([label, entry]) => (
+              <div key={label} className="flex items-center justify-between">
+                <span className="text-2xs text-muted-foreground">{label}</span>
+                <span
+                  className={cn(
+                    'text-sm font-black tabular-nums',
+                    entry.value ? SPEED_COLOR[entry.color] : PLACEHOLDER
+                  )}
+                >
+                  {entry.value ? `${entry.value} km/h` : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stint History */}
+        {row.stintHistory.length > 0 && (
+          <div className="flex flex-col gap-2 sm:col-span-2 xl:col-span-4">
+            <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
+              Stint History
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {row.stintHistory.map((stint, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1"
+                >
+                  <div
+                    className={cn(
+                      'size-3 rounded-full',
+                      TYRE_BG[stint.compound] ?? 'bg-muted-foreground'
+                    )}
+                  />
+                  <span className="text-2xs font-bold text-foreground">
+                    {stint.compound.charAt(0)}
+                  </span>
+                  <span className="text-2xs tabular-nums text-muted-foreground">
+                    {stint.totalLaps}L
+                  </span>
+                  {stint.isNew && (
+                    <span className="text-2xs font-bold text-emerald-500">N</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

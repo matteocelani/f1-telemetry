@@ -6,6 +6,7 @@ import {
   Thermometer,
   Droplets,
   Wind,
+  Navigation,
   Columns3,
   Rows3,
 } from 'lucide-react';
@@ -117,6 +118,33 @@ export function LiveHeader() {
                 }).format(weather.windSpeed)}
                 <span className="text-foreground/50"> m/s</span>
               </span>
+            </div>
+
+            <div className="hidden items-center gap-2 2xl:flex">
+              <div className="h-3 w-px bg-border" />
+
+              <div className="flex items-center gap-1.5">
+                <Thermometer className="size-3.5 text-red-400" />
+                <span className="text-xs font-bold tabular-nums text-foreground">
+                  {Intl.NumberFormat(INTL_LOCALE, {
+                    maximumFractionDigits: WEATHER_FRACTION_DIGITS,
+                  }).format(weather.trackTemp)}
+                  <span className="text-foreground/50">°C</span>
+                </span>
+              </div>
+
+              <div className="h-3 w-px bg-border" />
+
+              <div className="flex items-center gap-1.5">
+                <Navigation
+                  className="size-3.5 text-sky-400"
+                  style={{ transform: `rotate(${weather.windDirection}deg)` }}
+                />
+                <span className="text-xs font-bold tabular-nums text-foreground">
+                  {Math.round(weather.windDirection)}
+                  <span className="text-foreground/50">°</span>
+                </span>
+              </div>
             </div>
           </div>
         )}

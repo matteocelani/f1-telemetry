@@ -1,4 +1,4 @@
-import type { TyreCompound, TrackStatusCode } from '@f1-telemetry/core';
+import type { TyreCompound, TrackStatusCode, SpeedEntry } from '@f1-telemetry/core';
 
 export type SectorColorClass = 'purple' | 'green' | 'yellow' | 'none';
 
@@ -39,6 +39,26 @@ export interface UITimingRow {
   numberOfPitStops: number;
   numberOfLaps: number;
   isKnockedOut: boolean;
+  speeds: UIDriverSpeeds;
+  stintHistory: UIStint[];
+}
+
+export interface UISpeedEntry {
+  value: string;
+  color: SectorColorClass;
+}
+
+export interface UIDriverSpeeds {
+  fl: UISpeedEntry;
+  st: UISpeedEntry;
+  i1: UISpeedEntry;
+  i2: UISpeedEntry;
+}
+
+export interface UIStint {
+  compound: TyreCompound;
+  isNew: boolean;
+  totalLaps: number;
 }
 
 // Header

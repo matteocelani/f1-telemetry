@@ -95,7 +95,9 @@ class F1WebSocketClient {
     delayBuffer.flush();
 
     if (this.ws) {
+      this.ws.onmessage = null;
       this.ws.onclose = null;
+      this.ws.onerror = null;
       this.ws.close();
       this.ws = null;
     }

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { SegmentDots } from '@/app/live/components/SegmentDots';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
@@ -29,7 +30,7 @@ interface DriverRowProps {
   detailed?: boolean;
 }
 
-export function DriverRow({
+export const DriverRow = memo(function DriverRow({
   row,
   isExpanded,
   onToggle,
@@ -241,4 +242,4 @@ export function DriverRow({
       </div>
     </button>
   );
-}
+});

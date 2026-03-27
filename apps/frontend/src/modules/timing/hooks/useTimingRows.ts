@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SEGMENT_STATUS } from '@f1-telemetry/core';
-import type { SectorTime, StintData } from '@f1-telemetry/core';
+import type { SectorTime, StintData, SpeedEntry } from '@f1-telemetry/core';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
 import type {
   UITimingRow,
   UISector,
+  UIDriverSpeeds,
+  UISpeedEntry,
+  UIStint,
   SectorColorClass,
   SegmentColorClass,
 } from '@/modules/timing/types';
@@ -19,6 +22,8 @@ const teams = teamsData as unknown as TeamsMap;
 
 const SECTOR_INDICES = ['0', '1', '2'] as const;
 const EMPTY_SECTOR: UISector = { value: '', previousValue: '', color: 'none', segments: [] };
+const EMPTY_SPEED: UISpeedEntry = { value: '', color: 'none' };
+const EMPTY_SPEEDS: UIDriverSpeeds = { fl: EMPTY_SPEED, st: EMPTY_SPEED, i1: EMPTY_SPEED, i2: EMPTY_SPEED };
 const NO_POSITION = 999;
 
 function resolveSectorColor(
@@ -72,6 +77,36 @@ function buildSector(sector: SectorTime | undefined): UISector {
     color,
     segments,
   };
+}
+
+function buildSpeedEntry(entry: SpeedEntry | undefined): UISpeedEntry {
+  if (!entry?.Value) return EMPTY_SPEED;
+  return {
+    value: entry.Value,
+    color: resolveSectorColor(entry.Value, entry.PersonalFastest, entry.OverallFastest),
+  };
+}
+
+function buildSpeeds(timing: { Speeds?: { FL?: SpeedEntry; ST?: SpeedEntry; I1?: SpeedEntry; I2?: SpeedEntry } } | undefined): UIDriverSpeeds {
+  if (!timing?.Speeds) return EMPTY_SPEEDS;
+  const s = timing.Speeds;
+  return {
+    fl: buildSpeedEntry(s.FL),
+    st: buildSpeedEntry(s.ST),
+    i1: buildSpeedEntry(s.I1),
+    i2: buildSpeedEntry(s.I2),
+  };
+}
+
+function buildStintHistory(stintsRaw: Record<string, StintData> | undefined): UIStint[] {
+  if (!stintsRaw) return [];
+  return Object.keys(stintsRaw)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((key) => ({
+      compound: stintsRaw[key].Compound ?? 'UNKNOWN',
+      isNew: stintsRaw[key].New ?? false,
+      totalLaps: stintsRaw[key].TotalLaps ?? 0,
+    }));
 }
 
 // Merges driverList + timing into sorted UI rows. Skeleton state until data arrives.
@@ -150,6 +185,8 @@ export function useTimingRows(): UITimingRow[] {
         numberOfPitStops: timing?.NumberOfPitStops ?? 0,
         numberOfLaps: timing?.NumberOfLaps ?? 0,
         isKnockedOut: timing?.KnockedOut ?? false,
+        speeds: buildSpeeds(timing),
+        stintHistory: buildStintHistory(stintsRaw),
       });
     }
 
