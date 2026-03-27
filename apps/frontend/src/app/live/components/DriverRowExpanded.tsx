@@ -23,14 +23,14 @@ const SPEED_COLOR: Record<SectorColorClass, string> = {
   none: 'text-muted-foreground/30',
 };
 
-const TYRE_BG: Record<string, string> = {
+const TYRE_BG = {
   SOFT: 'bg-red-500',
   MEDIUM: 'bg-yellow-500',
   HARD: 'bg-white',
   INTERMEDIATE: 'bg-emerald-500',
   WET: 'bg-blue-500',
   UNKNOWN: 'bg-muted-foreground',
-};
+} as const satisfies Record<string, string>;
 
 interface DriverRowExpandedProps {
   row: UITimingRow;
@@ -40,7 +40,10 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
   const hasPosition = row.position !== NO_POSITION;
 
   return (
-    <div className="border-b border-border/20 bg-white/3 px-3 py-4">
+    <div
+      className="border-b border-border/20 border-l-2 bg-white/3 px-3 py-4"
+      style={{ borderLeftColor: row.teamColor }}
+    >
       {/* Driver + Team identity */}
       <div className="mb-3 flex items-center gap-3">
         {row.driverImageUrl && (

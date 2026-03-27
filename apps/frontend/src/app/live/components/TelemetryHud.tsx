@@ -5,12 +5,13 @@ import { cn } from '@/lib/utils';
 import { MAX_RPM } from '@/constants/numbers';
 import { useTelemetry } from '@/store/telemetry';
 
-const AERO_LABELS: Record<number, string> = {
+const AERO_LABELS: Readonly<Record<number, string>> = {
   0: 'HIGH DOWNFORCE',
   1: 'LOW DRAG',
   2: 'OVERTAKE BOOST',
 };
-const AERO_CLASSES: Record<number, string> = {
+
+const AERO_CLASSES: Readonly<Record<number, string>> = {
   0: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   1: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
   2: 'bg-amber-500/30 text-amber-400 border-amber-500/40',
@@ -39,10 +40,8 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
   const gearRef = useRef<HTMLSpanElement>(null);
   const gearWrapRef = useRef<HTMLDivElement>(null);
   const throttleBarRef = useRef<HTMLDivElement>(null);
-  const throttleTextRef = useRef<HTMLSpanElement>(null);
   const brakeWrapRef = useRef<HTMLDivElement>(null);
   const rpmSegmentsRef = useRef<HTMLDivElement>(null);
-  const rpmTextRef = useRef<HTMLSpanElement>(null);
   const aeroRef = useRef<HTMLSpanElement>(null);
   const prevGearRef = useRef<number>(-1);
 
@@ -74,7 +73,6 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
 
       // Throttle
       if (throttleBarRef.current) throttleBarRef.current.style.width = `${t.throttle}%`;
-      if (throttleTextRef.current) throttleTextRef.current.textContent = `${t.throttle}%`;
 
       // Brake glow
       if (brakeWrapRef.current) {
@@ -103,9 +101,6 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
             seg.style.backgroundColor = '';
           }
         }
-      }
-      if (rpmTextRef.current) {
-        rpmTextRef.current.textContent = t.rpm > 0 ? `${(t.rpm / 1000).toFixed(1)}k` : '—';
       }
 
       // Aero
@@ -175,12 +170,6 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
               className="h-full w-0 rounded-full bg-emerald-500 transition-[width] duration-75"
             />
           </div>
-          <span
-            ref={throttleTextRef}
-            className="w-10 shrink-0 text-right text-xs font-black tabular-nums text-emerald-500"
-          >
-            0%
-          </span>
         </div>
 
         {/* Brake */}
@@ -190,7 +179,6 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
             ref={brakeWrapRef}
             className="h-6 flex-1 rounded-full bg-red-500 opacity-12 transition-all duration-75"
           />
-          <span className="w-10 shrink-0" />
         </div>
 
         {/* RPM LED segments */}
@@ -204,12 +192,6 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
               />
             ))}
           </div>
-          <span
-            ref={rpmTextRef}
-            className="w-10 shrink-0 text-right text-xs font-bold tabular-nums text-muted-foreground"
-          >
-            —
-          </span>
         </div>
 
         {/* Aero mode */}

@@ -23,7 +23,7 @@ const BADGE_STYLES: Record<RCBadgeVariant, string> = {
 };
 
 const ROW_ACCENT: Partial<Record<RCBadgeVariant, string>> = {
-  red: 'border-l-2 border-l-red-600 bg-red-600/5',
+  red: 'border-l-2 border-l-red-600 bg-red-600/8 animate-pulse',
   safetyCar: 'border-l-2 border-l-amber-500 bg-amber-500/5',
   yellow: 'border-l-2 border-l-yellow-500',
 };

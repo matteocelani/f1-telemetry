@@ -98,8 +98,11 @@ export function TelemetryStrip({ className }: TelemetryStripProps) {
               tla={selectedRow.tla}
             />
           ) : (
-            <div ref={wrapRef} className="flex-1 min-h-0 overflow-hidden">
-              <div ref={canvasRef} />
+            <div className="flex flex-1 flex-col min-h-0">
+              <TraceLegend visible={visibleSeries} />
+              <div ref={wrapRef} className="flex-1 min-h-0 overflow-hidden">
+                <div ref={canvasRef} />
+              </div>
             </div>
           )}
         </div>
@@ -151,3 +154,40 @@ const DriverChips = memo(function DriverChips({
     </div>
   );
 });
+
+const SERIES_COLORS: Record<TelemetrySeries, string> = {
+  speed: '#3b82f6',
+  throttle: '#22c55e',
+  brake: '#ef4444',
+  rpm: '#f59e0b',
+  gear: '#a855f7',
+  activeAero: '#06b6d4',
+} as const;
+
+const SERIES_LABELS: Record<TelemetrySeries, string> = {
+  speed: 'Speed',
+  throttle: 'Throttle',
+  brake: 'Brake',
+  rpm: 'RPM',
+  gear: 'Gear',
+  activeAero: 'Aero',
+} as const;
+
+function TraceLegend({ visible }: { visible: Set<TelemetrySeries> }) {
+  const active = [...visible];
+  return (
+    <div className="flex shrink-0 items-center gap-3 px-3 py-1">
+      {active.map((key) => (
+        <div key={key} className="flex items-center gap-1">
+          <div
+            className="size-2 rounded-full"
+            style={{ backgroundColor: SERIES_COLORS[key] }}
+          />
+          <span className="text-2xs font-bold text-muted-foreground">
+            {SERIES_LABELS[key]}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -30,6 +30,8 @@ interface DriverRowProps {
   detailed?: boolean;
 }
 
+const PODIUM_POSITIONS = 3;
+
 export const DriverRow = memo(function DriverRow({
   row,
   isExpanded,
@@ -37,6 +39,8 @@ export const DriverRow = memo(function DriverRow({
   detailed,
 }: DriverRowProps) {
   const isLeader = row.position === 1;
+  const isPodium = row.position >= 1 && row.position <= PODIUM_POSITIONS;
+  const isFastestLap = row.lastLapColor === 'purple';
   const hasTimingData =
     row.position !== NO_POSITION ||
     row.lastLap !== '' ||
@@ -52,13 +56,16 @@ export const DriverRow = memo(function DriverRow({
         (detailed || false) && 'min-h-13',
         !detailed && 'xl:min-h-13',
         'transition-colors hover:bg-white/5 text-left',
-        isExpanded && 'bg-white/5'
+        isExpanded && 'bg-white/5',
+        isPodium && 'bg-white/3',
+        isFastestLap && 'bg-violet-500/5',
+        row.isRetired && 'opacity-40'
       )}
     >
       {/* POS */}
       <div className="flex w-8 shrink-0 items-center gap-1.5">
         <div
-          className="w-1 h-7 rounded-sm shrink-0"
+          className={cn('h-7 rounded-sm shrink-0', isPodium ? 'w-1.5' : 'w-1')}
           style={{ backgroundColor: row.teamColor }}
         />
         <span

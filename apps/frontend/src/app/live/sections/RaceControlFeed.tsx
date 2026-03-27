@@ -1,8 +1,10 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RaceControlMessage } from '@/app/live/components/RaceControlMessage';
+import { ROW_EXPAND_DURATION } from '@/constants/numbers';
 import { useRaceControlFeed } from '@/modules/timing/hooks/useRaceControlFeed';
 
 interface RaceControlFeedProps {
@@ -30,9 +32,19 @@ export function RaceControlFeed({ className }: RaceControlFeedProps) {
       <div className="flex-1 overflow-y-auto">
         {hasMessages ? (
           <div className="divide-y divide-border">
-            {messages.map((msg) => (
-              <RaceControlMessage key={msg.id} message={msg} />
-            ))}
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  transition={{ duration: ROW_EXPAND_DURATION }}
+                  className="overflow-hidden"
+                >
+                  <RaceControlMessage message={msg} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">

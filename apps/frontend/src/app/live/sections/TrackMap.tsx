@@ -1,6 +1,7 @@
 'use client';
 
 import { MapPin } from 'lucide-react';
+import type { TrackStatusCode } from '@f1-telemetry/core';
 import { cn } from '@/lib/utils';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
@@ -10,17 +11,30 @@ interface TrackMapProps {
 }
 
 const DOT_RADIUS = 6;
+const DOT_RADIUS_P1 = 7;
 const DOT_RADIUS_SELECTED = 9;
 const LABEL_FONT_SIZE = 10;
 const LABEL_OFFSET_Y = -11;
 const LABEL_OFFSET_Y_SELECTED = -14;
 const TRACK_STROKE_WIDTH = 3;
+const TRACK_GLOW_WIDTH = 8;
 const TRANSITION_MS = 300;
 const GLOW_RADIUS = 18;
 
+const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
+  '4': '#ef4444',
+  '5': '#ef4444',
+  '6': '#eab308',
+  '7': '#eab308',
+};
+
 export function TrackMap({ className }: TrackMapProps) {
   const { dots, circuit } = useTrackMap();
-  const { selectedDriver, setSelectedDriver } = useLiveTiming();
+  const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
+
+  const trackStatusColor = header.trackStatus
+    ? TRACK_STATUS_COLORS[header.trackStatus]
+    : undefined;
 
   if (!circuit) {
     return (
@@ -47,19 +61,31 @@ export function TrackMap({ className }: TrackMapProps) {
         className="h-full w-full"
         preserveAspectRatio="xMidYMid meet"
       >
+        {/* Track glow layer */}
         <path
           d={circuit.path}
           fill="none"
-          stroke="currentColor"
+          stroke={trackStatusColor ?? 'currentColor'}
+          strokeWidth={TRACK_GLOW_WIDTH}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity={trackStatusColor ? '0.15' : '0.06'}
+        />
+        {/* Track path */}
+        <path
+          d={circuit.path}
+          fill="none"
+          stroke={trackStatusColor ?? 'currentColor'}
           strokeWidth={TRACK_STROKE_WIDTH}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity="0.2"
+          opacity={trackStatusColor ? '0.6' : '0.2'}
         />
 
         {dots.map((dot) => {
           const isSelected = selectedDriver === dot.driverNo;
-          const radius = isSelected ? DOT_RADIUS_SELECTED : DOT_RADIUS;
+          const isP1 = dot.driverNo === dots[0]?.driverNo;
+          const radius = isSelected ? DOT_RADIUS_SELECTED : isP1 ? DOT_RADIUS_P1 : DOT_RADIUS;
           const labelY = isSelected ? LABEL_OFFSET_Y_SELECTED : LABEL_OFFSET_Y;
 
           return (
@@ -67,7 +93,7 @@ export function TrackMap({ className }: TrackMapProps) {
               key={dot.driverNo}
               style={{
                 transform: `translate(${dot.x}px, ${dot.y}px)`,
-                transition: `transform ${TRANSITION_MS}ms linear`,
+                transition: `transform ${TRANSITION_MS}ms ease-out`,
               }}
               className="cursor-pointer"
               onClick={() => setSelectedDriver(isSelected ? null : dot.driverNo)}

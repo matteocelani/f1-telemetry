@@ -186,7 +186,7 @@ export function LiveHeader() {
           <span
             className={cn(
               'size-2.5 shrink-0 rounded-full',
-              isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+              isConnected ? 'bg-emerald-500 animate-heartbeat' : 'bg-red-500'
             )}
           />
           <span
