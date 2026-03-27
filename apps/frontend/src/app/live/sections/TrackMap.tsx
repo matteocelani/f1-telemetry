@@ -2,6 +2,7 @@
 
 import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
 
 interface TrackMapProps {
@@ -9,13 +10,17 @@ interface TrackMapProps {
 }
 
 const DOT_RADIUS = 6;
+const DOT_RADIUS_SELECTED = 9;
 const LABEL_FONT_SIZE = 10;
 const LABEL_OFFSET_Y = -11;
+const LABEL_OFFSET_Y_SELECTED = -14;
 const TRACK_STROKE_WIDTH = 3;
 const TRANSITION_MS = 300;
+const GLOW_RADIUS = 18;
 
 export function TrackMap({ className }: TrackMapProps) {
   const { dots, circuit } = useTrackMap();
+  const { selectedDriver, setSelectedDriver } = useLiveTiming();
 
   if (!circuit) {
     return (
@@ -52,28 +57,43 @@ export function TrackMap({ className }: TrackMapProps) {
           opacity="0.2"
         />
 
-        {dots.map((dot) => (
-          <g
-            key={dot.driverNo}
-            style={{
-              transform: `translate(${dot.x}px, ${dot.y}px)`,
-              transition: `transform ${TRANSITION_MS}ms linear`,
-            }}
-          >
-            <circle r={DOT_RADIUS} fill={dot.teamColor} />
-            <text
-              y={LABEL_OFFSET_Y}
-              textAnchor="middle"
-              dominantBaseline="auto"
-              fill="currentColor"
-              fontSize={LABEL_FONT_SIZE}
-              fontWeight="bold"
-              className="pointer-events-none select-none"
+        {dots.map((dot) => {
+          const isSelected = selectedDriver === dot.driverNo;
+          const radius = isSelected ? DOT_RADIUS_SELECTED : DOT_RADIUS;
+          const labelY = isSelected ? LABEL_OFFSET_Y_SELECTED : LABEL_OFFSET_Y;
+
+          return (
+            <g
+              key={dot.driverNo}
+              style={{
+                transform: `translate(${dot.x}px, ${dot.y}px)`,
+                transition: `transform ${TRANSITION_MS}ms linear`,
+              }}
+              className="cursor-pointer"
+              onClick={() => setSelectedDriver(isSelected ? null : dot.driverNo)}
             >
-              {dot.tla}
-            </text>
-          </g>
-        ))}
+              {isSelected && (
+                <circle
+                  r={GLOW_RADIUS}
+                  fill={dot.teamColor}
+                  opacity="0.25"
+                />
+              )}
+              <circle r={radius} fill={dot.teamColor} />
+              <text
+                y={labelY}
+                textAnchor="middle"
+                dominantBaseline="auto"
+                fill="currentColor"
+                fontSize={LABEL_FONT_SIZE}
+                fontWeight="bold"
+                className="pointer-events-none select-none"
+              >
+                {dot.tla}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

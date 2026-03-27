@@ -116,7 +116,7 @@ export interface UIRaceControlMessage {
 
 // Context
 
-export type CenterTab = 'map' | 'telemetry' | 'raceControl';
+export type CenterTab = 'map' | 'raceControl' | 'telemetry';
 
 export interface LiveTimingContextType {
   isConnected: boolean;

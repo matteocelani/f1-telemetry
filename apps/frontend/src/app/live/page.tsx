@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
+import { TelemetryStrip } from '@/app/live/sections/TelemetryStrip';
 import { TrackMap } from '@/app/live/sections/TrackMap';
 import { TimingTower } from '@/app/live/sections/TimingTower';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
@@ -69,9 +70,7 @@ export default function LivePage() {
                     <RaceControlFeed className="h-full" />
                   )}
                   {activeTab === 'telemetry' && (
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      Telemetry (Fase 6)
-                    </div>
+                    <TelemetryStrip className="h-full" />
                   )}
                 </div>
               </div>
@@ -96,7 +95,7 @@ export default function LivePage() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize="50%" minSize="25%" maxSize="75%">
-                  <RaceControlFeed className="h-full" />
+                  <TelemetryStrip className="h-full" />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
@@ -120,9 +119,7 @@ export default function LivePage() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize="40%" minSize="20%" maxSize="75%">
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    Telemetry (Fase 6)
-                  </div>
+                  <TelemetryStrip className="h-full" />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
