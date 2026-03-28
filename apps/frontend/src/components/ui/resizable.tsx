@@ -1,6 +1,5 @@
 'use client';
 
-import { GripVerticalIcon } from 'lucide-react';
 import * as ResizablePrimitive from 'react-resizable-panels';
 import { cn } from '@/lib/utils';
 
@@ -35,14 +34,26 @@ function ResizableHandle({
     <ResizablePrimitive.Separator
       data-slot="resizable-handle"
       className={cn(
-        'relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90',
+        'group relative flex items-center justify-center outline-none border-border transition-colors',
+        'w-px border-r aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:border-r-0 aria-[orientation=horizontal]:border-b',
+        'hover:border-foreground/20 active:border-foreground/30',
         className
       )}
       {...props}
     >
       {withHandle && (
-        <div className="z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border">
-          <GripVerticalIcon className="size-2.5" />
+        <div
+          className={cn(
+            'z-10 flex shrink-0 items-center justify-center rounded-full bg-muted/80 backdrop-blur-sm transition-colors',
+            'group-hover:bg-muted group-active:bg-accent',
+            'h-8 w-3 group-aria-[orientation=horizontal]:h-3 group-aria-[orientation=horizontal]:w-8'
+          )}
+        >
+          <div className="flex flex-col gap-0.5 group-aria-[orientation=horizontal]:flex-row">
+            <span className="size-0.5 rounded-full bg-muted-foreground/50" />
+            <span className="size-0.5 rounded-full bg-muted-foreground/50" />
+            <span className="size-0.5 rounded-full bg-muted-foreground/50" />
+          </div>
         </div>
       )}
     </ResizablePrimitive.Separator>

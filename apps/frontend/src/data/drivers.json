@@ -136,14 +136,14 @@
     "imageUrl": "/images/drivers/10.avif"
   },
   {
-    "driverNumber": "7",
-    "tla": "DOO",
-    "firstName": "Jack",
-    "lastName": "Doohan",
+    "driverNumber": "43",
+    "tla": "COL",
+    "firstName": "Franco",
+    "lastName": "Colapinto",
     "teamId": "alpine",
-    "countryCode": "AUS",
-    "countryFlag": "🇦🇺",
-    "imageUrl": "/images/drivers/7.avif"
+    "countryCode": "ARG",
+    "countryFlag": "🇦🇷",
+    "imageUrl": "/images/drivers/43.avif"
   },
 
   {

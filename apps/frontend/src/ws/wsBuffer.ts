@@ -2,6 +2,7 @@ import type { ChannelValue } from '@f1-telemetry/core';
 import { dispatchToStores } from '@/ws/wsHandler';
 
 const MS_PER_SECOND = 1000;
+const MAX_BUFFER_SIZE = 1000;
 
 interface BufferedFrame {
   localTimestamp: number;
@@ -36,6 +37,9 @@ class StreamDelayBuffer {
       // Zero-delay bypass: dispatch immediately for minimum latency
       dispatchToStores({ channel, data });
       return;
+    }
+    if (this.buffer.length >= MAX_BUFFER_SIZE) {
+      this.buffer.shift();
     }
     this.buffer.push({
       localTimestamp: Date.now(),

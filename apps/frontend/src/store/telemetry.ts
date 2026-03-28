@@ -8,6 +8,7 @@ interface TelemetryHistoryPoint {
   throttle: number;
   brake: number;
   gear: number;
+  activeAero: number;
 }
 
 interface CarTelemetryState {
@@ -36,6 +37,7 @@ export const useTelemetry = create<TelemetryState>((set) => ({
         throttle: telemetry.throttle,
         brake: telemetry.brake,
         gear: telemetry.gear,
+        activeAero: telemetry.activeAero,
       };
 
       const prevHistory = existing?.history ?? [];

@@ -6,7 +6,8 @@ import { Logger } from '@utils/logger';
 
 // F1 Live Timing runs on legacy ASP.NET SignalR — Origin must match the official site
 const F1_ORIGIN_URL = 'https://www.formula1.com';
-const RECONNECT_DELAY_MS = 5_000;
+const BASE_RECONNECT_DELAY_MS = 5_000;
+const MAX_RECONNECT_DELAY_MS = 60_000;
 const CLIENT_PROTOCOL = '1.5';
 const WS_TRANSPORT = 'webSockets';
 
@@ -29,7 +30,7 @@ const WS_BASE_HEADERS: Record<string, string> = {
 const SUBSCRIBE_CHANNELS = [
   CHANNELS.TELEMETRY,
   CHANNELS.POSITION,
-  CHANNELS.TIMING,
+  CHANNELS.TIMING_F1,
   CHANNELS.TIMING_APP_DATA,
   CHANNELS.TIMING_STATS,
   CHANNELS.TRACK_STATUS,
@@ -37,6 +38,10 @@ const SUBSCRIBE_CHANNELS = [
   CHANNELS.DRIVER_LIST,
   CHANNELS.WEATHER_DATA,
   CHANNELS.RACE_CONTROL_MESSAGES,
+  CHANNELS.EXTRAPOLATED_CLOCK,
+  CHANNELS.LAP_COUNT,
+  CHANNELS.SESSION_DATA,
+  CHANNELS.HEARTBEAT,
 ] as const;
 
 // Pre-serialised SignalR invocation message — built once, sent on every (re)connect
@@ -58,6 +63,7 @@ type SignalRMessage = {
 
 type SignalRFrame = {
   M?: SignalRMessage[];
+  R?: Record<string, unknown>;
 };
 
 export class F1Client {
@@ -66,6 +72,7 @@ export class F1Client {
   private sessionCookie: string = '';
   private isReconnecting: boolean = false;
   private isConnected: boolean = false;
+  private reconnectAttempts: number = 0;
   private readonly localSocketServer: SocketServer;
 
   constructor(localSocketServer: SocketServer) {
@@ -122,6 +129,7 @@ export class F1Client {
       Logger.info('Connected to F1 SignalR WebSocket.');
       this.isReconnecting = false;
       this.isConnected = true;
+      this.reconnectAttempts = 0;
 
       try {
         // SignalR requires an explicit /start call after the WebSocket is open
@@ -151,6 +159,14 @@ export class F1Client {
         if (messageStr.length < 3) return;
 
         const frame = JSON.parse(messageStr) as SignalRFrame;
+
+        // Handle initial subscribe snapshot (F1 sends full state in the R field)
+        if (frame.R && typeof frame.R === 'object') {
+          for (const [channel, data] of Object.entries(frame.R)) {
+            this.processUpdate(channel, data);
+          }
+        }
+
         if (!frame.M?.length) return;
 
         for (const message of frame.M) {
@@ -194,9 +210,9 @@ export class F1Client {
 
     this.ws.on('close', (code: number) => {
       this.isConnected = false;
-      Logger.warn(
-        `F1 SignalR closed (code ${code}). Reconnecting in ${RECONNECT_DELAY_MS / 1000}s...`
-      );
+      // Stale cache from a finished session must not leak into the next client snapshot
+      this.localSocketServer.clearCache();
+      Logger.warn(`F1 SignalR closed (code ${code}). Scheduling reconnect...`);
       this.scheduleReconnect();
     });
 
@@ -235,7 +251,15 @@ export class F1Client {
     this.isReconnecting = true;
     this.isConnected = false;
     this.ws = null;
-    setTimeout(() => this.connect(), RECONNECT_DELAY_MS);
+
+    const delay = Math.min(
+      BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts),
+      MAX_RECONNECT_DELAY_MS
+    );
+    this.reconnectAttempts++;
+
+    Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`);
+    setTimeout(() => this.connect(), delay);
   }
 
   public get isConnectedToF1(): boolean {

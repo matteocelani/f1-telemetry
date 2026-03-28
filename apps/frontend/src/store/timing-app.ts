@@ -16,9 +16,9 @@ export const useTimingApp = create<TimingAppState>((set) => ({
       const nextLines = { ...state.lines };
       for (const [driverNo, delta] of Object.entries(deltaLines)) {
         nextLines[driverNo] = mergeDeltaUpdate(
-          nextLines[driverNo] ?? ({} as DriverAppData),
+          nextLines[driverNo] ?? {},
           delta
-        );
+        ) as DriverAppData;
       }
       return { lines: nextLines };
     }),

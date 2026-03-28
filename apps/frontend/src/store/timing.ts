@@ -19,14 +19,17 @@ export const useTiming = create<TimingState>((set) => ({
       const nextLines = { ...state.lines };
       for (const [driverNo, delta] of Object.entries(deltaLines)) {
         nextLines[driverNo] = mergeDeltaUpdate(
-          nextLines[driverNo] ?? ({} as DriverTiming),
+          nextLines[driverNo] ?? {},
           delta
-        );
+        ) as DriverTiming;
       }
       return { lines: nextLines };
     }),
 
-  setDriverList: (list) => set({ driverList: list }),
+  setDriverList: (list) =>
+    set((state) => ({
+      driverList: { ...state.driverList, ...list },
+    })),
 
   reset: () => set({ lines: {}, driverList: {} }),
 }));

@@ -82,6 +82,23 @@ export interface LapTime {
   Value: string;
   PersonalFastest?: boolean;
   OverallFastest?: boolean;
+  /** Present in TimingDataF1 — the lap on which this time was set. */
+  Lap?: number;
+}
+
+/** Micro-sector status codes used in TimingDataF1 segment data. */
+export const SEGMENT_STATUS = {
+  NONE: 0,
+  YELLOW: 2048,
+  GREEN: 2049,
+  PURPLE: 2051,
+  STOPPED: 2064,
+} as const;
+
+export type SegmentStatus = (typeof SEGMENT_STATUS)[keyof typeof SEGMENT_STATUS];
+
+export interface SegmentData {
+  Status: SegmentStatus;
 }
 
 export interface SectorTime {
@@ -89,6 +106,9 @@ export interface SectorTime {
   PersonalFastest?: boolean;
   OverallFastest?: boolean;
   Stopped?: boolean;
+  PreviousValue?: string;
+  /** Micro-sector segments from TimingDataF1. Keyed by segment index "0", "1", etc. */
+  Segments?: Record<string, SegmentData>;
 }
 
 export interface SpeedEntry {
@@ -121,6 +141,12 @@ export interface DriverTiming {
   NumberOfPitStops?: number;
   KnockedOut?: boolean;
   Cutoff?: boolean;
+  /** TimingDataF1 — driver has retired from the session. */
+  Retired?: boolean;
+  /** TimingDataF1 — driver is stopped on track. */
+  Stopped?: boolean;
+  /** TimingDataF1 — numeric driver status code. */
+  Status?: number;
 }
 
 /** TimingData payload — only changed fields are sent; frontend must merge deltas. */
@@ -293,4 +319,49 @@ export interface SessionInfoPayload {
   StartDate: string;
   EndDate?: string;
   Path?: string;
+}
+
+// ExtrapolatedClock
+
+/** Session countdown timer with server-extrapolated remaining time. */
+export interface ExtrapolatedClockPayload {
+  Utc: string;
+  Remaining: string;
+  Extrapolating: boolean;
+}
+
+// LapCount
+
+/** Current and total lap count. Only available during Race and Sprint sessions. */
+export interface LapCountPayload {
+  CurrentLap: number;
+  TotalLaps: number;
+}
+
+// SessionData
+
+export type SessionStatusValue = 'Started' | 'Finished' | 'Finalised' | 'Ends';
+
+export interface SessionSeriesEntry {
+  Utc: string;
+  Lap?: number;
+}
+
+export interface SessionStatusEntry {
+  Utc: string;
+  TrackStatus?: string;
+  SessionStatus?: SessionStatusValue;
+}
+
+/** Session progression data — lap series and status transitions. */
+export interface SessionDataPayload {
+  Series: SessionSeriesEntry[];
+  StatusSeries: SessionStatusEntry[];
+}
+
+// Heartbeat
+
+/** Keep-alive signal for stale connection detection. */
+export interface HeartbeatPayload {
+  Utc: string;
 }

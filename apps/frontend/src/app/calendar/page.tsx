@@ -6,9 +6,9 @@ import { motion, Variants } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import type { RaceEntry } from '@/types/data';
 import { RaceCard } from '@/app/calendar/components/RaceCard';
 import calendarData from '@/data/calendar.json';
+import type { RaceEntry } from '@/types/data';
 
 const races = calendarData as unknown as RaceEntry[];
 

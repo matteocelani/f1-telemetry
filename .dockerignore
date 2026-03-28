@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+*.md
+apps/frontend
+apps/backend/data
+apps/backend/dist
+core/dist

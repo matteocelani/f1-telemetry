@@ -1,4 +1,6 @@
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
+import { deepMerge } from '@utils/deepMerge';
 import { Logger } from '@utils/logger';
 
 // Batch window: flush accumulated updates every 50ms (≈20fps) to avoid high-frequency frame storms
@@ -7,10 +9,18 @@ const BATCH_INTERVAL_MS = 50;
 // Drop frames to slow clients to prevent unbounded memory growth on the server
 const MAX_BUFFERED_BYTES = 1024 * 64; // 64 KiB
 
+const HEALTH_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Cache-Control': 'no-store',
+};
+
 export class SocketServer {
+  private httpServer: ReturnType<typeof createServer> | null = null;
   private wss: WebSocketServer | null = null;
   private batchTimer: ReturnType<typeof setInterval> | null = null;
   private readonly port: number;
+  private getIsF1Connected: () => boolean = () => false;
 
   // Accumulates the latest value per channel within the current batch window
   private readonly batchBuffer = new Map<string, unknown>();
@@ -18,16 +28,46 @@ export class SocketServer {
   // Holds the last serialised value per channel for delta comparison
   private readonly deltaCache = new Map<string, string>();
 
+  // Deep-merged accumulated state per channel — used for complete snapshots on new connections
+  private readonly stateCache = new Map<string, unknown>();
+
   constructor(port: number = 8080) {
     this.port = port;
   }
 
+  public setHealthChecks(getIsF1Connected: () => boolean) {
+    this.getIsF1Connected = getIsF1Connected;
+  }
+
   public start() {
-    this.wss = new WebSocketServer({ port: this.port });
-    Logger.info(`WebSocket server listening on ws://localhost:${this.port}`);
+    this.httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+      if (req.url === '/health' && req.method === 'GET') {
+        const isF1Connected = this.getIsF1Connected();
+        const payload = {
+          status: isF1Connected ? 'ok' : 'degraded',
+          uptime: Math.floor(process.uptime()),
+          connectedClients: this.clientCount,
+          isF1Connected,
+          timestamp: new Date().toISOString(),
+        };
+        res.writeHead(200, HEALTH_HEADERS);
+        res.end(JSON.stringify(payload));
+        return;
+      }
+      res.writeHead(404);
+      res.end();
+    });
+
+    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.httpServer.listen(this.port, () => {
+      Logger.info(`Server listening on port ${this.port} (HTTP + WebSocket)`);
+    });
 
     this.wss.on('connection', (ws: WebSocket) => {
       Logger.info(`Client connected. Active: ${this.wss!.clients.size}`);
+
+      // Send a snapshot of the latest known state so the client doesn't wait for delta changes
+      this.sendSnapshot(ws);
 
       ws.on('close', () => {
         Logger.info(
@@ -54,10 +94,15 @@ export class SocketServer {
       this.batchTimer = null;
     }
 
-    if (!this.wss) return;
-    Logger.info('Closing WebSocket server...');
-    this.wss.close();
-    this.wss = null;
+    if (this.wss) {
+      this.wss.close();
+      this.wss = null;
+    }
+
+    if (this.httpServer) {
+      this.httpServer.close(() => Logger.info('Server closed.'));
+      this.httpServer = null;
+    }
   }
 
   // Accumulates the update — the flush cycle decides what to actually send
@@ -67,12 +112,8 @@ export class SocketServer {
 
   private flush() {
     if (this.batchBuffer.size === 0) return;
-    if (!this.wss || this.wss.clients.size === 0) {
-      this.batchBuffer.clear();
-      return;
-    }
 
-    // Build the diff: only include channels whose data has actually changed
+    // Always update caches so snapshots work even if no clients are connected yet
     const updates: Record<string, unknown> = {};
     let hasChanges = false;
 
@@ -80,12 +121,18 @@ export class SocketServer {
       const serialised = JSON.stringify(data);
       if (this.deltaCache.get(channel) === serialised) continue;
       this.deltaCache.set(channel, serialised);
+
+      // Deep-merge into stateCache so snapshots contain the full accumulated state
+      const existing = this.stateCache.get(channel);
+      this.stateCache.set(channel, deepMerge(existing, data));
+
       updates[channel] = data;
       hasChanges = true;
     }
 
     this.batchBuffer.clear();
-    if (!hasChanges) return;
+
+    if (!hasChanges || !this.wss || this.wss.clients.size === 0) return;
 
     // Serialise once — shared across all clients in this flush cycle
     const frame = JSON.stringify({ updates });
@@ -105,7 +152,30 @@ export class SocketServer {
     }
   }
 
+  // Discards all cached state so new clients start with a clean slate
+  public clearCache(): void {
+    this.batchBuffer.clear();
+    this.deltaCache.clear();
+    this.stateCache.clear();
+    Logger.info('Delta cache cleared — no active F1 session data');
+  }
+
   public get clientCount(): number {
     return this.wss?.clients.size ?? 0;
+  }
+
+  // Sends the full accumulated state to a newly connected client
+  private sendSnapshot(ws: WebSocket): void {
+    if (this.stateCache.size === 0) return;
+
+    const updates: Record<string, unknown> = {};
+    for (const [channel, state] of this.stateCache) {
+      updates[channel] = state;
+    }
+
+    // Mark as snapshot so the frontend can reset stale stores before applying
+    const frame = JSON.stringify({ snapshot: true, updates });
+    ws.send(frame);
+    Logger.info(`Sent snapshot (${this.stateCache.size} channels) to new client`);
   }
 }
