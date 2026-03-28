@@ -9,8 +9,8 @@
  * Press Ctrl+C to stop recording and save.
  */
 
-import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { writeFileSync, renameSync, mkdirSync } from 'fs';
+import { resolve, dirname } from 'path';
 import { WebSocket, ClientOptions } from 'ws';
 import { CHANNELS, F1_SERVER_URL, F1_HUB_NAME } from '@f1-telemetry/core';
 import { decompressPayload } from '@services/payload-parser';
@@ -22,7 +22,6 @@ const WS_TRANSPORT = 'webSockets';
 const CONNECTION_DATA = encodeURIComponent(`[{"name":"${F1_HUB_NAME}"}]`);
 const BATCH_INTERVAL_MS = 100;
 
-// Subscribe to every known channel so recordings are complete for future use.
 const SUBSCRIBE_CHANNELS = [
   CHANNELS.TELEMETRY,
   CHANNELS.POSITION,
@@ -57,12 +56,17 @@ interface ReplayFrame {
 }
 
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-const OUTPUT_PATH =
-  process.argv[2] ?? resolve(__dirname, `../data/recording-${timestamp}.json`);
+const fileArg = process.argv.find((a, i) => i >= 2 && !a.startsWith('--'));
+const OUTPUT_PATH = fileArg
+  ? resolve(process.cwd(), fileArg)
+  : resolve(__dirname, `../data/recording-${timestamp}.json`);
 
 const frames: ReplayFrame[] = [];
 let batchBuffer = new Map<string, unknown>();
 let isRecording = false;
+let isSaved = false;
+let batchIntervalId: ReturnType<typeof setInterval> | null = null;
+let statusIntervalId: ReturnType<typeof setInterval> | null = null;
 
 function flushBatch(): void {
   if (batchBuffer.size === 0) return;
@@ -76,11 +80,40 @@ function flushBatch(): void {
 }
 
 function save(): void {
+  if (isSaved) return;
+  isSaved = true;
+
+  if (batchIntervalId) clearInterval(batchIntervalId);
+  if (statusIntervalId) clearInterval(statusIntervalId);
+
   flushBatch();
+
+  if (frames.length === 0) {
+    Logger.warn('No frames captured — nothing to save.');
+    return;
+  }
+
   Logger.info(`Saving ${frames.length} frames to ${OUTPUT_PATH}...`);
-  writeFileSync(OUTPUT_PATH, JSON.stringify(frames), 'utf-8');
-  const sizeKb = (JSON.stringify(frames).length / 1024).toFixed(0);
-  Logger.info(`Saved ${frames.length} frames (${sizeKb}KB) to ${OUTPUT_PATH}`);
+
+  const json = JSON.stringify(frames);
+  const tmpPath = `${OUTPUT_PATH}.tmp`;
+
+  try {
+    mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
+    writeFileSync(tmpPath, json, 'utf-8');
+    renameSync(tmpPath, OUTPUT_PATH);
+  } catch (err) {
+    Logger.error('Atomic write failed, trying direct write...', err as Error);
+    try {
+      writeFileSync(OUTPUT_PATH, json, 'utf-8');
+      Logger.info('Direct write succeeded.');
+    } catch (fallbackErr) {
+      Logger.error('All writes failed — data lost', fallbackErr as Error);
+    }
+  }
+
+  const sizeMb = (json.length / (1024 * 1024)).toFixed(1);
+  Logger.info(`Saved ${frames.length} frames (${sizeMb}MB) to ${OUTPUT_PATH}`);
 }
 
 type NegotiateResponse = { ConnectionToken: string };
@@ -135,7 +168,7 @@ async function connect(): Promise<void> {
     });
     ws.send(subscribeMsg);
     Logger.info(`Subscribed to: ${SUBSCRIBE_CHANNELS.join(', ')}`);
-    Logger.info('Recording... Press Ctrl+C to stop and save.');
+    Logger.info(`Recording ${SUBSCRIBE_CHANNELS.length} channels... Press Ctrl+C to stop and save.`);
     isRecording = true;
   });
 
@@ -187,23 +220,22 @@ async function connect(): Promise<void> {
 
   ws.on('close', () => {
     Logger.warn('F1 connection closed.');
-    save();
-    process.exit(0);
+    shutdown();
   });
 
   ws.on('error', (err: Error) => {
     Logger.error('WebSocket error', err);
   });
 
-  // Batch flush interval
-  setInterval(flushBatch, BATCH_INTERVAL_MS);
+  batchIntervalId = setInterval(flushBatch, BATCH_INTERVAL_MS);
+  batchIntervalId.unref();
 
-  // Status updates every 10 seconds
-  setInterval(() => {
+  statusIntervalId = setInterval(() => {
     if (isRecording) {
       Logger.info(`Recording: ${frames.length} frames captured`);
     }
   }, 10_000);
+  statusIntervalId.unref();
 }
 
 function processUpdate(channelName: string, rawData: unknown): void {
@@ -217,7 +249,11 @@ function processUpdate(channelName: string, rawData: unknown): void {
   }
 }
 
+let isShuttingDown = false;
+
 const shutdown = () => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
   isRecording = false;
   Logger.info('Stopping recording...');
   save();
