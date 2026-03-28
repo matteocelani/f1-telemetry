@@ -31,11 +31,10 @@ const RPM_COLOR_HIGH = '#ef4444';
 interface TelemetryHudProps {
   driverNo: string;
   teamColor: string;
-  tla: string;
 }
 
 // Fully imperative — subscribes to Zustand and mutates DOM refs directly at 3.7Hz.
-export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
+export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
   const speedRef = useRef<HTMLSpanElement>(null);
   const gearRef = useRef<HTMLSpanElement>(null);
   const gearWrapRef = useRef<HTMLDivElement>(null);
@@ -119,7 +118,7 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
   }, [driverNo, teamColor]);
 
   return (
-    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden px-4 py-3">
+    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden px-3 py-2 md:px-4 md:py-3" role="status" aria-label="Live telemetry data">
       {/* Team color ambient glow */}
       <div
         className="pointer-events-none absolute inset-0 opacity-5"
@@ -128,13 +127,13 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
         }}
       />
 
-      <div className="relative flex w-full max-w-96 flex-col gap-4">
+      <div className="relative flex w-full max-w-72 flex-col gap-2 md:max-w-80 xl:max-w-96 xl:gap-4">
         {/* Hero: Speed + Gear */}
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center justify-center gap-4 xl:gap-6">
           <div className="flex flex-col items-center">
             <span
               ref={speedRef}
-              className="text-5xl font-black tabular-nums leading-none tracking-tight text-foreground"
+              className="text-3xl font-black tabular-nums leading-none tracking-tight text-foreground md:text-4xl xl:text-5xl"
             >
               0
             </span>
@@ -143,7 +142,7 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
             </span>
           </div>
 
-          <div className="h-10 w-px bg-border" />
+          <div className="h-8 w-px bg-border xl:h-10" />
 
           <div
             ref={gearWrapRef}
@@ -151,7 +150,7 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
           >
             <span
               ref={gearRef}
-              className="text-5xl font-black tabular-nums leading-none tracking-tight"
+              className="text-3xl font-black tabular-nums leading-none tracking-tight md:text-4xl xl:text-5xl"
             >
               N
             </span>
@@ -162,9 +161,9 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
         </div>
 
         {/* Throttle */}
-        <div className="flex items-center gap-2.5">
-          <span className="w-8 shrink-0 text-right text-xs font-bold text-emerald-500">THR</span>
-          <div className="h-6 flex-1 overflow-hidden rounded-full bg-emerald-500/8">
+        <div className="flex items-center gap-2">
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-emerald-500 md:w-8 md:text-xs">THR</span>
+          <div className="h-4 flex-1 overflow-hidden rounded-full bg-emerald-500/8 md:h-5 xl:h-6">
             <div
               ref={throttleBarRef}
               className="h-full w-0 rounded-full bg-emerald-500 transition-[width] duration-75"
@@ -173,22 +172,22 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
         </div>
 
         {/* Brake */}
-        <div className="flex items-center gap-2.5">
-          <span className="w-8 shrink-0 text-right text-xs font-bold text-red-500">BRK</span>
+        <div className="flex items-center gap-2">
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-red-500 md:w-8 md:text-xs">BRK</span>
           <div
             ref={brakeWrapRef}
-            className="h-6 flex-1 rounded-full bg-red-500 opacity-12 transition-all duration-75"
+            className="h-4 flex-1 rounded-full bg-red-500 opacity-12 transition-all duration-75 md:h-5 xl:h-6"
           />
         </div>
 
         {/* RPM LED segments */}
-        <div className="flex items-center gap-2.5">
-          <span className="w-8 shrink-0 text-right text-xs font-bold text-muted-foreground">RPM</span>
-          <div ref={rpmSegmentsRef} className="flex flex-1 gap-0.5">
+        <div className="flex items-center gap-2">
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-muted-foreground md:w-8 md:text-xs">RPM</span>
+          <div ref={rpmSegmentsRef} className="flex flex-1 gap-px md:gap-0.5">
             {Array.from({ length: RPM_SEGMENT_COUNT }).map((_, i) => (
               <div
                 key={i}
-                className="h-3 flex-1 rounded-sm bg-muted-foreground opacity-10 transition-opacity duration-75"
+                className="h-2 flex-1 rounded-sm bg-muted-foreground opacity-10 transition-opacity duration-75 md:h-2.5 xl:h-3"
               />
             ))}
           </div>
@@ -198,7 +197,7 @@ export function TelemetryHud({ driverNo, teamColor, tla }: TelemetryHudProps) {
         <div className="flex justify-center">
           <span
             ref={aeroRef}
-            className="rounded-full border border-border bg-muted px-3 py-1 text-2xs font-black tracking-widest text-muted-foreground transition-colors duration-200"
+            className="rounded-full border border-border bg-muted px-2 py-0.5 text-2xs font-black tracking-widest text-muted-foreground transition-colors duration-200 xl:px-3 xl:py-1"
           >
             —
           </span>

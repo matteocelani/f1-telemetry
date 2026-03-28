@@ -60,6 +60,8 @@ export function TrackMap({ className }: TrackMapProps) {
         viewBox={circuit.viewBox}
         className="h-full w-full"
         preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Live track map with driver positions"
       >
         {/* Track glow layer */}
         <path

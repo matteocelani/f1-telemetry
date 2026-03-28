@@ -1,8 +1,15 @@
 'use client';
 
-import { memo, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TelemetryHud } from '@/app/live/components/TelemetryHud';
 import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
@@ -10,7 +17,6 @@ import {
   useTelemetryChart,
   type TelemetrySeries,
 } from '@/modules/timing/hooks/useTelemetryChart';
-import type { UITimingRow } from '@/modules/timing/types';
 
 type ViewMode = 'hud' | 'trace';
 
@@ -18,9 +24,10 @@ const DEFAULT_SERIES = ['speed', 'throttle', 'brake'] as const;
 
 interface TelemetryStripProps {
   className?: string;
+  hideTitle?: boolean;
 }
 
-export function TelemetryStrip({ className }: TelemetryStripProps) {
+export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
   const { rows, selectedDriver, setSelectedDriver } = useLiveTiming();
   const [viewMode, setViewMode] = useState<ViewMode>('hud');
 
@@ -40,71 +47,72 @@ export function TelemetryStrip({ className }: TelemetryStripProps) {
     });
   }, []);
 
-  const { wrapRef, canvasRef } = useTelemetryChart(
-    viewMode === 'trace' ? selectedDriver : null,
-    visibleSeries
-  );
+  const { wrapRef, canvasRef } = useTelemetryChart(selectedDriver, visibleSeries);
 
   const selectedRow = rows.find((r) => r.driverNo === selectedDriver);
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
       {/* Header */}
-      <div className="shrink-0 border-b border-border px-3 py-1.5">
-        <div className="mb-1.5 flex items-center gap-2">
-          <Activity className="size-3 text-foreground" />
-          <span className="text-2xs font-bold uppercase tracking-widest text-foreground">
-            Telemetry
-          </span>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
+        {!hideTitle && (
+          <>
+            <Activity className="size-3 text-foreground" />
+            <span className="text-2xs font-bold uppercase tracking-widest text-foreground">
+              Telemetry
+            </span>
+          </>
+        )}
 
-          {/* HUD / Trace toggle + settings */}
-          <div className="ml-auto flex items-center gap-1 rounded-full bg-muted p-0.5">
-            {(['hud', 'trace'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setViewMode(mode)}
-                className={cn(
-                  'rounded-full px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider transition-colors',
-                  viewMode === mode
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {mode}
-              </button>
+        {/* Driver select */}
+        <Select
+          value={selectedDriver ?? ''}
+          onValueChange={(v) => setSelectedDriver(v || null)}
+        >
+          <SelectTrigger size="sm" className="h-7 w-32 gap-1.5 text-xs md:w-40">
+            <SelectValue placeholder="Select driver" />
+          </SelectTrigger>
+          <SelectContent position="popper" className="max-h-60">
+            {rows.map((row) => (
+              <SelectItem key={row.driverNo} value={row.driverNo}>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: row.teamColor }}
+                  />
+                  <span className="font-bold">{row.tla}</span>
+                </div>
+              </SelectItem>
             ))}
-            {viewMode === 'trace' && (
-              <TelemetrySettings visible={visibleSeries} onToggle={handleToggleSeries} />
-            )}
-          </div>
-        </div>
+          </SelectContent>
+        </Select>
 
-        {/* Driver chips */}
-        <DriverChips
-          rows={rows}
-          selectedDriver={selectedDriver}
-          onSelect={setSelectedDriver}
-        />
+        {/* Settings — contains view mode toggle + trace series */}
+        <div className="ml-auto">
+          <TelemetrySettings
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            visible={visibleSeries}
+            onToggle={handleToggleSeries}
+          />
+        </div>
       </div>
 
-      {/* Content */}
+      {/* Content — both views always mounted, toggled via invisible to avoid jank */}
       {selectedDriver && selectedRow ? (
-        <div className="flex flex-1 flex-col min-h-0">
-          {viewMode === 'hud' ? (
+        <div className="relative flex-1 min-h-0">
+          <div className={cn('absolute inset-0', viewMode !== 'hud' && 'invisible')}>
             <TelemetryHud
               driverNo={selectedDriver}
               teamColor={selectedRow.teamColor}
-              tla={selectedRow.tla}
             />
-          ) : (
-            <div className="flex flex-1 flex-col min-h-0">
-              <TraceLegend visible={visibleSeries} />
-              <div ref={wrapRef} className="flex-1 min-h-0 overflow-hidden">
-                <div ref={canvasRef} />
-              </div>
+          </div>
+          <div className={cn('flex h-full flex-col', viewMode !== 'trace' && 'invisible')}>
+            <TraceLegend visible={visibleSeries} />
+            <div ref={wrapRef} className="flex-1 min-h-0 overflow-hidden">
+              <div ref={canvasRef} />
             </div>
-          )}
+          </div>
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
@@ -118,60 +126,23 @@ export function TelemetryStrip({ className }: TelemetryStripProps) {
   );
 }
 
-// Compact driver chips row
-const DriverChips = memo(function DriverChips({
-  rows,
-  selectedDriver,
-  onSelect,
-}: {
-  rows: UITimingRow[];
-  selectedDriver: string | null;
-  onSelect: (driverNo: string | null) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {rows.map((row) => {
-        const isActive = selectedDriver === row.driverNo;
-        return (
-          <button
-            key={row.driverNo}
-            type="button"
-            onClick={() => onSelect(isActive ? null : row.driverNo)}
-            className={cn(
-              'rounded px-2 py-1 text-xs font-black uppercase tracking-wide transition-colors',
-              isActive
-                ? 'text-white ring-1 ring-white/20'
-                : 'text-white/70 hover:text-white'
-            )}
-            style={{
-              backgroundColor: isActive ? row.teamColor : `${row.teamColor}40`,
-            }}
-          >
-            {row.tla}
-          </button>
-        );
-      })}
-    </div>
-  );
-});
-
-const SERIES_COLORS: Record<TelemetrySeries, string> = {
+const SERIES_COLORS = {
   speed: '#3b82f6',
   throttle: '#22c55e',
   brake: '#ef4444',
   rpm: '#f59e0b',
   gear: '#a855f7',
   activeAero: '#06b6d4',
-} as const;
+} as const satisfies Record<TelemetrySeries, string>;
 
-const SERIES_LABELS: Record<TelemetrySeries, string> = {
+const SERIES_LABELS = {
   speed: 'Speed',
   throttle: 'Throttle',
   brake: 'Brake',
   rpm: 'RPM',
   gear: 'Gear',
   activeAero: 'Aero',
-} as const;
+} as const satisfies Record<TelemetrySeries, string>;
 
 function TraceLegend({ visible }: { visible: Set<TelemetrySeries> }) {
   const active = [...visible];

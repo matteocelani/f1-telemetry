@@ -19,15 +19,15 @@ const H =
 
 const COLUMN_HELP = {
   POS: 'Race position',
-  DRV: 'Driver · Team',
-  TYRE: 'Compound · Age',
-  INT: 'Interval · Gap',
-  LAST: 'Last lap · Best lap',
-  SEC: '🟣 Overall · 🟢 Personal · 🟡 Normal',
-  S1: 'Sector 1 · Previous · Dots',
-  S2: 'Sector 2 · Previous · Dots',
-  S3: 'Sector 3 · Previous · Dots',
-  LAPS: 'Laps · PIT/OUT/RET · 2P = 2 pits',
+  DRV: 'Driver and team',
+  TYRE: 'Compound and age',
+  INT: 'Interval and gap',
+  LAST: 'Last lap and best lap',
+  SEC: 'Purple = overall, Green = personal, Yellow = normal',
+  S1: 'Sector 1, previous, dots',
+  S2: 'Sector 2, previous, dots',
+  S3: 'Sector 3, previous, dots',
+  LAPS: 'Laps, PIT/OUT/RET, 2P = 2 pits',
 } as const;
 
 interface TimingTowerProps {
@@ -77,26 +77,26 @@ export function TimingTower({ className }: TimingTowerProps) {
       <div className="flex min-w-fit flex-col flex-1 min-h-0">
         {/* Header */}
         <TooltipProvider>
-          <div className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-3 py-1.5">
+          <div className="flex shrink-0 items-center gap-1.5 border-b border-border bg-card px-2 py-1.5 md:gap-3 md:px-3">
             <ColumnHeader
               label="POS"
               tip={COLUMN_HELP.POS}
-              className="w-8 shrink-0"
+              className="w-7 shrink-0 md:w-8"
             />
             <ColumnHeader
               label="DRV"
               tip={COLUMN_HELP.DRV}
-              className="w-12 shrink-0 text-center"
+              className="w-10 shrink-0 text-center md:w-12"
             />
             <ColumnHeader
               label="TYRE"
               tip={COLUMN_HELP.TYRE}
-              className="w-16 shrink-0"
+              className="hidden w-16 shrink-0 md:block"
             />
             <ColumnHeader
               label="INT"
               tip={COLUMN_HELP.INT}
-              className="min-w-20 flex-1 shrink-0 text-right"
+              className="min-w-14 flex-1 shrink-0 text-right md:min-w-20"
             />
             <ColumnHeader
               label="GAP"
@@ -106,7 +106,7 @@ export function TimingTower({ className }: TimingTowerProps) {
             <ColumnHeader
               label="LAST"
               tip={COLUMN_HELP.LAST}
-              className="min-w-16 md:min-w-24 flex-1 shrink-0 text-right"
+              className="min-w-14 flex-1 shrink-0 text-right md:min-w-24"
             />
             <ColumnHeader
               label="SEC"
@@ -143,7 +143,7 @@ export function TimingTower({ className }: TimingTowerProps) {
             <ColumnHeader
               label="LAPS"
               tip={COLUMN_HELP.LAPS}
-              className="w-12 shrink-0 text-center"
+              className="w-9 shrink-0 text-center md:w-12"
             />
           </div>
         </TooltipProvider>

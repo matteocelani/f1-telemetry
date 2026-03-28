@@ -52,7 +52,7 @@ export const DriverRow = memo(function DriverRow({
       type="button"
       onClick={onToggle}
       className={cn(
-        'flex w-full h-full min-h-9 max-h-16 items-center gap-3 border-b border-border/20 px-3',
+        'flex w-full h-full min-h-9 max-h-16 items-center gap-1.5 border-b border-border/20 px-2 md:gap-3 md:px-3',
         (detailed || false) && 'min-h-13',
         !detailed && 'xl:min-h-13',
         'transition-colors hover:bg-white/5 text-left',
@@ -63,14 +63,14 @@ export const DriverRow = memo(function DriverRow({
       )}
     >
       {/* POS */}
-      <div className="flex w-8 shrink-0 items-center gap-1.5">
+      <div className="flex w-7 shrink-0 items-center gap-1 md:w-8 md:gap-1.5">
         <div
-          className={cn('h-7 rounded-sm shrink-0', isPodium ? 'w-1.5' : 'w-1')}
+          className={cn('h-6 rounded-sm shrink-0 md:h-7', isPodium ? 'w-1.5' : 'w-1')}
           style={{ backgroundColor: row.teamColor }}
         />
         <span
           className={cn(
-            'text-base font-black tabular-nums',
+            'text-sm font-black tabular-nums md:text-base',
             hasTimingData ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
@@ -80,14 +80,14 @@ export const DriverRow = memo(function DriverRow({
 
       {/* DRV */}
       <span
-        className="w-12 shrink-0 rounded py-0.5 text-center text-xs font-black tracking-wider text-white"
+        className="w-10 shrink-0 rounded py-0.5 text-center text-xs font-black tracking-wider text-white md:w-12"
         style={{ backgroundColor: row.teamColor }}
       >
         {row.tla}
       </span>
 
       {/* TYRE */}
-      <div className={cn('w-16 shrink-0', !hasTimingData && 'opacity-30')}>
+      <div className={cn('hidden w-16 shrink-0 md:block', !hasTimingData && 'opacity-30')}>
         <TyreIcon
           compound={row.currentTyre}
           age={row.tyreAge}
@@ -96,7 +96,7 @@ export const DriverRow = memo(function DriverRow({
       </div>
 
       {/* INT — on mobile stacks gap below, on md+ gap has its own column */}
-      <div className="min-w-20 flex-1 shrink-0 text-right">
+      <div className="min-w-14 flex-1 shrink-0 text-right md:min-w-20">
         {!hasTimingData ? (
           <span className={cn('text-sm font-bold tabular-nums', GHOST)}>
             +0.000
@@ -142,7 +142,7 @@ export const DriverRow = memo(function DriverRow({
       </div>
 
       {/* LAST */}
-      <div className="min-w-16 md:min-w-24 flex-1 shrink-0 text-right">
+      <div className="min-w-14 flex-1 shrink-0 text-right md:min-w-24">
         <div className="flex flex-col items-end">
           <span
             className={cn(
@@ -219,7 +219,7 @@ export const DriverRow = memo(function DriverRow({
       ))}
 
       {/* LAPS / Status */}
-      <div className="w-12 shrink-0 text-center">
+      <div className="w-9 shrink-0 text-center md:w-12">
         {!hasTimingData ? (
           <span className={cn('text-sm font-bold tabular-nums', GHOST)}>0</span>
         ) : row.isRetired ? (

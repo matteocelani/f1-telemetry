@@ -38,7 +38,7 @@ export function LiveHeader() {
 
   return (
     <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
-      <div className="flex max-w-[40%] items-center gap-2.5 overflow-hidden md:gap-3">
+      <div className="flex items-center gap-2 overflow-hidden md:gap-3">
         {trackStatus && <TrackStatusBadge status={trackStatus} />}
 
         <div className="flex items-center gap-1.5 lg:hidden">
@@ -56,11 +56,7 @@ export function LiveHeader() {
 
         <div className="hidden min-w-0 items-center gap-2.5 lg:flex">
           {flag && (
-            <span
-              className="shrink-0 text-lg"
-              role="img"
-              aria-label={countryCode}
-            >
+            <span className="shrink-0 text-lg" role="img" aria-label={countryCode}>
               {flag}
             </span>
           )}
