@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { NO_POSITION } from '@/constants/numbers';
+import { COMPOUND_BG } from '@/modules/timing/constants';
 import type {
   UITimingRow,
   SectorColorClass,
@@ -26,15 +27,6 @@ const SPEED_COLOR: Record<SectorColorClass, string> = {
   yellow: 'text-foreground',
   none: 'text-muted-foreground/30',
 };
-
-const TYRE_BG = {
-  SOFT: 'bg-red-500',
-  MEDIUM: 'bg-yellow-500',
-  HARD: 'bg-white',
-  INTERMEDIATE: 'bg-emerald-500',
-  WET: 'bg-blue-500',
-  UNKNOWN: 'bg-muted-foreground',
-} as const satisfies Record<string, string>;
 
 interface DriverRowExpandedProps {
   row: UITimingRow;
@@ -252,7 +244,7 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
                   <div
                     className={cn(
                       'size-3 rounded-full',
-                      TYRE_BG[stint.compound] ?? 'bg-muted-foreground'
+                      COMPOUND_BG[stint.compound] ?? 'bg-muted-foreground'
                     )}
                   />
                   <span className="text-2xs font-bold text-foreground">

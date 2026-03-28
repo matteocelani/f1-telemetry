@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { Activity, Map, Radio } from 'lucide-react';
+import { BarChart3, Map, Radio } from 'lucide-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import {
   ResizableHandle,
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
-import { TelemetryStrip } from '@/app/live/sections/TelemetryStrip';
+import { SmartWidget } from '@/app/live/sections/SmartWidget';
 import { TrackMap } from '@/app/live/sections/TrackMap';
 import { TimingTower } from '@/app/live/sections/TimingTower';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
@@ -21,7 +21,7 @@ type PanelId = 'map' | 'raceControl' | 'telemetry';
 
 const PANEL_OPTIONS = [
   { id: 'map', label: 'Map', Icon: Map },
-  { id: 'telemetry', label: 'Telemetry', Icon: Activity },
+  { id: 'telemetry', label: 'Strategy', Icon: BarChart3 },
   { id: 'raceControl', label: 'Control', Icon: Radio },
 ] as const;
 
@@ -32,7 +32,7 @@ function PanelContent({ id, className, hideTitle }: { id: PanelId; className?: s
     case 'raceControl':
       return <RaceControlFeed className={className} hideTitle={hideTitle} />;
     case 'telemetry':
-      return <TelemetryStrip className={className} hideTitle={hideTitle} />;
+      return <SmartWidget className={className} hideTitle={hideTitle} />;
   }
 }
 
@@ -188,7 +188,7 @@ export default function LivePage() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize="40%" minSize="20%" maxSize="75%">
-                  <TelemetryStrip className="h-full" />
+                  <SmartWidget className="h-full" />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>

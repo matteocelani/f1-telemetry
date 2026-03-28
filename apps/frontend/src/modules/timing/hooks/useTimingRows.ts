@@ -22,6 +22,7 @@ import type {
   SegmentColorClass,
   TimingRowsResult,
 } from '@/modules/timing/types';
+import { lapTimeToMs } from '@/modules/timing/utils';
 import { useSession } from '@/store/session';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
@@ -142,19 +143,8 @@ function buildStintHistory(
       compound: stintsRaw[key].Compound ?? 'UNKNOWN',
       isNew: stintsRaw[key].New ?? false,
       totalLaps: stintsRaw[key].TotalLaps ?? 0,
+      startLap: stintsRaw[key].StartLaps ?? 0,
     }));
-}
-
-function lapTimeToMs(value: string): number {
-  if (!value) return Infinity;
-  const colonIdx = value.indexOf(':');
-  if (colonIdx !== -1) {
-    return (
-      parseInt(value.slice(0, colonIdx), 10) * 60_000 +
-      parseFloat(value.slice(colonIdx + 1)) * 1000
-    );
-  }
-  return parseFloat(value) * 1000;
 }
 
 // Infers qualifying part from knocked-out count — more reliable than waiting for SessionPart in stream.
