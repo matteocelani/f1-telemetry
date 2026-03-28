@@ -1,11 +1,9 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { HealthServer } from '@services/health-server';
 import { SocketServer } from '@services/socket-server';
 import { Logger } from '@utils/logger';
 
-const WS_PORT = parseInt(process.env.PORT ?? '8080', 10);
-const HEALTH_PORT = parseInt(process.env.HEALTH_PORT ?? '8081', 10);
+const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const REPLAY_INTERVAL_MS = parseInt(process.env.REPLAY_INTERVAL ?? '100', 10);
 
 interface ReplayFrame {
@@ -49,22 +47,15 @@ function startReplay(socketServer: SocketServer, frames: ReplayFrame[]): void {
   );
 }
 
-const socketServer = new SocketServer(WS_PORT);
+const socketServer = new SocketServer(PORT);
+socketServer.setHealthChecks(() => true);
 socketServer.start();
-
-const healthServer = new HealthServer(
-  HEALTH_PORT,
-  () => socketServer.clientCount,
-  () => true
-);
-healthServer.start();
 
 const frames = loadReplayData();
 startReplay(socketServer, frames);
 
 const shutdown = (signal: string) => {
   Logger.info(`Received ${signal}. Shutting down...`);
-  healthServer.stop();
   socketServer.stop();
   process.exit(0);
 };

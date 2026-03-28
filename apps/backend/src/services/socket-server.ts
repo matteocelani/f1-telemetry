@@ -1,3 +1,4 @@
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import { deepMerge } from '@utils/deepMerge';
 import { Logger } from '@utils/logger';
@@ -8,10 +9,18 @@ const BATCH_INTERVAL_MS = 50;
 // Drop frames to slow clients to prevent unbounded memory growth on the server
 const MAX_BUFFERED_BYTES = 1024 * 64; // 64 KiB
 
+const HEALTH_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Cache-Control': 'no-store',
+};
+
 export class SocketServer {
+  private httpServer: ReturnType<typeof createServer> | null = null;
   private wss: WebSocketServer | null = null;
   private batchTimer: ReturnType<typeof setInterval> | null = null;
   private readonly port: number;
+  private getIsF1Connected: () => boolean = () => false;
 
   // Accumulates the latest value per channel within the current batch window
   private readonly batchBuffer = new Map<string, unknown>();
@@ -26,9 +35,33 @@ export class SocketServer {
     this.port = port;
   }
 
+  public setHealthChecks(getIsF1Connected: () => boolean) {
+    this.getIsF1Connected = getIsF1Connected;
+  }
+
   public start() {
-    this.wss = new WebSocketServer({ port: this.port });
-    Logger.info(`WebSocket server listening on ws://localhost:${this.port}`);
+    this.httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+      if (req.url === '/health' && req.method === 'GET') {
+        const isF1Connected = this.getIsF1Connected();
+        const payload = {
+          status: isF1Connected ? 'ok' : 'degraded',
+          uptime: Math.floor(process.uptime()),
+          connectedClients: this.clientCount,
+          isF1Connected,
+          timestamp: new Date().toISOString(),
+        };
+        res.writeHead(200, HEALTH_HEADERS);
+        res.end(JSON.stringify(payload));
+        return;
+      }
+      res.writeHead(404);
+      res.end();
+    });
+
+    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.httpServer.listen(this.port, () => {
+      Logger.info(`Server listening on port ${this.port} (HTTP + WebSocket)`);
+    });
 
     this.wss.on('connection', (ws: WebSocket) => {
       Logger.info(`Client connected. Active: ${this.wss!.clients.size}`);
@@ -61,10 +94,15 @@ export class SocketServer {
       this.batchTimer = null;
     }
 
-    if (!this.wss) return;
-    Logger.info('Closing WebSocket server...');
-    this.wss.close();
-    this.wss = null;
+    if (this.wss) {
+      this.wss.close();
+      this.wss = null;
+    }
+
+    if (this.httpServer) {
+      this.httpServer.close(() => Logger.info('Server closed.'));
+      this.httpServer = null;
+    }
   }
 
   // Accumulates the update — the flush cycle decides what to actually send
