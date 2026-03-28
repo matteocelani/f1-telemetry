@@ -1,7 +1,12 @@
 'use client';
 
-import { MapPin } from 'lucide-react';
+import { Info, MapPin } from 'lucide-react';
 import type { TrackStatusCode } from '@f1-telemetry/core';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
@@ -18,8 +23,11 @@ const LABEL_OFFSET_Y = -11;
 const LABEL_OFFSET_Y_SELECTED = -14;
 const TRACK_STROKE_WIDTH = 3;
 const TRACK_GLOW_WIDTH = 8;
-const TRANSITION_MS = 300;
+const GPS_TRANSITION_MS = 300;
+const SEGMENT_TRANSITION_MS = 1500;
 const GLOW_RADIUS = 18;
+const START_LINE_LENGTH = 12;
+const START_LINE_WIDTH = 2;
 
 const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
   '4': '#ef4444',
@@ -29,12 +37,17 @@ const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
 };
 
 export function TrackMap({ className }: TrackMapProps) {
-  const { dots, circuit } = useTrackMap();
+  const { dots, circuit, isSegmentMode, startPercent } = useTrackMap();
   const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
+  const transitionMs = isSegmentMode
+    ? SEGMENT_TRANSITION_MS
+    : GPS_TRANSITION_MS;
 
   const trackStatusColor = header.trackStatus
     ? TRACK_STATUS_COLORS[header.trackStatus]
     : undefined;
+
+  const visibleDots = dots.filter((d) => !d.inPit);
 
   if (!circuit) {
     return (
@@ -54,8 +67,39 @@ export function TrackMap({ className }: TrackMapProps) {
 
   return (
     <div
-      className={cn('flex h-full items-center justify-center p-2', className)}
+      className={cn(
+        'relative flex h-full items-center justify-center p-2',
+        className
+      )}
     >
+      {isSegmentMode && visibleDots.length > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="absolute bottom-2 left-2 flex cursor-pointer items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 transition-colors hover:bg-muted/80">
+              <Info className="size-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                Estimated positions
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-72 p-3">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5">
+                <Info className="size-3.5 shrink-0 text-amber-500" />
+                <span className="text-sm font-semibold text-foreground">
+                  Estimated positions
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-foreground">
+                The live stream is not sending GPS position data. Car positions
+                are being calculated locally from F1 sector timing segments —
+                this is an approximation and may not perfectly match real track
+                positions.
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
       <svg
         viewBox={circuit.viewBox}
         className="h-full w-full"
@@ -84,28 +128,50 @@ export function TrackMap({ className }: TrackMapProps) {
           opacity={trackStatusColor ? '0.6' : '0.2'}
         />
 
-        {dots.map((dot) => {
+        {/* Start/finish line */}
+        <line
+          x1={0}
+          y1={-START_LINE_LENGTH / 2}
+          x2={0}
+          y2={START_LINE_LENGTH / 2}
+          stroke="currentColor"
+          strokeWidth={START_LINE_WIDTH}
+          opacity="0.5"
+          style={{
+            offsetPath: `path("${circuit.path}")`,
+            offsetDistance: `${startPercent}%`,
+            offsetRotate: 'auto',
+          }}
+        />
+
+        {visibleDots.map((dot) => {
           const isSelected = selectedDriver === dot.driverNo;
-          const isP1 = dot.driverNo === dots[0]?.driverNo;
-          const radius = isSelected ? DOT_RADIUS_SELECTED : isP1 ? DOT_RADIUS_P1 : DOT_RADIUS;
+          const isP1 = dot.driverNo === visibleDots[0]?.driverNo;
+          const radius = isSelected
+            ? DOT_RADIUS_SELECTED
+            : isP1
+              ? DOT_RADIUS_P1
+              : DOT_RADIUS;
           const labelY = isSelected ? LABEL_OFFSET_Y_SELECTED : LABEL_OFFSET_Y;
 
           return (
             <g
               key={dot.driverNo}
               style={{
-                transform: `translate(${dot.x}px, ${dot.y}px)`,
-                transition: `transform ${TRANSITION_MS}ms ease-out`,
+                offsetPath: `path("${circuit.path}")`,
+                offsetDistance: `${dot.percent}%`,
+                offsetRotate: '0deg',
+                transition: dot.isWrapping
+                  ? 'none'
+                  : `offset-distance ${transitionMs}ms ${isSegmentMode ? 'linear' : 'ease-out'}`,
               }}
               className="cursor-pointer"
-              onClick={() => setSelectedDriver(isSelected ? null : dot.driverNo)}
+              onClick={() =>
+                setSelectedDriver(isSelected ? null : dot.driverNo)
+              }
             >
               {isSelected && (
-                <circle
-                  r={GLOW_RADIUS}
-                  fill={dot.teamColor}
-                  opacity="0.25"
-                />
+                <circle r={GLOW_RADIUS} fill={dot.teamColor} opacity="0.25" />
               )}
               <circle r={radius} fill={dot.teamColor} />
               <text

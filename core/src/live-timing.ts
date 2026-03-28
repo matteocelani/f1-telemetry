@@ -125,6 +125,12 @@ export interface DriverSpeeds {
   I2?: SpeedEntry;
 }
 
+/** Per-qualifying-part gap stats. TimeDifftoPositionAhead has a lowercase 't' (F1 typo). */
+export interface QualifyingStats {
+  TimeDiffToFastest?: string;
+  TimeDifftoPositionAhead?: string;
+}
+
 export interface DriverTiming {
   RacingNumber: string;
   Position: string;
@@ -132,6 +138,10 @@ export interface DriverTiming {
   IntervalToPositionAhead?: { Value: string; Catching?: boolean };
   BestLapTime: LapTime;
   LastLapTime: LapTime;
+  /** Per-qualifying-part best lap times. Keys are 0-indexed ("0"=Q1, "1"=Q2, "2"=Q3). */
+  BestLapTimes?: Record<string, LapTime>;
+  /** Per-qualifying-part gap/interval. Can arrive as keyed object or array (delta protocol). */
+  Stats?: Record<string, QualifyingStats> | QualifyingStats[];
   /** Keyed by sector index "0", "1", "2". */
   Sectors: Record<string, SectorTime>;
   Speeds: DriverSpeeds;
@@ -152,6 +162,10 @@ export interface DriverTiming {
 /** TimingData payload — only changed fields are sent; frontend must merge deltas. */
 export interface TimingDataPayload {
   Lines: Record<string, DriverTiming>;
+  /** Qualifying part (1=Q1, 2=Q2, 3=Q3). Only in TimingDataF1. */
+  SessionPart?: number;
+  /** Max driver count per qualifying part [Q1, Q2, Q3]. Only in TimingDataF1. */
+  NoEntries?: number[];
 }
 
 // TimingAppData
@@ -316,6 +330,8 @@ export interface SessionInfoPayload {
   };
   Type: 'Practice' | 'Qualifying' | 'Race' | 'Sprint' | 'Sprint Qualifying';
   Name: string;
+  /** Lifecycle state of the session: Started → Finished → Finalised → Ends. */
+  SessionStatus?: string;
   StartDate: string;
   EndDate?: string;
   Path?: string;
@@ -327,7 +343,8 @@ export interface SessionInfoPayload {
 export interface ExtrapolatedClockPayload {
   Utc: string;
   Remaining: string;
-  Extrapolating: boolean;
+  /** true=running, false=stopped, undefined=reset-not-started (qualifying inter-part gap). */
+  Extrapolating?: boolean;
 }
 
 // LapCount

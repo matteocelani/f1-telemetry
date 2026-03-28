@@ -58,7 +58,11 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
       if (gearRef.current) {
         gearRef.current.textContent = t.gear === 0 ? 'N' : String(t.gear);
       }
-      if (gearWrapRef.current && prevGearRef.current !== t.gear && prevGearRef.current !== -1) {
+      if (
+        gearWrapRef.current &&
+        prevGearRef.current !== t.gear &&
+        prevGearRef.current !== -1
+      ) {
         gearWrapRef.current.style.transform = 'scale(1.2)';
         gearWrapRef.current.style.color = teamColor;
         setTimeout(() => {
@@ -71,7 +75,8 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
       prevGearRef.current = t.gear;
 
       // Throttle
-      if (throttleBarRef.current) throttleBarRef.current.style.width = `${t.throttle}%`;
+      if (throttleBarRef.current)
+        throttleBarRef.current.style.width = `${t.throttle}%`;
 
       // Brake glow
       if (brakeWrapRef.current) {
@@ -92,8 +97,10 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
           if (i < activeCount) {
             seg.style.opacity = '1';
             const ratio = i / (RPM_SEGMENT_COUNT - 1);
-            if (ratio < RPM_LOW_THRESHOLD) seg.style.backgroundColor = RPM_COLOR_LOW;
-            else if (ratio < RPM_MID_THRESHOLD) seg.style.backgroundColor = RPM_COLOR_MID;
+            if (ratio < RPM_LOW_THRESHOLD)
+              seg.style.backgroundColor = RPM_COLOR_LOW;
+            else if (ratio < RPM_MID_THRESHOLD)
+              seg.style.backgroundColor = RPM_COLOR_MID;
             else seg.style.backgroundColor = RPM_COLOR_HIGH;
           } else {
             seg.style.opacity = '0.1';
@@ -105,7 +112,9 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
       // Aero
       if (aeroRef.current) {
         const label = AERO_LABELS[t.activeAero] ?? '—';
-        const colorClass = AERO_CLASSES[t.activeAero] ?? 'bg-muted text-muted-foreground border-border';
+        const colorClass =
+          AERO_CLASSES[t.activeAero] ??
+          'bg-muted text-muted-foreground border-border';
         aeroRef.current.textContent = label;
         aeroRef.current.className = cn(
           'rounded-full border px-3 py-1 text-2xs font-black tracking-widest transition-colors duration-200',
@@ -118,7 +127,11 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
   }, [driverNo, teamColor]);
 
   return (
-    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden px-3 py-2 md:px-4 md:py-3" role="status" aria-label="Live telemetry data">
+    <div
+      className="relative flex h-full flex-col items-center justify-center overflow-hidden px-3 py-2 md:px-4 md:py-3"
+      role="status"
+      aria-label="Live telemetry data"
+    >
       {/* Team color ambient glow */}
       <div
         className="pointer-events-none absolute inset-0 opacity-5"
@@ -162,7 +175,9 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
 
         {/* Throttle */}
         <div className="flex items-center gap-2">
-          <span className="w-7 shrink-0 text-right text-2xs font-bold text-emerald-500 md:w-8 md:text-xs">THR</span>
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-emerald-500 md:w-8 md:text-xs">
+            THR
+          </span>
           <div className="h-4 flex-1 overflow-hidden rounded-full bg-emerald-500/8 md:h-5 xl:h-6">
             <div
               ref={throttleBarRef}
@@ -173,7 +188,9 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
 
         {/* Brake */}
         <div className="flex items-center gap-2">
-          <span className="w-7 shrink-0 text-right text-2xs font-bold text-red-500 md:w-8 md:text-xs">BRK</span>
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-red-500 md:w-8 md:text-xs">
+            BRK
+          </span>
           <div
             ref={brakeWrapRef}
             className="h-4 flex-1 rounded-full bg-red-500 opacity-12 transition-all duration-75 md:h-5 xl:h-6"
@@ -182,7 +199,9 @@ export function TelemetryHud({ driverNo, teamColor }: TelemetryHudProps) {
 
         {/* RPM LED segments */}
         <div className="flex items-center gap-2">
-          <span className="w-7 shrink-0 text-right text-2xs font-bold text-muted-foreground md:w-8 md:text-xs">RPM</span>
+          <span className="w-7 shrink-0 text-right text-2xs font-bold text-muted-foreground md:w-8 md:text-xs">
+            RPM
+          </span>
           <div ref={rpmSegmentsRef} className="flex flex-1 gap-px md:gap-0.5">
             {Array.from({ length: RPM_SEGMENT_COUNT }).map((_, i) => (
               <div

@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Moon,
   Sun,
@@ -19,9 +20,23 @@ import { SESSION_SHORT } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { countryFlag } from '@/modules/timing/utils';
 
+const Q_PART_LABEL: Record<number, string> = {
+  1: 'Q1',
+  2: 'Q2',
+  3: 'Q3',
+} as const;
+
+const LAYOUT_TRANSITION = { duration: 0.2, ease: 'easeOut' } as const;
+
 export function LiveHeader() {
-  const { isConnected, header, isDetailedView, setDetailedView } =
-    useLiveTiming();
+  const {
+    isConnected,
+    header,
+    isDetailedView,
+    setDetailedView,
+    isQualifying,
+    sessionPart,
+  } = useLiveTiming();
   const { theme, setTheme } = useTheme();
   const {
     meetingName,
@@ -38,10 +53,22 @@ export function LiveHeader() {
 
   return (
     <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
+      {/* LEFT — badge + session identity.
+          overflow-hidden is kept on the outer div; layout animation is applied to
+          the inner siblings so they slide smoothly when the badge appears/clears. */}
       <div className="flex items-center gap-2 overflow-hidden md:gap-3">
-        {trackStatus && <TrackStatusBadge status={trackStatus} />}
+        {/* AnimatePresence drives the badge entrance/exit. TrackStatusBadge returns null
+            for Green ('1'), so it disappears automatically when the track goes clear. */}
+        <AnimatePresence>
+          {trackStatus && <TrackStatusBadge status={trackStatus} />}
+        </AnimatePresence>
 
-        <div className="flex items-center gap-1.5 lg:hidden">
+        {/* Mobile: flag + short session label */}
+        <motion.div
+          layout
+          transition={{ layout: LAYOUT_TRANSITION }}
+          className="flex items-center gap-1.5 lg:hidden"
+        >
           {flag && (
             <span className="text-base" role="img" aria-label={countryCode}>
               {flag}
@@ -49,14 +76,25 @@ export function LiveHeader() {
           )}
           {sessionTypeName && (
             <span className="text-2xs font-extrabold uppercase tracking-wider text-foreground/60">
-              {SESSION_SHORT[sessionTypeName] ?? sessionTypeName}
+              {isQualifying && Q_PART_LABEL[sessionPart]
+                ? Q_PART_LABEL[sessionPart]
+                : (SESSION_SHORT[sessionTypeName] ?? sessionTypeName)}
             </span>
           )}
-        </div>
+        </motion.div>
 
-        <div className="hidden min-w-0 items-center gap-2.5 lg:flex">
+        {/* Desktop: flag + full meeting name + session type */}
+        <motion.div
+          layout
+          transition={{ layout: LAYOUT_TRANSITION }}
+          className="hidden min-w-0 items-center gap-2.5 lg:flex"
+        >
           {flag && (
-            <span className="shrink-0 text-lg" role="img" aria-label={countryCode}>
+            <span
+              className="shrink-0 text-lg"
+              role="img"
+              aria-label={countryCode}
+            >
               {flag}
             </span>
           )}
@@ -66,13 +104,16 @@ export function LiveHeader() {
             </span>
             {sessionTypeName && (
               <span className="truncate text-2xs font-semibold uppercase leading-tight tracking-wider text-foreground/50 md:text-xs">
-                {sessionTypeName}
+                {isQualifying && Q_PART_LABEL[sessionPart]
+                  ? `${sessionTypeName} — ${Q_PART_LABEL[sessionPart]}`
+                  : sessionTypeName}
               </span>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
+      {/* CENTER — timer, absolutely positioned to stay centred regardless of left/right widths */}
       <div className="absolute left-1/2 -translate-x-1/2">
         <LapTimer
           isRace={isRace}
@@ -81,69 +122,79 @@ export function LiveHeader() {
         />
       </div>
 
+      {/* RIGHT — weather, controls, live indicator */}
       <div className="flex items-center gap-2 md:gap-3">
-        {weather && (
-          <div className="hidden items-center gap-2 lg:flex">
-            <div className="flex items-center gap-1.5">
-              <Thermometer className="size-3.5 text-orange-500" />
-              <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat(INTL_LOCALE, {
-                  maximumFractionDigits: WEATHER_FRACTION_DIGITS,
-                }).format(weather.airTemp)}
-                <span className="text-foreground/50">&#176;C</span>
-              </span>
-            </div>
-
-            <div className="h-3 w-px bg-border" />
-
-            <div className="flex items-center gap-1.5">
-              <Droplets className="size-3.5 text-blue-500" />
-              <span className="text-xs font-bold tabular-nums text-foreground">
-                {Math.round(weather.humidity)}
-                <span className="text-foreground/50">%</span>
-              </span>
-            </div>
-
-            <div className="h-3 w-px bg-border" />
-
-            <div className="flex items-center gap-1.5">
-              <Wind className="size-3.5 text-sky-500" />
-              <span className="text-xs font-bold tabular-nums text-foreground">
-                {Intl.NumberFormat(INTL_LOCALE, {
-                  maximumFractionDigits: WEATHER_FRACTION_DIGITS,
-                }).format(weather.windSpeed)}
-                <span className="text-foreground/50"> m/s</span>
-              </span>
-            </div>
-
-            <div className="hidden items-center gap-2 2xl:flex">
-              <div className="h-3 w-px bg-border" />
-
+        {/* Weather fades in as a unit once the first WeatherData frame arrives. */}
+        <AnimatePresence>
+          {weather && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="hidden items-center gap-2 lg:flex"
+            >
               <div className="flex items-center gap-1.5">
-                <Thermometer className="size-3.5 text-red-400" />
+                <Thermometer className="size-3.5 text-orange-500" />
                 <span className="text-xs font-bold tabular-nums text-foreground">
                   {Intl.NumberFormat(INTL_LOCALE, {
                     maximumFractionDigits: WEATHER_FRACTION_DIGITS,
-                  }).format(weather.trackTemp)}
-                  <span className="text-foreground/50">°C</span>
+                  }).format(weather.airTemp)}
+                  <span className="text-foreground/50">&#176;C</span>
                 </span>
               </div>
 
               <div className="h-3 w-px bg-border" />
 
               <div className="flex items-center gap-1.5">
-                <Navigation
-                  className="size-3.5 text-sky-400"
-                  style={{ transform: `rotate(${weather.windDirection}deg)` }}
-                />
+                <Droplets className="size-3.5 text-blue-500" />
                 <span className="text-xs font-bold tabular-nums text-foreground">
-                  {Math.round(weather.windDirection)}
-                  <span className="text-foreground/50">°</span>
+                  {Math.round(weather.humidity)}
+                  <span className="text-foreground/50">%</span>
                 </span>
               </div>
-            </div>
-          </div>
-        )}
+
+              <div className="h-3 w-px bg-border" />
+
+              <div className="flex items-center gap-1.5">
+                <Wind className="size-3.5 text-sky-500" />
+                <span className="text-xs font-bold tabular-nums text-foreground">
+                  {Intl.NumberFormat(INTL_LOCALE, {
+                    maximumFractionDigits: WEATHER_FRACTION_DIGITS,
+                  }).format(weather.windSpeed)}
+                  <span className="text-foreground/50"> m/s</span>
+                </span>
+              </div>
+
+              <div className="hidden items-center gap-2 2xl:flex">
+                <div className="h-3 w-px bg-border" />
+
+                <div className="flex items-center gap-1.5">
+                  <Thermometer className="size-3.5 text-red-400" />
+                  <span className="text-xs font-bold tabular-nums text-foreground">
+                    {Intl.NumberFormat(INTL_LOCALE, {
+                      maximumFractionDigits: WEATHER_FRACTION_DIGITS,
+                    }).format(weather.trackTemp)}
+                    <span className="text-foreground/50">°C</span>
+                  </span>
+                </div>
+
+                <div className="h-3 w-px bg-border" />
+
+                <div className="flex items-center gap-1.5">
+                  <Navigation
+                    className="size-3.5 text-sky-400 transform-[rotate(var(--wind-dir))]"
+                    style={{ '--wind-dir': `${weather.windDirection}deg` } as React.CSSProperties}
+                  />
+                  <span className="text-xs font-bold tabular-nums text-foreground">
+                    {Math.round(weather.windDirection)}
+                    <span className="text-foreground/50">°</span>
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           type="button"

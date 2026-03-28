@@ -5,7 +5,11 @@ import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { NO_POSITION } from '@/constants/numbers';
-import type { UITimingRow, SectorColorClass, UISpeedEntry } from '@/modules/timing/types';
+import type {
+  UITimingRow,
+  SectorColorClass,
+  UISpeedEntry,
+} from '@/modules/timing/types';
 
 const PLACEHOLDER = 'text-muted-foreground/20';
 
@@ -210,12 +214,14 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
             Speed Traps
           </span>
           <div className="flex flex-col gap-1.5 rounded-md bg-white/5 p-2">
-            {([
-              ['Speed Trap', row.speeds.st],
-              ['Finish Line', row.speeds.fl],
-              ['Intermediate 1', row.speeds.i1],
-              ['Intermediate 2', row.speeds.i2],
-            ] as [string, UISpeedEntry][]).map(([label, entry]) => (
+            {(
+              [
+                ['Speed Trap', row.speeds.st],
+                ['Finish Line', row.speeds.fl],
+                ['Intermediate 1', row.speeds.i1],
+                ['Intermediate 2', row.speeds.i2],
+              ] as [string, UISpeedEntry][]
+            ).map(([label, entry]) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="text-2xs text-muted-foreground">{label}</span>
                 <span
@@ -256,7 +262,9 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
                     {stint.totalLaps}L
                   </span>
                   {stint.isNew && (
-                    <span className="text-2xs font-bold text-emerald-500">N</span>
+                    <span className="text-2xs font-bold text-emerald-500">
+                      N
+                    </span>
                   )}
                 </div>
               ))}

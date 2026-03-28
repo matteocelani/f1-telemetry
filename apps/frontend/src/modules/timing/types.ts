@@ -1,4 +1,32 @@
-import type { TyreCompound, TrackStatusCode, SpeedEntry } from '@f1-telemetry/core';
+import type { TyreCompound, TrackStatusCode } from '@f1-telemetry/core';
+
+// Track Map
+
+export interface CircuitData {
+  circuitId: string;
+  name: string;
+  viewBox: string;
+  path: string;
+  points: [number, number][];
+  startOffset: number;
+}
+
+export interface TrackDot {
+  driverNo: string;
+  tla: string;
+  teamColor: string;
+  percent: number;
+  inPit: boolean;
+  isWrapping: boolean;
+}
+
+export interface TrackMapData {
+  dots: TrackDot[];
+  circuit: CircuitData | null;
+  hasData: boolean;
+  isSegmentMode: boolean;
+  startPercent: number;
+}
 
 export type SectorColorClass = 'purple' | 'green' | 'yellow' | 'none';
 
@@ -114,15 +142,36 @@ export interface UIRaceControlMessage {
   icon: RCIconVariant;
 }
 
+// Telemetry
+
+export type TelemetrySeries = 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+
+export interface TelemetrySeriesMeta {
+  key: TelemetrySeries;
+  label: string;
+  description: string;
+  color: string;
+}
+
 // Context
 
 export type CenterTab = 'map' | 'raceControl' | 'telemetry';
+
+export interface TimingRowsResult {
+  rows: UITimingRow[];
+  sessionPart: number;
+  eliminationPos: number | null;
+  isQualifying: boolean;
+}
 
 export interface LiveTimingContextType {
   isConnected: boolean;
   isLive: boolean;
   header: UIHeaderData;
   rows: UITimingRow[];
+  sessionPart: number;
+  eliminationPos: number | null;
+  isQualifying: boolean;
   selectedDriver: string | null;
   setSelectedDriver: (driverNo: string | null) => void;
   activeTab: CenterTab;

@@ -12,7 +12,10 @@ interface RaceControlFeedProps {
   hideTitle?: boolean;
 }
 
-export function RaceControlFeed({ className, hideTitle }: RaceControlFeedProps) {
+export function RaceControlFeed({
+  className,
+  hideTitle,
+}: RaceControlFeedProps) {
   const messages = useRaceControlFeed();
   const hasMessages = messages.length > 0;
 
@@ -32,7 +35,11 @@ export function RaceControlFeed({ className, hideTitle }: RaceControlFeedProps) 
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto" role="log" aria-label="Race control messages">
+      <div
+        className="flex-1 overflow-y-auto"
+        role="log"
+        aria-label="Race control messages"
+      >
         {hasMessages ? (
           <div className="divide-y divide-border">
             <AnimatePresence initial={false}>
@@ -52,9 +59,7 @@ export function RaceControlFeed({ className, hideTitle }: RaceControlFeedProps) 
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
             <Radio className="size-5 text-muted-foreground/40" />
-            <p className="text-xs text-muted-foreground">
-              No messages yet
-            </p>
+            <p className="text-xs text-muted-foreground">No messages yet</p>
           </div>
         )}
       </div>

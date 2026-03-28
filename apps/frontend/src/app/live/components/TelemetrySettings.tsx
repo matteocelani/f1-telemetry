@@ -15,27 +15,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { TelemetrySeries } from '@/modules/timing/hooks/useTelemetryChart';
+import { MAX_VISIBLE_SERIES, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
+import type { TelemetrySeries } from '@/modules/timing/types';
 
 type ViewMode = 'hud' | 'trace';
-
-interface SeriesOption {
-  key: TelemetrySeries;
-  label: string;
-  description: string;
-  color: string;
-}
-
-const SERIES_OPTIONS = [
-  { key: 'speed', label: 'Speed', description: 'Vehicle speed (km/h)', color: '#3b82f6' },
-  { key: 'throttle', label: 'Throttle', description: 'Throttle input (0–100%)', color: '#22c55e' },
-  { key: 'brake', label: 'Brake', description: 'Brake pressure (0–100%)', color: '#ef4444' },
-  { key: 'rpm', label: 'RPM', description: 'Engine RPM', color: '#f59e0b' },
-  { key: 'gear', label: 'Gear', description: 'Current gear (1–8)', color: '#a855f7' },
-  { key: 'activeAero', label: 'Aero Mode', description: '0 Corner · 1 Straight · 2 Overtake', color: '#06b6d4' },
-] as const satisfies readonly SeriesOption[];
-
-const MAX_VISIBLE_SERIES = 4;
 
 interface TelemetrySettingsProps {
   viewMode: ViewMode;
@@ -93,7 +76,12 @@ export function TelemetrySettings({
         </div>
 
         {/* Series selection — only relevant in Trace */}
-        <div className={cn('flex flex-col gap-1.5', viewMode !== 'trace' && 'opacity-30 pointer-events-none')}>
+        <div
+          className={cn(
+            'flex flex-col gap-1.5',
+            viewMode !== 'trace' && 'opacity-30 pointer-events-none'
+          )}
+        >
           <div className="flex items-center gap-2">
             <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
               Chart Series
@@ -114,7 +102,7 @@ export function TelemetrySettings({
           </div>
 
           <div className="flex flex-col gap-1">
-            {SERIES_OPTIONS.map((opt) => {
+            {TELEMETRY_SERIES_META.map((opt) => {
               const isActive = visible.has(opt.key);
               const isOnlyOne = isActive && visible.size === 1;
               const isDisabled = !isActive && isAtMax;
@@ -139,18 +127,27 @@ export function TelemetrySettings({
                     }}
                   />
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-foreground">{opt.label}</span>
-                    <span className="text-2xs text-muted-foreground">{opt.description}</span>
+                    <span className="text-xs font-bold text-foreground">
+                      {opt.label}
+                    </span>
+                    <span className="text-2xs text-muted-foreground">
+                      {opt.description}
+                    </span>
                   </div>
                   <div className="ml-auto">
                     <div
                       className={cn(
                         'size-4 rounded border-2 transition-colors',
-                        isActive ? 'border-foreground bg-foreground' : 'border-muted-foreground'
+                        isActive
+                          ? 'border-foreground bg-foreground'
+                          : 'border-muted-foreground'
                       )}
                     >
                       {isActive && (
-                        <svg viewBox="0 0 16 16" className="size-full text-background">
+                        <svg
+                          viewBox="0 0 16 16"
+                          className="size-full text-background"
+                        >
                           <path
                             d="M4 8l3 3 5-6"
                             fill="none"

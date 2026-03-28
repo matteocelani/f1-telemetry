@@ -805,7 +805,8 @@
         301.4,
         453.3
       ]
-    ]
+    ],
+    "startOffset": 8.5
   },
   {
     "circuitId": "chinese_gp_2026",
@@ -1613,7 +1614,8 @@
         462.1,
         220.6
       ]
-    ]
+    ],
+    "startOffset": 77
   },
   {
     "circuitId": "japanese_gp_2026",
@@ -2421,7 +2423,8 @@
         221.3,
         264
       ]
-    ]
+    ],
+    "startOffset": 58.5
   },
   {
     "circuitId": "bahrain_gp_2026",
@@ -3229,7 +3232,8 @@
         74.5,
         111.7
       ]
-    ]
+    ],
+    "startOffset": 64.5
   },
   {
     "circuitId": "saudi_arabian_gp_2026",
@@ -4037,7 +4041,8 @@
         449.1,
         130.5
       ]
-    ]
+    ],
+    "startOffset": 70
   },
   {
     "circuitId": "miami_gp_2026",
@@ -4845,7 +4850,8 @@
         251,
         216.7
       ]
-    ]
+    ],
+    "startOffset": 97
   },
   {
     "circuitId": "canadian_gp_2026",
@@ -5653,7 +5659,8 @@
         223.9,
         52
       ]
-    ]
+    ],
+    "startOffset": 42
   },
   {
     "circuitId": "monaco_gp_2026",
@@ -6461,7 +6468,8 @@
         122.1,
         246.1
       ]
-    ]
+    ],
+    "startOffset": 30
   },
   {
     "circuitId": "spanish_gp_2026_bcn",
@@ -7269,7 +7277,8 @@
         441.3,
         94.4
       ]
-    ]
+    ],
+    "startOffset": 5.5
   },
   {
     "circuitId": "austrian_gp_2026",
@@ -8077,7 +8086,8 @@
         464.7,
         371.6
       ]
-    ]
+    ],
+    "startOffset": 3
   },
   {
     "circuitId": "british_gp_2026",
@@ -8885,7 +8895,8 @@
         181.5,
         266.1
       ]
-    ]
+    ],
+    "startOffset": 94
   },
   {
     "circuitId": "belgian_gp_2026",
@@ -9693,7 +9704,8 @@
         169.1,
         23.3
       ]
-    ]
+    ],
+    "startOffset": 95
   },
   {
     "circuitId": "hungarian_gp_2026",
@@ -10501,7 +10513,8 @@
         45.3,
         289.7
       ]
-    ]
+    ],
+    "startOffset": 86
   },
   {
     "circuitId": "dutch_gp_2026",
@@ -11309,7 +11322,8 @@
         16.7,
         371.4
       ]
-    ]
+    ],
+    "startOffset": 9
   },
   {
     "circuitId": "italian_gp_2026",
@@ -12117,7 +12131,8 @@
         211.2,
         51.2
       ]
-    ]
+    ],
+    "startOffset": 69.5
   },
   {
     "circuitId": "spanish_gp_2026_madrid",
@@ -12925,7 +12940,8 @@
         131.7,
         338
       ]
-    ]
+    ],
+    "startOffset": 0
   },
   {
     "circuitId": "azerbaijan_gp_2026",
@@ -13733,7 +13749,8 @@
         465,
         59
       ]
-    ]
+    ],
+    "startOffset": 92
   },
   {
     "circuitId": "singapore_gp_2026",
@@ -14541,7 +14558,8 @@
         458.1,
         325.1
       ]
-    ]
+    ],
+    "startOffset": 5
   },
   {
     "circuitId": "united_states_gp_2026",
@@ -15349,7 +15367,8 @@
         464.8,
         50.1
       ]
-    ]
+    ],
+    "startOffset": 52
   },
   {
     "circuitId": "mexico_gp_2026",
@@ -16157,7 +16176,8 @@
         59.5,
         74.1
       ]
-    ]
+    ],
+    "startOffset": 1
   },
   {
     "circuitId": "sao_paulo_gp_2026",
@@ -16965,7 +16985,8 @@
         227.5,
         17.1
       ]
-    ]
+    ],
+    "startOffset": 19.5
   },
   {
     "circuitId": "las_vegas_gp_2026",
@@ -17773,7 +17794,8 @@
         39.1,
         307.9
       ]
-    ]
+    ],
+    "startOffset": 24.5
   },
   {
     "circuitId": "qatar_gp_2026",
@@ -18581,7 +18603,8 @@
         245.4,
         403.5
       ]
-    ]
+    ],
+    "startOffset": 12
   },
   {
     "circuitId": "abu_dhabi_gp_2026",
@@ -19389,6 +19412,7 @@
         188.1,
         165.2
       ]
-    ]
+    ],
+    "startOffset": 94
   }
 ]
