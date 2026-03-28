@@ -259,7 +259,10 @@ export class F1Client {
     this.reconnectAttempts++;
 
     Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`);
-    setTimeout(() => this.connect(), delay);
+    setTimeout(() => {
+      this.isReconnecting = false;
+      this.connect();
+    }, delay);
   }
 
   public get isConnectedToF1(): boolean {
