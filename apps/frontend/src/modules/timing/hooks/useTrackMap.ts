@@ -468,11 +468,12 @@ export function useTrackMap(): TrackMapData {
       const driverSegCount = countSegments(timing);
       if (driverSegCount !== totalSegments) continue;
 
-      // Detect new lap via NumberOfLaps — reset motion state to allow position wrap.
       const currentLap = timing.NumberOfLaps ?? 0;
       let motion: DriverMotionState | undefined = motionRef.current[driverNo];
-      const isNewLap = !!motion && currentLap > motion.lapCount;
-      if (isNewLap) {
+
+      // Reset only on confirmed lap change to prevent false backwards teleports.
+      const isLapReset = !!motion && currentLap > motion.lapCount;
+      if (isLapReset) {
         delete motionRef.current[driverNo];
         motion = undefined;
       }
@@ -505,8 +506,8 @@ export function useTrackMap(): TrackMapData {
         rawPercent = base + ratio * (nextBound - base);
       }
 
-      // Forward-only: dots NEVER move backwards. No exceptions.
-      if (rawPercent < motion.prevPercent) {
+      // Forward-only within a lap: hold position if data would move backwards.
+      if (!isLapReset && rawPercent < motion.prevPercent) {
         rawPercent = motion.prevPercent;
       }
       motion.prevPercent = rawPercent;
@@ -517,7 +518,7 @@ export function useTrackMap(): TrackMapData {
         teamColor: meta.color,
         percent: rawPercent,
         inPit: false,
-        isWrapping: isNewLap ?? false,
+        isWrapping: isLapReset ?? false,
       });
     }
 
