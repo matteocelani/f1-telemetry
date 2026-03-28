@@ -175,13 +175,13 @@ async function connect(): Promise<void> {
             for (const channelName in feedPayload) {
               processUpdate(channelName, feedPayload[channelName]);
             }
-          } catch {
-            // Skip malformed bulk payloads
+          } catch (err) {
+            Logger.warn('Malformed bulk feed payload, skipping', err);
           }
         }
       }
-    } catch {
-      // Skip malformed frames
+    } catch (err) {
+      Logger.warn('Malformed SignalR frame, skipping', err);
     }
   });
 
