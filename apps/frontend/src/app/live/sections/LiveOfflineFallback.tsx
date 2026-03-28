@@ -16,14 +16,8 @@ import {
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import { getNextSession } from '@/modules/timing/utils';
+import type { CircuitData } from '@/modules/timing/types';
 import type { RaceEntry } from '@/types/data';
-
-interface CircuitData {
-  circuitId: string;
-  name: string;
-  viewBox: string;
-  path: string;
-}
 
 interface RacingDot {
   id: string;

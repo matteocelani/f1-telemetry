@@ -5,14 +5,17 @@ import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
-import type { CircuitData, TrackDot, TrackMapData } from '@/modules/timing/types';
+import type {
+  CircuitData,
+  TrackDot,
+  TrackMapData,
+} from '@/modules/timing/types';
 import { useSession } from '@/store/session';
 import { useTiming } from '@/store/timing';
 import { useTrack } from '@/store/track';
 import type { RaceEntry } from '@/types/data';
 
 // Interfaces
-
 interface TeamData {
   colorHex: string;
   textColorHex: string;
@@ -41,7 +44,6 @@ interface GpsDriverState {
 }
 
 // Constants
-
 const MIN_DRIVERS_FOR_BOUNDS = 5;
 const WARMUP_FRAMES = 3;
 // Curvature weight: 0 = uniform, 4 = ~5x density in corners vs straights.
@@ -54,7 +56,6 @@ const MAX_INTERPOLATION_RATIO = 0.85;
 const PERCENT_PER_LAP = 100;
 
 // Module-level data
-
 const races = calendarData as unknown as RaceEntry[];
 const circuits = circuitsData as unknown as CircuitData[];
 const teams = teamsData as Record<string, TeamData>;
@@ -78,16 +79,23 @@ function findCurrentRace(): RaceEntry | undefined {
   const WEEKEND_BUFFER_MS = WEEKEND_BUFFER_DAYS * MS_PER_DAY;
 
   for (const race of races) {
-    const sessionDates = Object.values(race.sessions).map((s) => new Date(s).getTime());
+    const sessionDates = Object.values(race.sessions).map((s) =>
+      new Date(s).getTime()
+    );
     const earliest = Math.min(...sessionDates);
     const latest = Math.max(...sessionDates);
-    if (now >= earliest - WEEKEND_BUFFER_MS && now <= latest + WEEKEND_BUFFER_MS) {
+    if (
+      now >= earliest - WEEKEND_BUFFER_MS &&
+      now <= latest + WEEKEND_BUFFER_MS
+    ) {
       return race;
     }
   }
 
   return races.find((race) => {
-    const sessionDates = Object.values(race.sessions).map((s) => new Date(s).getTime());
+    const sessionDates = Object.values(race.sessions).map((s) =>
+      new Date(s).getTime()
+    );
     return Math.max(...sessionDates) > now;
   });
 }
@@ -108,7 +116,12 @@ function findCircuit(meetingName: string | undefined): CircuitData | null {
   return circuits.find((c) => c.circuitId === race!.id) ?? null;
 }
 
-function parseViewBox(vb: string): { x: number; y: number; w: number; h: number } {
+function parseViewBox(vb: string): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
   const [x, y, w, h] = vb.split(' ').map(Number);
   return { x, y, w, h };
 }
@@ -237,7 +250,11 @@ function parseLapTimeMs(value: string | undefined): number | null {
   return null;
 }
 
-function findNearestPointIndex(x: number, y: number, points: [number, number][]): number {
+function findNearestPointIndex(
+  x: number,
+  y: number,
+  points: [number, number][]
+): number {
   let bestDist = Infinity;
   let bestIdx = 0;
   for (let i = 0; i < points.length; i++) {
@@ -266,7 +283,9 @@ function flattenSegmentStatuses(driver: DriverTiming): number[] {
   for (const sKey of Object.keys(sectors).sort()) {
     const segs = sectors[sKey]?.Segments;
     if (!segs) continue;
-    for (const segKey of Object.keys(segs).sort((a, b) => Number(a) - Number(b))) {
+    for (const segKey of Object.keys(segs).sort(
+      (a, b) => Number(a) - Number(b)
+    )) {
       statuses.push(segs[segKey]?.Status ?? 0);
     }
   }
@@ -342,8 +361,10 @@ export function useTrackMap(): TrackMapData {
   if (gpsEntries.length === 0 && transformRef.current) {
     transformRef.current = null;
     accumRef.current = {
-      minX: Infinity, maxX: -Infinity,
-      minY: Infinity, maxY: -Infinity,
+      minX: Infinity,
+      maxX: -Infinity,
+      minY: Infinity,
+      maxY: -Infinity,
       frameCount: 0,
     };
   }
@@ -359,8 +380,10 @@ export function useTrackMap(): TrackMapData {
     acc.frameCount++;
 
     if (acc.frameCount >= WARMUP_FRAMES && circuit.points.length > 0) {
-      let pathMinX = Infinity, pathMaxX = -Infinity;
-      let pathMinY = Infinity, pathMaxY = -Infinity;
+      let pathMinX = Infinity,
+        pathMaxX = -Infinity;
+      let pathMinY = Infinity,
+        pathMaxY = -Infinity;
       for (const [px, py] of circuit.points) {
         pathMinX = Math.min(pathMinX, px);
         pathMaxX = Math.max(pathMaxX, px);
@@ -385,7 +408,13 @@ export function useTrackMap(): TrackMapData {
 
   return useMemo(() => {
     if (!circuit || arcDistances.length === 0) {
-      return { dots: [], circuit, hasData: false, isSegmentMode: false, startPercent: startOffsetPct };
+      return {
+        dots: [],
+        circuit,
+        hasData: false,
+        isSegmentMode: false,
+        startPercent: startOffsetPct,
+      };
     }
 
     // GPS mode: use real Position.z coordinates when available
@@ -396,8 +425,10 @@ export function useTrackMap(): TrackMapData {
         const timing = timingLines[driverNo];
         const currentLap = timing?.NumberOfLaps ?? 0;
 
-        const approxX = transform.svgCX + (pos.X - transform.gpsCX) * transform.scale;
-        const approxY = transform.svgCY - (pos.Y - transform.gpsCY) * transform.scale;
+        const approxX =
+          transform.svgCX + (pos.X - transform.gpsCX) * transform.scale;
+        const approxY =
+          transform.svgCY - (pos.Y - transform.gpsCY) * transform.scale;
         const idx = findNearestPointIndex(approxX, approxY, circuit.points);
         const rawPercent = indexToPercent(idx, arcDistances);
 
@@ -407,8 +438,12 @@ export function useTrackMap(): TrackMapData {
         const prevCumulative = prev?.prevCumulative ?? candidate;
 
         // Forward-only: GPS spatial jitter cannot produce a valid candidate < prevCumulative.
-        const cumulative = candidate >= prevCumulative ? candidate : prevCumulative;
-        gpsMotionRef.current[driverNo] = { prevCumulative: cumulative, lapCount: currentLap };
+        const cumulative =
+          candidate >= prevCumulative ? candidate : prevCumulative;
+        gpsMotionRef.current[driverNo] = {
+          prevCumulative: cumulative,
+          lapCount: currentLap,
+        };
 
         return {
           driverNo,
@@ -419,13 +454,25 @@ export function useTrackMap(): TrackMapData {
           isWrapping: false,
         };
       });
-      return { dots, circuit, hasData: true, isSegmentMode: false, startPercent: startOffsetPct };
+      return {
+        dots,
+        circuit,
+        hasData: true,
+        isSegmentMode: false,
+        startPercent: startOffsetPct,
+      };
     }
 
     // Segment mode: estimate from TimingData when GPS is unavailable
     const timingEntries = Object.entries(timingLines);
     if (timingEntries.length === 0 || boundaries.length === 0) {
-      return { dots: [], circuit, hasData: false, isSegmentMode: true, startPercent: startOffsetPct };
+      return {
+        dots: [],
+        circuit,
+        hasData: false,
+        isSegmentMode: true,
+        startPercent: startOffsetPct,
+      };
     }
 
     const now = Date.now();
@@ -453,7 +500,8 @@ export function useTrackMap(): TrackMapData {
         continue;
       }
 
-      let motion: DriverMotionState | undefined = segMotionRef.current[driverNo];
+      let motion: DriverMotionState | undefined =
+        segMotionRef.current[driverNo];
 
       // Reset only on confirmed lap change to prevent false backwards teleports.
       const isLapReset = !!motion && currentLap > motion.lapCount;
@@ -477,15 +525,23 @@ export function useTrackMap(): TrackMapData {
         if (!motion) {
           // No segment data yet after lap reset: anchor visually to the lap entry boundary.
           dots.push({
-            driverNo, tla: meta.tla, teamColor: meta.color,
-            percent: currentLap * PERCENT_PER_LAP + (boundaries[1] ?? boundaries[0]),
-            inPit: false, isWrapping: false,
+            driverNo,
+            tla: meta.tla,
+            teamColor: meta.color,
+            percent:
+              currentLap * PERCENT_PER_LAP + (boundaries[1] ?? boundaries[0]),
+            inPit: false,
+            isWrapping: false,
           });
         } else {
           // Data gap or regression: hold the last confirmed cumulative position.
           dots.push({
-            driverNo, tla: meta.tla, teamColor: meta.color,
-            percent: motion.prevCumulative, inPit: false, isWrapping: false,
+            driverNo,
+            tla: meta.tla,
+            teamColor: meta.color,
+            percent: motion.prevCumulative,
+            inPit: false,
+            isWrapping: false,
           });
         }
         continue;
@@ -494,8 +550,10 @@ export function useTrackMap(): TrackMapData {
       if (!motion || motion.segIndex !== leadSeg) {
         const lapTime = parseLapTimeMs(timing.LastLapTime?.Value);
         // Carry prevCumulative forward on segment advancement; seed from boundary on first init.
-        const prevCumulative = motion?.prevCumulative
-          ?? (currentLap * PERCENT_PER_LAP + (boundaries[leadSeg + 1] ?? boundaries[0]));
+        const prevCumulative =
+          motion?.prevCumulative ??
+          currentLap * PERCENT_PER_LAP +
+            (boundaries[leadSeg + 1] ?? boundaries[0]);
         motion = {
           segIndex: leadSeg,
           segChangeTime: now,
@@ -515,18 +573,23 @@ export function useTrackMap(): TrackMapData {
         const nextBound = boundaries[leadSeg + 2];
         const segArcSpan = nextBound - base;
         const totalArcSpan = boundaries[boundaries.length - 1] - boundaries[0];
-        const segDurationMs = totalArcSpan > 0
-          ? motion.lapTimeMs * (segArcSpan / totalArcSpan)
-          : motion.lapTimeMs / totalSegments;
+        const segDurationMs =
+          totalArcSpan > 0
+            ? motion.lapTimeMs * (segArcSpan / totalArcSpan)
+            : motion.lapTimeMs / totalSegments;
         const elapsed = now - motion.segChangeTime;
-        const ratio = Math.min(elapsed / segDurationMs, MAX_INTERPOLATION_RATIO);
+        const ratio = Math.min(
+          elapsed / segDurationMs,
+          MAX_INTERPOLATION_RATIO
+        );
         rawCumulative = baseCumulative + ratio * segArcSpan;
       }
 
       // Strictly monotonic: clamp any backward movement to the last known cumulative position.
-      const cumulative = rawCumulative >= motion.prevCumulative
-        ? rawCumulative
-        : motion.prevCumulative;
+      const cumulative =
+        rawCumulative >= motion.prevCumulative
+          ? rawCumulative
+          : motion.prevCumulative;
       motion.prevCumulative = cumulative;
 
       dots.push({
@@ -539,6 +602,21 @@ export function useTrackMap(): TrackMapData {
       });
     }
 
-    return { dots, circuit, hasData: dots.length > 0, isSegmentMode: true, startPercent: startOffsetPct };
-  }, [gpsEntries, timingLines, circuit, hasGps, arcDistances, boundaries, totalSegments, startOffsetPct]);
+    return {
+      dots,
+      circuit,
+      hasData: dots.length > 0,
+      isSegmentMode: true,
+      startPercent: startOffsetPct,
+    };
+  }, [
+    gpsEntries,
+    timingLines,
+    circuit,
+    hasGps,
+    arcDistances,
+    boundaries,
+    totalSegments,
+    startOffsetPct,
+  ]);
 }

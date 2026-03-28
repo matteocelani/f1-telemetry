@@ -12,11 +12,10 @@ import {
 import { cn } from '@/lib/utils';
 import { TelemetryHud } from '@/app/live/components/TelemetryHud';
 import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
+import { MAX_VISIBLE_SERIES, SERIES_COLORS, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
-import {
-  useTelemetryChart,
-  type TelemetrySeries,
-} from '@/modules/timing/hooks/useTelemetryChart';
+import { useTelemetryChart } from '@/modules/timing/hooks/useTelemetryChart';
+import type { TelemetrySeries } from '@/modules/timing/types';
 
 type ViewMode = 'hud' | 'trace';
 
@@ -40,7 +39,7 @@ export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
       const next = new Set(prev);
       if (next.has(series)) {
         if (next.size > 1) next.delete(series);
-      } else if (next.size < 4) {
+      } else if (next.size < MAX_VISIBLE_SERIES) {
         next.add(series);
       }
       return next;
@@ -137,36 +136,18 @@ export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
   );
 }
 
-const SERIES_COLORS = {
-  speed: '#3b82f6',
-  throttle: '#22c55e',
-  brake: '#ef4444',
-  rpm: '#f59e0b',
-  gear: '#a855f7',
-  activeAero: '#06b6d4',
-} as const satisfies Record<TelemetrySeries, string>;
-
-const SERIES_LABELS = {
-  speed: 'Speed',
-  throttle: 'Throttle',
-  brake: 'Brake',
-  rpm: 'RPM',
-  gear: 'Gear',
-  activeAero: 'Aero',
-} as const satisfies Record<TelemetrySeries, string>;
-
 function TraceLegend({ visible }: { visible: Set<TelemetrySeries> }) {
-  const active = [...visible];
+  const active = TELEMETRY_SERIES_META.filter((s) => visible.has(s.key));
   return (
     <div className="flex shrink-0 items-center gap-3 px-3 py-1">
-      {active.map((key) => (
-        <div key={key} className="flex items-center gap-1">
+      {active.map((s) => (
+        <div key={s.key} className="flex items-center gap-1">
           <div
             className="size-2 rounded-full"
-            style={{ backgroundColor: SERIES_COLORS[key] }}
+            style={{ backgroundColor: SERIES_COLORS[s.key] }}
           />
           <span className="text-2xs font-bold text-muted-foreground">
-            {SERIES_LABELS[key]}
+            {s.label}
           </span>
         </div>
       ))}

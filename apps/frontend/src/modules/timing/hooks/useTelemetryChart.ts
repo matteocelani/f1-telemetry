@@ -1,78 +1,32 @@
 import { useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
+import { MS_PER_SECOND } from '@/constants/numbers';
+import { SERIES_COLORS } from '@/modules/timing/constants';
+import type { TelemetrySeries } from '@/modules/timing/types';
 import { useTelemetry } from '@/store/telemetry';
 
-const MS_PER_SECOND = 1000;
-const MIN_CHART_HEIGHT = 80;
+export type { TelemetrySeries };
 
-export type TelemetrySeries =
-  | 'speed'
-  | 'throttle'
-  | 'brake'
-  | 'rpm'
-  | 'gear'
-  | 'activeAero';
+const MIN_CHART_HEIGHT = 80;
 
 interface SeriesDef {
   key: TelemetrySeries;
-  field: 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+  field: TelemetrySeries;
   color: string;
   fill: string;
   scale: string;
   width: number;
 }
 
-const ALL_SERIES = [
-  {
-    key: 'speed',
-    field: 'speed',
-    color: '#3b82f6',
-    fill: 'rgba(59,130,246,0.12)',
-    scale: 'speed',
-    width: 2,
-  },
-  {
-    key: 'throttle',
-    field: 'throttle',
-    color: '#22c55e',
-    fill: '',
-    scale: 'pct',
-    width: 1.5,
-  },
-  {
-    key: 'brake',
-    field: 'brake',
-    color: '#ef4444',
-    fill: '',
-    scale: 'pct',
-    width: 1.5,
-  },
-  {
-    key: 'rpm',
-    field: 'rpm',
-    color: '#f59e0b',
-    fill: '',
-    scale: 'rpm',
-    width: 1,
-  },
-  {
-    key: 'gear',
-    field: 'gear',
-    color: '#a855f7',
-    fill: '',
-    scale: 'gear',
-    width: 2,
-  },
-  {
-    key: 'activeAero',
-    field: 'activeAero',
-    color: '#06b6d4',
-    fill: '',
-    scale: 'aero',
-    width: 2,
-  },
-] as const satisfies readonly SeriesDef[];
+const ALL_SERIES: readonly SeriesDef[] = [
+  { key: 'speed', field: 'speed', color: SERIES_COLORS.speed, fill: 'rgba(59,130,246,0.12)', scale: 'speed', width: 2 },
+  { key: 'throttle', field: 'throttle', color: SERIES_COLORS.throttle, fill: '', scale: 'pct', width: 1.5 },
+  { key: 'brake', field: 'brake', color: SERIES_COLORS.brake, fill: '', scale: 'pct', width: 1.5 },
+  { key: 'rpm', field: 'rpm', color: SERIES_COLORS.rpm, fill: '', scale: 'rpm', width: 1 },
+  { key: 'gear', field: 'gear', color: SERIES_COLORS.gear, fill: '', scale: 'gear', width: 2 },
+  { key: 'activeAero', field: 'activeAero', color: SERIES_COLORS.activeAero, fill: '', scale: 'aero', width: 2 },
+];
 
 const COLOR_GRID = 'rgba(128,128,128,0.1)';
 
@@ -163,10 +117,7 @@ function buildOpts(
   };
 }
 
-/**
- * Renders a speed trace with throttle/brake fill bands.
- * Bypasses React via imperative Zustand subscription → uPlot.setData().
- */
+// Bypasses React via imperative Zustand subscription → uPlot.setData() for zero-overhead updates.
 export function useTelemetryChart(
   driverNo: string | null,
   visibleSeries: Set<TelemetrySeries>

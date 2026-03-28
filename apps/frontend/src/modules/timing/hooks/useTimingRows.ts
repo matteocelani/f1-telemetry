@@ -8,6 +8,7 @@ import type {
   QualifyingStats,
   DriverTiming,
 } from '@f1-telemetry/core';
+import { NO_POSITION } from '@/constants/numbers';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
 import { QUALIFYING_SESSION_TYPES } from '@/modules/timing/constants';
@@ -43,7 +44,6 @@ const EMPTY_SPEEDS: UIDriverSpeeds = {
   i1: EMPTY_SPEED,
   i2: EMPTY_SPEED,
 };
-const NO_POSITION = 999;
 
 function resolveSectorColor(
   value: string | undefined,

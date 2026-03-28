@@ -142,6 +142,17 @@ export interface UIRaceControlMessage {
   icon: RCIconVariant;
 }
 
+// Telemetry
+
+export type TelemetrySeries = 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+
+export interface TelemetrySeriesMeta {
+  key: TelemetrySeries;
+  label: string;
+  description: string;
+  color: string;
+}
+
 // Context
 
 export type CenterTab = 'map' | 'raceControl' | 'telemetry';

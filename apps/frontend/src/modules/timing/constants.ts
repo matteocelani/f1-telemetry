@@ -1,3 +1,22 @@
+import type { TelemetrySeries, TelemetrySeriesMeta } from '@/modules/timing/types';
+
+// Telemetry series
+
+export const MAX_VISIBLE_SERIES = 4;
+
+export const TELEMETRY_SERIES_META = [
+  { key: 'speed' as TelemetrySeries, label: 'Speed', description: 'Vehicle speed (km/h)', color: '#3b82f6' },
+  { key: 'throttle' as TelemetrySeries, label: 'Throttle', description: 'Throttle input (0–100%)', color: '#22c55e' },
+  { key: 'brake' as TelemetrySeries, label: 'Brake', description: 'Brake pressure (0–100%)', color: '#ef4444' },
+  { key: 'rpm' as TelemetrySeries, label: 'RPM', description: 'Engine RPM', color: '#f59e0b' },
+  { key: 'gear' as TelemetrySeries, label: 'Gear', description: 'Current gear (1–8)', color: '#a855f7' },
+  { key: 'activeAero' as TelemetrySeries, label: 'Aero', description: '0 Corner · 1 Straight · 2 Overtake', color: '#06b6d4' },
+] as const satisfies readonly TelemetrySeriesMeta[];
+
+export const SERIES_COLORS = Object.fromEntries(
+  TELEMETRY_SERIES_META.map((s) => [s.key, s.color])
+) as Record<TelemetrySeries, string>;
+
 // Session type grouping
 export const RACE_SESSION_TYPES = ['Race', 'Sprint'] as const;
 export const TIMED_SESSION_TYPES = ['Practice', 'Qualifying', 'Sprint Qualifying'] as const;
