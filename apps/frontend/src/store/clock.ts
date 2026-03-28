@@ -12,6 +12,10 @@ interface ClockState {
 export const useClock = create<ClockState>((set) => ({
   clock: null,
   serverReceivedAt: null,
-  setClock: (data) => set({ clock: data, serverReceivedAt: Date.now() }),
+  setClock: (data) =>
+    set({
+      clock: data,
+      serverReceivedAt: data.Utc ? new Date(data.Utc).getTime() : Date.now(),
+    }),
   reset: () => set({ clock: null, serverReceivedAt: null }),
 }));
