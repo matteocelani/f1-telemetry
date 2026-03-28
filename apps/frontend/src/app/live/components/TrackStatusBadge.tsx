@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import type { TrackStatusCode } from '@f1-telemetry/core';
 import { cn } from '@/lib/utils';
 
@@ -8,9 +9,13 @@ interface TrackStatusBadgeProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
-  TrackStatusCode,
-  { label: string; shortLabel: string; bg: string; text: string; dot: string }
+// Green ('1') is the default running state and adds visual noise — it is intentionally
+// excluded. The badge only renders for anomalous conditions.
+const STATUS_CONFIG: Partial<
+  Record<
+    TrackStatusCode,
+    { label: string; shortLabel: string; bg: string; text: string; dot: string }
+  >
 > = {
   '1': {
     label: 'GREEN',
@@ -58,9 +63,14 @@ const STATUS_CONFIG: Record<
 
 export function TrackStatusBadge({ status, className }: TrackStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
+  if (!config) return null;
 
   return (
-    <span
+    <motion.span
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.85 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-extrabold uppercase tracking-wider',
         config.bg,
@@ -71,6 +81,6 @@ export function TrackStatusBadge({ status, className }: TrackStatusBadgeProps) {
       <span className={cn('size-1.5 shrink-0 rounded-full', config.dot)} />
       <span className="hidden md:inline">{config.label}</span>
       <span className="md:hidden">{config.shortLabel}</span>
-    </span>
+    </motion.span>
   );
 }

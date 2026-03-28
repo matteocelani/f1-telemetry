@@ -74,7 +74,16 @@ export function dispatchToStores(frame: F1Frame): void {
   const { channel, data } = frame;
 
   switch (channel) {
-    case CHANNELS.TIMING_F1:
+    case CHANNELS.TIMING_F1: {
+      const payload = data as TimingDataPayload;
+      useTiming.getState().updateLines(payload.Lines);
+      // SessionPart/NoEntries only arrive on TimingDataF1, not on TimingData
+      if (payload.SessionPart !== undefined) {
+        useTiming.getState().setSessionMeta(payload.SessionPart, payload.NoEntries ?? []);
+      }
+      break;
+    }
+
     case CHANNELS.TIMING: {
       const payload = data as TimingDataPayload;
       useTiming.getState().updateLines(payload.Lines);

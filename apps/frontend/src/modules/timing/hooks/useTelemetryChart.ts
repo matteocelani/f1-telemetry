@@ -6,7 +6,13 @@ import { useTelemetry } from '@/store/telemetry';
 const MS_PER_SECOND = 1000;
 const MIN_CHART_HEIGHT = 80;
 
-export type TelemetrySeries = 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+export type TelemetrySeries =
+  | 'speed'
+  | 'throttle'
+  | 'brake'
+  | 'rpm'
+  | 'gear'
+  | 'activeAero';
 
 interface SeriesDef {
   key: TelemetrySeries;
@@ -18,12 +24,54 @@ interface SeriesDef {
 }
 
 const ALL_SERIES = [
-  { key: 'speed', field: 'speed', color: '#3b82f6', fill: 'rgba(59,130,246,0.12)', scale: 'speed', width: 2 },
-  { key: 'throttle', field: 'throttle', color: '#22c55e', fill: '', scale: 'pct', width: 1.5 },
-  { key: 'brake', field: 'brake', color: '#ef4444', fill: '', scale: 'pct', width: 1.5 },
-  { key: 'rpm', field: 'rpm', color: '#f59e0b', fill: '', scale: 'rpm', width: 1 },
-  { key: 'gear', field: 'gear', color: '#a855f7', fill: '', scale: 'gear', width: 2 },
-  { key: 'activeAero', field: 'activeAero', color: '#06b6d4', fill: '', scale: 'aero', width: 2 },
+  {
+    key: 'speed',
+    field: 'speed',
+    color: '#3b82f6',
+    fill: 'rgba(59,130,246,0.12)',
+    scale: 'speed',
+    width: 2,
+  },
+  {
+    key: 'throttle',
+    field: 'throttle',
+    color: '#22c55e',
+    fill: '',
+    scale: 'pct',
+    width: 1.5,
+  },
+  {
+    key: 'brake',
+    field: 'brake',
+    color: '#ef4444',
+    fill: '',
+    scale: 'pct',
+    width: 1.5,
+  },
+  {
+    key: 'rpm',
+    field: 'rpm',
+    color: '#f59e0b',
+    fill: '',
+    scale: 'rpm',
+    width: 1,
+  },
+  {
+    key: 'gear',
+    field: 'gear',
+    color: '#a855f7',
+    fill: '',
+    scale: 'gear',
+    width: 2,
+  },
+  {
+    key: 'activeAero',
+    field: 'activeAero',
+    color: '#06b6d4',
+    fill: '',
+    scale: 'aero',
+    width: 2,
+  },
 ] as const satisfies readonly SeriesDef[];
 
 const COLOR_GRID = 'rgba(128,128,128,0.1)';
@@ -65,14 +113,18 @@ function fillPlugin(seriesIdx: number, fillColor: string): uPlot.Plugin {
   };
 }
 
-function buildOpts(width: number, height: number, active: SeriesDef[]): uPlot.Options {
+function buildOpts(
+  width: number,
+  height: number,
+  active: SeriesDef[]
+): uPlot.Options {
   return {
     width,
     height,
     cursor: { show: true, drag: { x: false, y: false } },
     legend: { show: false },
     plugins: active
-      .map((s, i) => s.fill ? fillPlugin(i + 1, s.fill) : null)
+      .map((s, i) => (s.fill ? fillPlugin(i + 1, s.fill) : null))
       .filter((p): p is uPlot.Plugin => p !== null),
     series: [
       {},
@@ -96,7 +148,13 @@ function buildOpts(width: number, height: number, active: SeriesDef[]): uPlot.Op
     ],
     scales: {
       x: { time: false },
-      speed: { auto: true, range: (_u: uPlot, min: number, max: number) => [Math.max(0, min - 20), max + 10] },
+      speed: {
+        auto: true,
+        range: (_u: uPlot, min: number, max: number) => [
+          Math.max(0, min - 20),
+          max + 10,
+        ],
+      },
       pct: { min: 0, max: 100 },
       rpm: { auto: true },
       gear: { min: 0, max: 9 },
@@ -127,15 +185,24 @@ export function useTelemetryChart(
   useEffect(() => {
     if (!wrapRef.current || !canvasRef.current || !driverNo) return;
 
-    const currentActive = ALL_SERIES.filter((s) => visibleRef.current.has(s.key));
+    const currentActive = ALL_SERIES.filter((s) =>
+      visibleRef.current.has(s.key)
+    );
     const wrap = wrapRef.current;
     const canvas = canvasRef.current;
     const w = wrap.clientWidth;
     const h = Math.max(wrap.clientHeight, MIN_CHART_HEIGHT);
     sizeRef.current = { w, h };
 
-    const emptyData: uPlot.AlignedData = [[], ...currentActive.map(() => [] as number[])];
-    uplotRef.current = new uPlot(buildOpts(w, h, currentActive), emptyData, canvas);
+    const emptyData: uPlot.AlignedData = [
+      [],
+      ...currentActive.map(() => [] as number[]),
+    ];
+    uplotRef.current = new uPlot(
+      buildOpts(w, h, currentActive),
+      emptyData,
+      canvas
+    );
 
     const unsubscribe = useTelemetry.subscribe((state) => {
       const carData = state.cars[driverNo];

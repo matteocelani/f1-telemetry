@@ -63,7 +63,7 @@ function ColumnHeader({
 }
 
 export function TimingTower({ className }: TimingTowerProps) {
-  const { rows, isDetailedView } = useLiveTiming();
+  const { rows, isDetailedView, eliminationPos } = useLiveTiming();
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
 
   const isExpanded = expandedDriver !== null;
@@ -176,6 +176,15 @@ export function TimingTower({ className }: TimingTowerProps) {
                   </motion.div>
                 )}
               </AnimatePresence>
+              {eliminationPos !== null && row.position === eliminationPos && (
+                <div className="flex items-center gap-2 px-2 py-0.5">
+                  <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
+                  <span className="shrink-0 text-2xs font-bold uppercase tracking-widest text-red-500/70">
+                    ELIM
+                  </span>
+                  <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
+                </div>
+              )}
             </motion.div>
           ))}
         </div>

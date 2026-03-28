@@ -5,32 +5,17 @@ import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
+import type { CircuitData, TrackDot, TrackMapData } from '@/modules/timing/types';
 import { useSession } from '@/store/session';
 import { useTiming } from '@/store/timing';
 import { useTrack } from '@/store/track';
 import type { RaceEntry } from '@/types/data';
 
-interface CircuitData {
-  circuitId: string;
-  name: string;
-  viewBox: string;
-  path: string;
-  points: [number, number][];
-  startOffset: number;
-}
+// Interfaces
 
 interface TeamData {
   colorHex: string;
   textColorHex: string;
-}
-
-export interface TrackDot {
-  driverNo: string;
-  tla: string;
-  teamColor: string;
-  percent: number;
-  inPit: boolean;
-  isWrapping: boolean;
 }
 
 interface AffineTransform {
@@ -41,24 +26,34 @@ interface AffineTransform {
   scale: number;
 }
 
-export interface TrackMapData {
-  dots: TrackDot[];
-  circuit: CircuitData | null;
-  hasData: boolean;
-  isSegmentMode: boolean;
-  startPercent: number;
+interface DriverMotionState {
+  segIndex: number;
+  segChangeTime: number;
+  lapTimeMs: number;
+  // Cumulative (lapCount * PERCENT_PER_LAP + rawPercent): strictly increases, never wraps.
+  prevCumulative: number;
+  lapCount: number;
 }
+
+interface GpsDriverState {
+  prevCumulative: number;
+  lapCount: number;
+}
+
+// Constants
 
 const MIN_DRIVERS_FOR_BOUNDS = 5;
 const WARMUP_FRAMES = 3;
-
 // Curvature weight: 0 = uniform, 4 = ~5x density in corners vs straights.
 const CURVATURE_WEIGHT = 4;
 const SMOOTHING_WINDOW = 5;
-
 const DEFAULT_LAP_TIME_MS = 90_000;
 // Cap forward interpolation to prevent overshooting into the next segment.
 const MAX_INTERPOLATION_RATIO = 0.85;
+// Each completed lap advances the cumulative offset-distance by exactly one full path length.
+const PERCENT_PER_LAP = 100;
+
+// Module-level data
 
 const races = calendarData as unknown as RaceEntry[];
 const circuits = circuitsData as unknown as CircuitData[];
@@ -74,6 +69,8 @@ for (const driver of driversData) {
     };
   }
 }
+
+// Helper functions
 
 function findCurrentRace(): RaceEntry | undefined {
   const now = Date.now();
@@ -108,7 +105,7 @@ function findCircuit(meetingName: string | undefined): CircuitData | null {
   }
 
   if (!race) return null;
-  return circuits.find((c) => c.circuitId === race.id) ?? null;
+  return circuits.find((c) => c.circuitId === race!.id) ?? null;
 }
 
 function parseViewBox(vb: string): { x: number; y: number; w: number; h: number } {
@@ -161,8 +158,6 @@ function computeSmoothedCurvatures(points: [number, number][]): number[] {
   return smoothed;
 }
 
-// Curvature-weighted boundary mapping: denser in corners, sparser on straights.
-
 // Linear interpolation lookup in a monotonic table.
 function lerpLookup(xs: number[], ys: number[], targetX: number): number {
   for (let i = 1; i < xs.length; i++) {
@@ -175,7 +170,7 @@ function lerpLookup(xs: number[], ys: number[], targetX: number): number {
   return ys[ys.length - 1];
 }
 
-// Monotonically increasing boundaries; values > 100% wrap via CSS offset-distance.
+// Curvature-weighted boundary mapping: denser in corners, sparser on straights.
 function computeSegmentBoundaries(
   points: [number, number][],
   arcDist: number[],
@@ -217,48 +212,6 @@ function computeSegmentBoundaries(
   }
 
   return boundaries;
-}
-
-// Longest contiguous non-zero run avoids stale segments from deep-merge cache.
-function getLeadingSegmentIndex(driver: DriverTiming): number {
-  const sectors = driver.Sectors;
-  if (!sectors) return -1;
-
-  const statuses: number[] = [];
-  for (const sKey of Object.keys(sectors).sort()) {
-    const segs = sectors[sKey]?.Segments;
-    if (!segs) continue;
-    for (const segKey of Object.keys(segs).sort((a, b) => Number(a) - Number(b))) {
-      statuses.push(segs[segKey]?.Status ?? 0);
-    }
-  }
-
-  if (statuses.length === 0) return -1;
-
-  // Find the longest contiguous run of non-zero segments
-  let bestStart = -1;
-  let bestLen = 0;
-  let runStart = -1;
-  let runLen = 0;
-
-  for (let i = 0; i < statuses.length; i++) {
-    if (statuses[i] > 0) {
-      if (runStart === -1) runStart = i;
-      runLen++;
-      if (runLen > bestLen) {
-        bestLen = runLen;
-        bestStart = runStart;
-      }
-    } else {
-      runStart = -1;
-      runLen = 0;
-    }
-  }
-
-  if (bestStart === -1) return -1;
-
-  // The driver is at the END of the longest contiguous block
-  return bestStart + bestLen - 1;
 }
 
 function countSegments(driver: DriverTiming): number {
@@ -305,13 +258,35 @@ function indexToPercent(index: number, distances: number[]): number {
   return (distances[index] / total) * 100;
 }
 
-interface DriverMotionState {
-  segIndex: number;
-  segChangeTime: number;
-  lapTimeMs: number;
-  prevPercent: number;
-  lapCount: number;
+// Flattens all sector segment statuses into a single ordered array.
+function flattenSegmentStatuses(driver: DriverTiming): number[] {
+  const sectors = driver.Sectors;
+  if (!sectors) return [];
+  const statuses: number[] = [];
+  for (const sKey of Object.keys(sectors).sort()) {
+    const segs = sectors[sKey]?.Segments;
+    if (!segs) continue;
+    for (const segKey of Object.keys(segs).sort((a, b) => Number(a) - Number(b))) {
+      statuses.push(segs[segKey]?.Status ?? 0);
+    }
+  }
+  return statuses;
 }
+
+// Returns the furthest consecutive non-zero segment index; stale deep-merge data from prior laps is unreachable.
+function scanForwardSegment(statuses: number[], startIndex: number): number {
+  let furthest = startIndex;
+  for (let i = startIndex; i < statuses.length; i++) {
+    if (statuses[i] > 0) {
+      furthest = i;
+    } else {
+      break;
+    }
+  }
+  return furthest;
+}
+
+// Hook
 
 export function useTrackMap(): TrackMapData {
   const positions = useTrack((s) => s.positions);
@@ -325,7 +300,8 @@ export function useTrackMap(): TrackMapData {
     maxY: -Infinity,
     frameCount: 0,
   });
-  const motionRef = useRef<Record<string, DriverMotionState>>({});
+  const segMotionRef = useRef<Record<string, DriverMotionState>>({});
+  const gpsMotionRef = useRef<Record<string, GpsDriverState>>({});
 
   const circuit = useMemo(
     () => findCircuit(sessionInfo?.Meeting?.Name),
@@ -417,14 +393,28 @@ export function useTrackMap(): TrackMapData {
     if (hasGps && transform) {
       const dots: TrackDot[] = gpsEntries.map(([driverNo, pos]) => {
         const meta = DRIVER_META[driverNo];
+        const timing = timingLines[driverNo];
+        const currentLap = timing?.NumberOfLaps ?? 0;
+
         const approxX = transform.svgCX + (pos.X - transform.gpsCX) * transform.scale;
         const approxY = transform.svgCY - (pos.Y - transform.gpsCY) * transform.scale;
         const idx = findNearestPointIndex(approxX, approxY, circuit.points);
+        const rawPercent = indexToPercent(idx, arcDistances);
+
+        // Cumulative unwrap: a new lap contributes >= 100, so lap crossings are always forward.
+        const candidate = currentLap * PERCENT_PER_LAP + rawPercent;
+        const prev = gpsMotionRef.current[driverNo];
+        const prevCumulative = prev?.prevCumulative ?? candidate;
+
+        // Forward-only: GPS spatial jitter cannot produce a valid candidate < prevCumulative.
+        const cumulative = candidate >= prevCumulative ? candidate : prevCumulative;
+        gpsMotionRef.current[driverNo] = { prevCumulative: cumulative, lapCount: currentLap };
+
         return {
           driverNo,
           tla: meta?.tla ?? driverNo,
           teamColor: meta?.color ?? '#888888',
-          percent: indexToPercent(idx, arcDistances),
+          percent: cumulative,
           inPit: false,
           isWrapping: false,
         };
@@ -447,53 +437,80 @@ export function useTrackMap(): TrackMapData {
       const meta = DRIVER_META[driverNo];
       if (!meta) continue;
 
+      const currentLap = timing.NumberOfLaps ?? 0;
+
       if (timing.InPit) {
         // Reset motion state so the driver starts fresh when leaving the pit
-        delete motionRef.current[driverNo];
+        delete segMotionRef.current[driverNo];
         dots.push({
           driverNo,
           tla: meta.tla,
           teamColor: meta.color,
-          percent: startOffsetPct,
+          percent: currentLap * PERCENT_PER_LAP + startOffsetPct,
           inPit: true,
           isWrapping: false,
         });
         continue;
       }
 
-      const leadSeg = getLeadingSegmentIndex(timing);
-      if (leadSeg < 0) continue;
+      let motion: DriverMotionState | undefined = segMotionRef.current[driverNo];
+
+      // Reset only on confirmed lap change to prevent false backwards teleports.
+      const isLapReset = !!motion && currentLap > motion.lapCount;
+      if (isLapReset) {
+        delete segMotionRef.current[driverNo];
+        motion = undefined;
+      }
 
       // Skip drivers whose segment count doesn't match the precomputed boundaries
       const driverSegCount = countSegments(timing);
       if (driverSegCount !== totalSegments) continue;
 
-      const currentLap = timing.NumberOfLaps ?? 0;
-      let motion: DriverMotionState | undefined = motionRef.current[driverNo];
+      const statuses = flattenSegmentStatuses(timing);
 
-      // Reset only on confirmed lap change to prevent false backwards teleports.
-      const isLapReset = !!motion && currentLap > motion.lapCount;
-      if (isLapReset) {
-        delete motionRef.current[driverNo];
-        motion = undefined;
+      // Start scan from 0 after lap reset; stale segments from prior laps exist only at higher indices.
+      const scanStart = motion?.segIndex ?? 0;
+      const leadSeg = scanForwardSegment(statuses, scanStart);
+      const hasValidSegment = statuses.length > 0 && statuses[leadSeg] > 0;
+
+      if (!hasValidSegment) {
+        if (!motion) {
+          // No segment data yet after lap reset: anchor visually to the lap entry boundary.
+          dots.push({
+            driverNo, tla: meta.tla, teamColor: meta.color,
+            percent: currentLap * PERCENT_PER_LAP + (boundaries[1] ?? boundaries[0]),
+            inPit: false, isWrapping: false,
+          });
+        } else {
+          // Data gap or regression: hold the last confirmed cumulative position.
+          dots.push({
+            driverNo, tla: meta.tla, teamColor: meta.color,
+            percent: motion.prevCumulative, inPit: false, isWrapping: false,
+          });
+        }
+        continue;
       }
 
       if (!motion || motion.segIndex !== leadSeg) {
         const lapTime = parseLapTimeMs(timing.LastLapTime?.Value);
+        // Carry prevCumulative forward on segment advancement; seed from boundary on first init.
+        const prevCumulative = motion?.prevCumulative
+          ?? (currentLap * PERCENT_PER_LAP + (boundaries[leadSeg + 1] ?? boundaries[0]));
         motion = {
           segIndex: leadSeg,
           segChangeTime: now,
           lapTimeMs: lapTime ?? motion?.lapTimeMs ?? DEFAULT_LAP_TIME_MS,
-          prevPercent: motion?.prevPercent ?? boundaries[0],
+          prevCumulative,
           lapCount: currentLap,
         };
-        motionRef.current[driverNo] = motion;
+        segMotionRef.current[driverNo] = motion;
       }
 
       const base = boundaries[leadSeg + 1] ?? boundaries[boundaries.length - 1];
+      const baseCumulative = currentLap * PERCENT_PER_LAP + base;
 
       // Duration proportional to arc-length span, not uniform across segments.
-      let rawPercent = base;
+      let rawCumulative = baseCumulative;
       if (leadSeg + 2 < boundaries.length) {
         const nextBound = boundaries[leadSeg + 2];
         const segArcSpan = nextBound - base;
@@ -503,22 +520,22 @@ export function useTrackMap(): TrackMapData {
           : motion.lapTimeMs / totalSegments;
         const elapsed = now - motion.segChangeTime;
         const ratio = Math.min(elapsed / segDurationMs, MAX_INTERPOLATION_RATIO);
-        rawPercent = base + ratio * (nextBound - base);
+        rawCumulative = baseCumulative + ratio * segArcSpan;
       }
 
-      // Forward-only within a lap: hold position if data would move backwards.
-      if (!isLapReset && rawPercent < motion.prevPercent) {
-        rawPercent = motion.prevPercent;
-      }
-      motion.prevPercent = rawPercent;
+      // Strictly monotonic: clamp any backward movement to the last known cumulative position.
+      const cumulative = rawCumulative >= motion.prevCumulative
+        ? rawCumulative
+        : motion.prevCumulative;
+      motion.prevCumulative = cumulative;
 
       dots.push({
         driverNo,
         tla: meta.tla,
         teamColor: meta.color,
-        percent: rawPercent,
+        percent: cumulative,
         inPit: false,
-        isWrapping: isLapReset ?? false,
+        isWrapping: false,
       });
     }
 

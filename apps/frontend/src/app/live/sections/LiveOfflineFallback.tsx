@@ -99,8 +99,7 @@ export function LiveOfflineFallback() {
 
   const isUpcoming = diffMs > 0;
   const isLive = !isUpcoming && elapsedMs < SESSION_ENDED_THRESHOLD_MS;
-  const isSessionEnded =
-    !isUpcoming && elapsedMs >= SESSION_ENDED_THRESHOLD_MS;
+  const isSessionEnded = !isUpcoming && elapsedMs >= SESSION_ENDED_THRESHOLD_MS;
 
   const circuitSvg = circuits.find((c) => c.circuitId === race.id);
 

@@ -2,10 +2,14 @@
 
 import { Info, MapPin } from 'lucide-react';
 import type { TrackStatusCode } from '@f1-telemetry/core';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 
 interface TrackMapProps {
   className?: string;
@@ -35,7 +39,9 @@ const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
 export function TrackMap({ className }: TrackMapProps) {
   const { dots, circuit, isSegmentMode, startPercent } = useTrackMap();
   const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
-  const transitionMs = isSegmentMode ? SEGMENT_TRANSITION_MS : GPS_TRANSITION_MS;
+  const transitionMs = isSegmentMode
+    ? SEGMENT_TRANSITION_MS
+    : GPS_TRANSITION_MS;
 
   const trackStatusColor = header.trackStatus
     ? TRACK_STATUS_COLORS[header.trackStatus]
@@ -61,7 +67,10 @@ export function TrackMap({ className }: TrackMapProps) {
 
   return (
     <div
-      className={cn('relative flex h-full items-center justify-center p-2', className)}
+      className={cn(
+        'relative flex h-full items-center justify-center p-2',
+        className
+      )}
     >
       {isSegmentMode && visibleDots.length > 0 && (
         <Popover>
@@ -77,7 +86,9 @@ export function TrackMap({ className }: TrackMapProps) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
                 <Info className="size-3.5 shrink-0 text-amber-500" />
-                <span className="text-sm font-semibold text-foreground">Estimated positions</span>
+                <span className="text-sm font-semibold text-foreground">
+                  Estimated positions
+                </span>
               </div>
               <p className="text-xs leading-relaxed text-foreground">
                 The live stream is not sending GPS position data. Car positions
@@ -160,11 +171,7 @@ export function TrackMap({ className }: TrackMapProps) {
               }
             >
               {isSelected && (
-                <circle
-                  r={GLOW_RADIUS}
-                  fill={dot.teamColor}
-                  opacity="0.25"
-                />
+                <circle r={GLOW_RADIUS} fill={dot.teamColor} opacity="0.25" />
               )}
               <circle r={radius} fill={dot.teamColor} />
               <text

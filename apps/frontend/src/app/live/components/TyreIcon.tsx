@@ -24,7 +24,12 @@ interface TyreIconProps {
   showAge?: boolean;
 }
 
-export function TyreIcon({ compound, age = 0, isNew, showAge = true }: TyreIconProps) {
+export function TyreIcon({
+  compound,
+  age = 0,
+  isNew,
+  showAge = true,
+}: TyreIconProps) {
   const config = TYRE_CONFIG[compound];
 
   return (
@@ -41,8 +46,18 @@ export function TyreIcon({ compound, age = 0, isNew, showAge = true }: TyreIconP
           aria-hidden="true"
         >
           <circle cx="86" cy="86" r="86" className="fill-black" />
-          <path d={LEFT_ARC} stroke="currentColor" strokeWidth="20" fill="none" />
-          <path d={RIGHT_ARC} stroke="currentColor" strokeWidth="20" fill="none" />
+          <path
+            d={LEFT_ARC}
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+          />
+          <path
+            d={RIGHT_ARC}
+            stroke="currentColor"
+            strokeWidth="20"
+            fill="none"
+          />
         </svg>
         <span className="relative text-xs font-black text-white">
           {config.label}

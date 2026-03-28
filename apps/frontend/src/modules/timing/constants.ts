@@ -1,6 +1,7 @@
 // Session type grouping
 export const RACE_SESSION_TYPES = ['Race', 'Sprint'] as const;
 export const TIMED_SESSION_TYPES = ['Practice', 'Qualifying', 'Sprint Qualifying'] as const;
+export const QUALIFYING_SESSION_TYPES = ['Qualifying', 'Sprint Qualifying'] as const;
 
 // Short labels for mobile display
 export const SESSION_SHORT: Record<string, string> = {

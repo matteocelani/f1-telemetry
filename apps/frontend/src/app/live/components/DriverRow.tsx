@@ -65,7 +65,10 @@ export const DriverRow = memo(function DriverRow({
       {/* POS */}
       <div className="flex w-7 shrink-0 items-center gap-1 md:w-8 md:gap-1.5">
         <div
-          className={cn('h-6 rounded-sm shrink-0 md:h-7', isPodium ? 'w-1.5' : 'w-1')}
+          className={cn(
+            'h-6 rounded-sm shrink-0 md:h-7',
+            isPodium ? 'w-1.5' : 'w-1'
+          )}
           style={{ backgroundColor: row.teamColor }}
         />
         <span
@@ -87,7 +90,12 @@ export const DriverRow = memo(function DriverRow({
       </span>
 
       {/* TYRE */}
-      <div className={cn('hidden w-16 shrink-0 md:block', !hasTimingData && 'opacity-30')}>
+      <div
+        className={cn(
+          'hidden w-16 shrink-0 md:block',
+          !hasTimingData && 'opacity-30'
+        )}
+      >
         <TyreIcon
           compound={row.currentTyre}
           age={row.tyreAge}
@@ -125,7 +133,11 @@ export const DriverRow = memo(function DriverRow({
       </div>
 
       {/* GAP — separate column, visible md → lg only */}
-      <div className={cn('hidden min-w-16 flex-1 shrink-0 text-right md:block lg:hidden')}>
+      <div
+        className={cn(
+          'hidden min-w-16 flex-1 shrink-0 text-right md:block lg:hidden'
+        )}
+      >
         {!hasTimingData ? (
           <span className={cn('text-sm font-bold tabular-nums', GHOST)}>
             +0.000
@@ -212,7 +224,9 @@ export const DriverRow = memo(function DriverRow({
               hasTimingData ? 'text-muted-foreground' : GHOST
             )}
           >
-            {s.previousValue || '\u00A0'}
+            {s.previousValue && s.previousValue !== s.value
+              ? s.previousValue
+              : '\u00A0'}
           </span>
           <SegmentDots segments={s.segments} />
         </div>

@@ -36,7 +36,9 @@ export function SectorBlock({ sector, label }: SectorBlockProps) {
           prev {sector.previousValue}
         </span>
       ) : (
-        <span className="text-2xs text-muted-foreground/20">prev {DEFAULT_SECTOR_TIME}</span>
+        <span className="text-2xs text-muted-foreground/20">
+          prev {DEFAULT_SECTOR_TIME}
+        </span>
       )}
       <SegmentDots segments={sector.segments} />
     </div>

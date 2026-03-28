@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SEGMENT_STATUS } from '@f1-telemetry/core';
-import type { SectorTime, StintData, SpeedEntry } from '@f1-telemetry/core';
+import type {
+  SectorTime,
+  StintData,
+  SpeedEntry,
+  QualifyingStats,
+  DriverTiming,
+} from '@f1-telemetry/core';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
+import { QUALIFYING_SESSION_TYPES } from '@/modules/timing/constants';
 import type {
   UITimingRow,
   UISector,
@@ -12,7 +19,9 @@ import type {
   UIStint,
   SectorColorClass,
   SegmentColorClass,
+  TimingRowsResult,
 } from '@/modules/timing/types';
+import { useSession } from '@/store/session';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
 import type { DriverMeta, TeamsMap } from '@/types/data';
@@ -21,9 +30,19 @@ const staticDrivers = driversData as unknown as DriverMeta[];
 const teams = teamsData as unknown as TeamsMap;
 
 const SECTOR_INDICES = ['0', '1', '2'] as const;
-const EMPTY_SECTOR: UISector = { value: '', previousValue: '', color: 'none', segments: [] };
+const EMPTY_SECTOR: UISector = {
+  value: '',
+  previousValue: '',
+  color: 'none',
+  segments: [],
+};
 const EMPTY_SPEED: UISpeedEntry = { value: '', color: 'none' };
-const EMPTY_SPEEDS: UIDriverSpeeds = { fl: EMPTY_SPEED, st: EMPTY_SPEED, i1: EMPTY_SPEED, i2: EMPTY_SPEED };
+const EMPTY_SPEEDS: UIDriverSpeeds = {
+  fl: EMPTY_SPEED,
+  st: EMPTY_SPEED,
+  i1: EMPTY_SPEED,
+  i2: EMPTY_SPEED,
+};
 const NO_POSITION = 999;
 
 function resolveSectorColor(
@@ -83,11 +102,26 @@ function buildSpeedEntry(entry: SpeedEntry | undefined): UISpeedEntry {
   if (!entry?.Value) return EMPTY_SPEED;
   return {
     value: entry.Value,
-    color: resolveSectorColor(entry.Value, entry.PersonalFastest, entry.OverallFastest),
+    color: resolveSectorColor(
+      entry.Value,
+      entry.PersonalFastest,
+      entry.OverallFastest
+    ),
   };
 }
 
-function buildSpeeds(timing: { Speeds?: { FL?: SpeedEntry; ST?: SpeedEntry; I1?: SpeedEntry; I2?: SpeedEntry } } | undefined): UIDriverSpeeds {
+function buildSpeeds(
+  timing:
+    | {
+        Speeds?: {
+          FL?: SpeedEntry;
+          ST?: SpeedEntry;
+          I1?: SpeedEntry;
+          I2?: SpeedEntry;
+        };
+      }
+    | undefined
+): UIDriverSpeeds {
   if (!timing?.Speeds) return EMPTY_SPEEDS;
   const s = timing.Speeds;
   return {
@@ -98,7 +132,9 @@ function buildSpeeds(timing: { Speeds?: { FL?: SpeedEntry; ST?: SpeedEntry; I1?:
   };
 }
 
-function buildStintHistory(stintsRaw: Record<string, StintData> | undefined): UIStint[] {
+function buildStintHistory(
+  stintsRaw: Record<string, StintData> | undefined
+): UIStint[] {
   if (!stintsRaw) return [];
   return Object.keys(stintsRaw)
     .sort((a, b) => Number(a) - Number(b))
@@ -109,19 +145,110 @@ function buildStintHistory(stintsRaw: Record<string, StintData> | undefined): UI
     }));
 }
 
+function lapTimeToMs(value: string): number {
+  if (!value) return Infinity;
+  const colonIdx = value.indexOf(':');
+  if (colonIdx !== -1) {
+    return (
+      parseInt(value.slice(0, colonIdx), 10) * 60_000 +
+      parseFloat(value.slice(colonIdx + 1)) * 1000
+    );
+  }
+  return parseFloat(value) * 1000;
+}
+
+// Infers qualifying part from knocked-out count — more reliable than waiting for SessionPart in stream.
+// noEntries = [22, 16, 10]: q2Threshold=6 KO → Q2, q3Threshold=12 KO → Q3.
+function inferSessionPart(
+  knockedOutCount: number,
+  noEntries: number[]
+): number {
+  if (noEntries.length < 3) return 1;
+  const q2Threshold = noEntries[0] - noEntries[1];
+  const q3Threshold = noEntries[0] - noEntries[2];
+  if (knockedOutCount >= q3Threshold) return 3;
+  if (knockedOutCount >= q2Threshold) return 2;
+  return 1;
+}
+
+// Stats format varies between delta frames (keyed object) and full snapshots (array).
+function getQualifyingStats(
+  timing: DriverTiming | undefined,
+  partIndex: number
+): QualifyingStats | undefined {
+  const stats = timing?.Stats;
+  if (!stats) return undefined;
+  if (Array.isArray(stats)) return stats[partIndex];
+  return stats[String(partIndex)];
+}
+
+// BestLapTimes key with the highest index and a populated Value = last part the driver ran.
+function getKnockoutPartIndex(timing: DriverTiming | undefined): number {
+  const blts = timing?.BestLapTimes;
+  if (!blts) return 0;
+  let maxIdx = 0;
+  for (const [key, val] of Object.entries(blts)) {
+    const idx = parseInt(key, 10);
+    if (!isNaN(idx) && val?.Value && idx > maxIdx) maxIdx = idx;
+  }
+  return maxIdx;
+}
+
+// Cross-part fallback excluded for active drivers; using a prior Q time violates FIA B2.4.3 sort order.
+function resolveQualifyingBestLap(
+  timing: DriverTiming | undefined,
+  isKnockedOut: boolean,
+  koPartIndex: number
+): string {
+  if (!isKnockedOut) return timing?.BestLapTime?.Value ?? '';
+  return timing?.BestLapTimes?.[String(koPartIndex)]?.Value ?? '';
+}
+
+// FIA B2.4.3 order: active-timed (0) → active-no-time (1) → KO by elimination part (N≥2).
+// effectiveSessionPart - koPartIndex maps later-eliminated drivers to lower group numbers.
+function getQualifyingGroup(
+  row: UITimingRow,
+  koPartIndices: Record<string, number>,
+  effectiveSessionPart: number
+): number {
+  if (!row.isKnockedOut) return row.bestLap !== '' ? 0 : 1;
+  const koPartIndex = koPartIndices[row.driverNo] ?? 0;
+  return effectiveSessionPart - koPartIndex;
+}
+
 // Merges driverList + timing into sorted UI rows. Skeleton state until data arrives.
-export function useTimingRows(): UITimingRow[] {
+export function useTimingRows(): TimingRowsResult {
   const lines = useTiming(useShallow((s) => s.lines));
   const driverList = useTiming(useShallow((s) => s.driverList));
+  const sessionPart = useTiming((s) => s.sessionPart);
+  const noEntries = useTiming(useShallow((s) => s.noEntries));
+  const knockedOutParts = useTiming(useShallow((s) => s.knockedOutParts));
   const appLines = useTimingApp(useShallow((s) => s.lines));
+  const sessionInfo = useSession((s) => s.sessionInfo);
 
   return useMemo(() => {
+    const isQualifying = QUALIFYING_SESSION_TYPES.includes(
+      sessionInfo?.Type as (typeof QUALIFYING_SESSION_TYPES)[number]
+    );
+
+    const knockedOutCount = Object.values(lines).filter(
+      (t) => t.KnockedOut
+    ).length;
+    // Use knock-out count as primary source; falls back to stream value if noEntries unavailable.
+    const effectiveSessionPart =
+      isQualifying && noEntries.length >= 3
+        ? inferSessionPart(knockedOutCount, noEntries)
+        : sessionPart;
     // Always start from static drivers (22 entries) so the list is complete on first render
     const allDriverNos = new Set(staticDrivers.map((d) => d.driverNumber));
     for (const no of Object.keys(driverList)) allDriverNos.add(no);
     for (const no of Object.keys(lines)) allDriverNos.add(no);
 
     const rows: UITimingRow[] = [];
+    // Built during the row loop; used by getQualifyingGroup to distinguish Q1-KO from Q2-KO.
+    // Primary source: knockedOutParts store (accurate for live KO transitions).
+    // Fallback: getKnockoutPartIndex via BestLapTimes (handles session snapshots/replays).
+    const koPartIndices: Record<string, number> = {};
 
     for (const driverNo of allDriverNos) {
       const timing = lines[driverNo];
@@ -138,9 +265,14 @@ export function useTimingRows(): UITimingRow[] {
         : (teams[teamId]?.colorHex ?? '#888888');
 
       // Stints arrives as a keyed object from the WS delta merge, not a true array.
-      const stintsRaw = appData?.Stints as unknown as Record<string, StintData> | undefined;
-      const lastStintKey = stintsRaw ? Object.keys(stintsRaw).sort((a, b) => Number(b) - Number(a))[0] : undefined;
-      const lastStint = lastStintKey !== undefined ? stintsRaw?.[lastStintKey] : undefined;
+      const stintsRaw = appData?.Stints as unknown as
+        | Record<string, StintData>
+        | undefined;
+      const lastStintKey = stintsRaw
+        ? Object.keys(stintsRaw).sort((a, b) => Number(b) - Number(a))[0]
+        : undefined;
+      const lastStint =
+        lastStintKey !== undefined ? stintsRaw?.[lastStintKey] : undefined;
 
       const rawPosition = timing ? parseInt(timing.Position, 10) : NaN;
       const hasPosition = !isNaN(rawPosition) && rawPosition > 0;
@@ -157,6 +289,35 @@ export function useTimingRows(): UITimingRow[] {
           )
         : 'none';
 
+      // In qualifying, gap/interval come from per-part Stats (0-indexed), not GapToLeader/IntervalToPositionAhead.
+      const isKnockedOut = timing?.KnockedOut ?? false;
+      const partIndex = effectiveSessionPart - 1;
+      const koPartIndex =
+        isQualifying && isKnockedOut
+          ? driverNo in knockedOutParts
+            ? knockedOutParts[driverNo]
+            : getKnockoutPartIndex(timing)
+          : 0;
+      if (isQualifying && isKnockedOut) koPartIndices[driverNo] = koPartIndex;
+      // KO drivers use their elimination-part stats; active drivers use the current-part stats.
+      const statsIndex = isQualifying
+        ? isKnockedOut
+          ? koPartIndex
+          : partIndex
+        : 0;
+      const qualiStats = isQualifying
+        ? getQualifyingStats(timing, statsIndex)
+        : undefined;
+      const gap = isQualifying
+        ? (qualiStats?.TimeDiffToFastest ?? '')
+        : (timing?.GapToLeader ?? '');
+      const interval = isQualifying
+        ? (qualiStats?.TimeDifftoPositionAhead ?? '')
+        : (timing?.IntervalToPositionAhead?.Value ?? '');
+      const bestLap = isQualifying
+        ? resolveQualifyingBestLap(timing, isKnockedOut, koPartIndex)
+        : (timing?.BestLapTime?.Value ?? '');
+
       rows.push({
         driverNo,
         position: hasPosition ? rawPosition : NO_POSITION,
@@ -169,12 +330,12 @@ export function useTimingRows(): UITimingRow[] {
         driverImageUrl: staticDriver?.imageUrl ?? '',
         carImageUrl: teams[teamId]?.carImageUrl ?? '',
         countryFlag: staticDriver?.countryFlag ?? '',
-        gap: timing?.GapToLeader ?? '',
-        interval: timing?.IntervalToPositionAhead?.Value ?? '',
+        gap,
+        interval,
         isCatching: timing?.IntervalToPositionAhead?.Catching ?? false,
         lastLap: timing?.LastLapTime?.Value ?? '',
         lastLapColor,
-        bestLap: timing?.BestLapTime?.Value ?? '',
+        bestLap,
         sectors,
         isInPit: timing?.InPit ?? false,
         isPitOut: timing?.PitOut ?? false,
@@ -184,23 +345,81 @@ export function useTimingRows(): UITimingRow[] {
         tyreAge: lastStint?.TotalLaps ?? 0,
         numberOfPitStops: timing?.NumberOfPitStops ?? 0,
         numberOfLaps: timing?.NumberOfLaps ?? 0,
-        isKnockedOut: timing?.KnockedOut ?? false,
+        isKnockedOut,
         speeds: buildSpeeds(timing),
         stintHistory: buildStintHistory(stintsRaw),
       });
     }
 
-    return rows.sort((a, b) => {
+    if (isQualifying) {
+      rows.sort((a, b) => {
+        const groupA = getQualifyingGroup(
+          a,
+          koPartIndices,
+          effectiveSessionPart
+        );
+        const groupB = getQualifyingGroup(
+          b,
+          koPartIndices,
+          effectiveSessionPart
+        );
+        if (groupA !== groupB) return groupA - groupB;
+        // Group 1 (active, no current-part time): stable TLA fallback per FIA B2.4.3 a v.
+        if (groupA === 1) return a.tla.localeCompare(b.tla);
+        // All other groups: sort by the time already resolved in bestLap.
+        return (
+          lapTimeToMs(a.bestLap) - lapTimeToMs(b.bestLap) ||
+          a.tla.localeCompare(b.tla)
+        );
+      });
+      // Assign sequential positions to eliminate server-side duplicates/gaps.
+      const remapped = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
+      // Cutoff: noEntries[effectiveSessionPart] drivers advance; those after are in danger zone.
+      const eliminationPos =
+        noEntries.length > effectiveSessionPart
+          ? noEntries[effectiveSessionPart]
+          : null;
+      return {
+        rows: remapped,
+        sessionPart: effectiveSessionPart,
+        eliminationPos,
+        isQualifying: true,
+      };
+    }
+
+    rows.sort((a, b) => {
       // Position is king when available
-      if (a.position !== NO_POSITION && b.position !== NO_POSITION) return a.position - b.position;
+      if (a.position !== NO_POSITION && b.position !== NO_POSITION)
+        return a.position - b.position;
       if (a.position !== NO_POSITION) return -1;
       if (b.position !== NO_POSITION) return 1;
       // Both without position: drivers with any timing data come first
-      const aHasData = a.lastLap !== '' || a.bestLap !== '' || a.sectors.some((s) => s.value !== '');
-      const bHasData = b.lastLap !== '' || b.bestLap !== '' || b.sectors.some((s) => s.value !== '');
+      const aHasData =
+        a.lastLap !== '' ||
+        a.bestLap !== '' ||
+        a.sectors.some((s) => s.value !== '');
+      const bHasData =
+        b.lastLap !== '' ||
+        b.bestLap !== '' ||
+        b.sectors.some((s) => s.value !== '');
       if (aHasData !== bHasData) return aHasData ? -1 : 1;
       // Stable fallback by TLA
       return a.tla.localeCompare(b.tla);
     });
-  }, [lines, driverList, appLines]);
+
+    return {
+      rows,
+      sessionPart: effectiveSessionPart,
+      eliminationPos: null,
+      isQualifying: false,
+    };
+  }, [
+    lines,
+    driverList,
+    appLines,
+    sessionPart,
+    noEntries,
+    sessionInfo,
+    knockedOutParts,
+  ]);
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { DriverAppData } from '@f1-telemetry/core';
-import { mergeDeltaUpdate } from '@/lib/deltaUtils';
+import { mergeDeltaUpdate, isDriverNo } from '@/lib/deltaUtils';
 
 interface TimingAppState {
   lines: Record<string, DriverAppData>;
@@ -15,6 +15,7 @@ export const useTimingApp = create<TimingAppState>((set) => ({
     set((state) => {
       const nextLines = { ...state.lines };
       for (const [driverNo, delta] of Object.entries(deltaLines)) {
+        if (!isDriverNo(driverNo)) continue;
         nextLines[driverNo] = mergeDeltaUpdate(
           nextLines[driverNo] ?? {},
           delta

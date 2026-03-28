@@ -28,7 +28,7 @@ export const BRAKE_FULL = 100;
 // Sentinels and defaults
 export const NO_POSITION = 999;
 export const PLACEHOLDER_DOT_COUNT = 7;
-export const TIMER_PLACEHOLDER = '0:00.000';
+export const TIMER_PLACEHOLDER = '00:00:00';
 export const DEFAULT_SECTOR_TIME = '0.000';
 export const RAINFALL_INDICATOR = '1';
 

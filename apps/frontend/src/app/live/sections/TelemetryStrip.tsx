@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { Activity } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { TelemetryHud } from '@/app/live/components/TelemetryHud';
 import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
@@ -47,7 +47,10 @@ export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
     });
   }, []);
 
-  const { wrapRef, canvasRef } = useTelemetryChart(selectedDriver, visibleSeries);
+  const { wrapRef, canvasRef } = useTelemetryChart(
+    selectedDriver,
+    visibleSeries
+  );
 
   const selectedRow = rows.find((r) => r.driverNo === selectedDriver);
 
@@ -101,13 +104,23 @@ export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
       {/* Content — both views always mounted, toggled via invisible to avoid jank */}
       {selectedDriver && selectedRow ? (
         <div className="relative flex-1 min-h-0">
-          <div className={cn('absolute inset-0', viewMode !== 'hud' && 'invisible')}>
+          <div
+            className={cn(
+              'absolute inset-0',
+              viewMode !== 'hud' && 'invisible'
+            )}
+          >
             <TelemetryHud
               driverNo={selectedDriver}
               teamColor={selectedRow.teamColor}
             />
           </div>
-          <div className={cn('flex h-full flex-col', viewMode !== 'trace' && 'invisible')}>
+          <div
+            className={cn(
+              'flex h-full flex-col',
+              viewMode !== 'trace' && 'invisible'
+            )}
+          >
             <TraceLegend visible={visibleSeries} />
             <div ref={wrapRef} className="flex-1 min-h-0 overflow-hidden">
               <div ref={canvasRef} />
@@ -117,9 +130,7 @@ export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
           <Activity className="size-5 text-muted-foreground/40" />
-          <p className="text-xs text-muted-foreground">
-            Select a driver above
-          </p>
+          <p className="text-xs text-muted-foreground">Select a driver above</p>
         </div>
       )}
     </div>

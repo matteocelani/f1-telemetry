@@ -30,7 +30,7 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
   const isLive = isConnected && hasActivity;
 
   const header = useHeaderData();
-  const rows = useTimingRows();
+  const { rows, sessionPart, eliminationPos, isQualifying } = useTimingRows();
 
   const handleSetSelectedDriver = useCallback(
     (driverNo: string | null) => setSelectedDriver(driverNo),
@@ -53,6 +53,9 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
       isLive,
       header,
       rows,
+      sessionPart,
+      eliminationPos,
+      isQualifying,
       selectedDriver,
       setSelectedDriver: handleSetSelectedDriver,
       activeTab,
@@ -65,6 +68,9 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
       isLive,
       header,
       rows,
+      sessionPart,
+      eliminationPos,
+      isQualifying,
       selectedDriver,
       handleSetSelectedDriver,
       activeTab,
