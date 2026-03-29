@@ -26,8 +26,9 @@ export function useHeaderData(): UIHeaderData {
     const sessionTypeName = sessionInfo?.Name ?? '';
     const countryCode = sessionInfo?.Meeting?.Country?.Code ?? '';
 
-    const lapText =
-      lapCount ? `${lapCount.CurrentLap}/${lapCount.TotalLaps}` : null;
+    const lapText = lapCount?.CurrentLap != null
+      ? `${lapCount.CurrentLap}/${lapCount.TotalLaps ?? '—'}`
+      : null;
 
     let weather: UIWeatherData | null = null;
     if (rawWeather) {

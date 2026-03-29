@@ -9,6 +9,11 @@ interface LapCountState {
 
 export const useLapCount = create<LapCountState>((set) => ({
   lapCount: null,
-  setLapCount: (data) => set({ lapCount: data }),
+  setLapCount: (incoming) =>
+    set((state) => ({
+      lapCount: state.lapCount
+        ? { ...state.lapCount, ...incoming }
+        : incoming,
+    })),
   reset: () => set({ lapCount: null }),
 }));

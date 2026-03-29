@@ -34,7 +34,12 @@ export const useSession = create<SessionState>((set) => ({
   sessionInfo: null,
   sessionData: null,
 
-  setSessionInfo: (info) => set({ sessionInfo: info }),
+  setSessionInfo: (incoming) =>
+    set((state) => ({
+      sessionInfo: state.sessionInfo
+        ? { ...state.sessionInfo, ...incoming }
+        : incoming,
+    })),
 
   setSessionData: (incoming) =>
     set((state) => {

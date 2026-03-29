@@ -105,9 +105,10 @@ export class SocketServer {
     }
   }
 
-  // Accumulates the update — the flush cycle decides what to actually send
+  // Deep-merges incoming deltas within the batch window to prevent overwrites.
   public broadcast(channel: string, data: unknown) {
-    this.batchBuffer.set(channel, data);
+    const existing = this.batchBuffer.get(channel);
+    this.batchBuffer.set(channel, existing !== undefined ? deepMerge(existing, data) : data);
   }
 
   // Replaces the entire stateCache with a fresh F1 snapshot and broadcasts it
