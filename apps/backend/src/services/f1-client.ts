@@ -10,6 +10,7 @@ const BASE_RECONNECT_DELAY_MS = 5_000;
 const MAX_RECONNECT_DELAY_MS = 60_000;
 const CLIENT_PROTOCOL = '1.5';
 const WS_TRANSPORT = 'webSockets';
+const SESSION_INFO_CHANNEL = 'SessionInfo';
 
 // Pre-encoded once at module load to avoid runtime encodeURIComponent on every reconnect
 const CONNECTION_DATA = encodeURIComponent(`[{"name":"${F1_HUB_NAME}"}]`);
@@ -74,6 +75,9 @@ export class F1Client {
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private readonly localSocketServer: SocketServer;
+
+  // Session watchdog: tracks the current F1 session path to detect session transitions
+  private currentSessionPath: string = '';
 
   constructor(localSocketServer: SocketServer) {
     this.localSocketServer = localSocketServer;
@@ -160,11 +164,11 @@ export class F1Client {
 
         const frame = JSON.parse(messageStr) as SignalRFrame;
 
-        // Handle initial subscribe snapshot (F1 sends full state in the R field)
+        // Subscribe response: F1 sends full state in the R field.
+        // Replace (not merge) the entire stateCache to prevent ghost data from
+        // stale sessions or pre-reconnect state leaking through.
         if (frame.R && typeof frame.R === 'object') {
-          for (const [channel, data] of Object.entries(frame.R)) {
-            this.processUpdate(channel, data);
-          }
+          this.handleSubscribeSnapshot(frame.R);
         }
 
         if (!frame.M?.length) return;
@@ -210,9 +214,8 @@ export class F1Client {
 
     this.ws.on('close', (code: number) => {
       this.isConnected = false;
-      // Keep cached state across reconnects so clients see stale-but-complete data
-      // instead of an empty/partial snapshot. The next F1 snapshot will overwrite it.
       Logger.warn(`F1 SignalR closed (code ${code}). Scheduling reconnect...`);
+      this.localSocketServer.broadcastControl({ control: 'f1_disconnected' });
       this.scheduleReconnect();
     });
 
@@ -222,7 +225,36 @@ export class F1Client {
     });
   }
 
+  // Handles the Subscribe R-field snapshot: decompresses .z channels, then
+  // atomically replaces the entire server state and notifies all clients.
+  private handleSubscribeSnapshot(snapshot: Record<string, unknown>): void {
+    const processed: Record<string, unknown> = {};
+
+    for (const [channel, rawData] of Object.entries(snapshot)) {
+      if (channel.endsWith('.z') && typeof rawData === 'string') {
+        const decompressed = decompressPayload(rawData);
+        if (decompressed !== null) {
+          processed[channel] = decompressed;
+        }
+      } else {
+        processed[channel] = rawData;
+      }
+    }
+
+    // Extract session path for the watchdog before replacing state
+    this.updateSessionPath(processed[SESSION_INFO_CHANNEL]);
+
+    this.localSocketServer.replaceState(processed);
+    this.localSocketServer.broadcastControl({ control: 'f1_reconnected' });
+    Logger.info(`Subscribe snapshot applied (${Object.keys(processed).length} channels)`);
+  }
+
   private processUpdate(channelName: string, rawData: unknown) {
+    // Session watchdog: detect session transitions on incremental updates
+    if (channelName === SESSION_INFO_CHANNEL) {
+      this.checkSessionChange(rawData);
+    }
+
     // Channels ending in '.z' are raw DEFLATE-compressed blobs
     if (channelName.endsWith('.z') && typeof rawData === 'string') {
       const decompressed = decompressPayload(rawData);
@@ -232,6 +264,63 @@ export class F1Client {
     } else {
       this.localSocketServer.broadcast(channelName, rawData);
     }
+  }
+
+  // Extracts and stores the session path from a SessionInfo payload
+  private updateSessionPath(sessionInfo: unknown): void {
+    if (
+      sessionInfo !== null &&
+      sessionInfo !== undefined &&
+      typeof sessionInfo === 'object' &&
+      'Path' in (sessionInfo as Record<string, unknown>)
+    ) {
+      const path = (sessionInfo as Record<string, unknown>)['Path'];
+      if (typeof path === 'string') {
+        this.currentSessionPath = path;
+      }
+    }
+  }
+
+  // Compares incoming SessionInfo.Path to the stored value. If it changed,
+  // the F1 timing system switched sessions (e.g. Qualifying → Race).
+  // Clear all state and reconnect to get a clean snapshot for the new session.
+  private checkSessionChange(rawData: unknown): void {
+    if (
+      rawData === null ||
+      rawData === undefined ||
+      typeof rawData !== 'object'
+    ) {
+      return;
+    }
+
+    const data = rawData as Record<string, unknown>;
+    if (!('Path' in data) || typeof data['Path'] !== 'string') return;
+
+    const newPath = data['Path'];
+    if (this.currentSessionPath === '' || newPath === this.currentSessionPath) {
+      this.currentSessionPath = newPath;
+      return;
+    }
+
+    Logger.warn(
+      `Session changed: "${this.currentSessionPath}" → "${newPath}". Clearing state and reconnecting.`
+    );
+    this.currentSessionPath = newPath;
+    this.localSocketServer.clearCache();
+    this.forceReconnect();
+  }
+
+  // Tears down the current F1 connection and initiates a fresh reconnect
+  private forceReconnect(): void {
+    if (this.ws) {
+      this.ws.removeAllListeners();
+      this.ws.close();
+      this.ws = null;
+    }
+    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.isReconnecting = false;
+    this.connect();
   }
 
   private sendSubscribe() {

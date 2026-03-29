@@ -1,4 +1,5 @@
-import type { TelemetrySeries, TelemetrySeriesMeta } from '@/modules/timing/types';
+import type { TyreCompound } from '@f1-telemetry/core';
+import type { PaceMetricOption, TelemetrySeries, TelemetrySeriesMeta } from '@/modules/timing/types';
 
 // Telemetry series
 
@@ -32,6 +33,49 @@ export const SESSION_SHORT: Record<string, string> = {
   Sprint: 'SPRINT',
   Race: 'RACE',
 } as const;
+
+// Tyre compound Tailwind background classes (shared across strategy timeline + expanded row)
+export const COMPOUND_BG: Record<TyreCompound, string> = {
+  SOFT: 'bg-red-500',
+  MEDIUM: 'bg-yellow-500',
+  HARD: 'bg-white',
+  INTERMEDIATE: 'bg-emerald-500',
+  WET: 'bg-blue-500',
+  UNKNOWN: 'bg-muted-foreground',
+} as const;
+
+export const COMPOUND_LABEL: Record<TyreCompound, string> = {
+  SOFT: 'S',
+  MEDIUM: 'M',
+  HARD: 'H',
+  INTERMEDIATE: 'I',
+  WET: 'W',
+  UNKNOWN: '?',
+} as const;
+
+// Fallback when TotalLaps is unknown from the LapCount channel
+export const DEFAULT_TOTAL_LAPS = 70;
+
+// Minimum stint block width (%) to render the compound label inside it
+export const MIN_STINT_LABEL_WIDTH_PERCENT = 6;
+
+// Pace Radar metrics
+export const PACE_METRICS: readonly PaceMetricOption[] = [
+  { key: 's1', label: 'S1', description: 'Sector 1 — Best Time' },
+  { key: 's2', label: 'S2', description: 'Sector 2 — Best Time' },
+  { key: 's3', label: 'S3', description: 'Sector 3 — Best Time' },
+  { key: 'st', label: 'ST', description: 'Speed Trap — Top Speed' },
+  { key: 'fl', label: 'FL', description: 'Finish Line — Exit Speed' },
+] as const;
+
+// Max lap history entries per driver for the sparkline
+export const MAX_LAP_HISTORY = 10;
+
+// Drivers shown in the lap trend sparkline
+export const LAP_TREND_DRIVER_COUNT = 3;
+
+// Drivers shown in the speed snapshot ranking
+export const SPEED_SNAPSHOT_COUNT = 5;
 
 // ISO 3166-1 alpha-3 → alpha-2 for F1 host countries
 export const ALPHA3_TO_ALPHA2: Record<string, string> = {

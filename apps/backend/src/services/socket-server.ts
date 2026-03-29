@@ -110,6 +110,23 @@ export class SocketServer {
     this.batchBuffer.set(channel, data);
   }
 
+  // Replaces the entire stateCache with a fresh F1 snapshot and broadcasts it
+  // to all connected clients as a snapshot frame, forcing frontend store resets.
+  // Used on F1 reconnect and session changes to prevent stale ghost data.
+  public replaceState(channels: Record<string, unknown>): void {
+    this.batchBuffer.clear();
+    this.deltaCache.clear();
+    this.stateCache.clear();
+
+    for (const [channel, data] of Object.entries(channels)) {
+      this.stateCache.set(channel, data);
+      this.deltaCache.set(channel, JSON.stringify(data));
+    }
+
+    Logger.info(`State replaced (${this.stateCache.size} channels)`);
+    this.broadcastSnapshotToAll();
+  }
+
   private flush() {
     if (this.batchBuffer.size === 0) return;
 
@@ -157,7 +174,18 @@ export class SocketServer {
     this.batchBuffer.clear();
     this.deltaCache.clear();
     this.stateCache.clear();
-    Logger.info('Delta cache cleared — no active F1 session data');
+    Logger.info('State cache cleared');
+  }
+
+  // Sends a control frame to all connected clients (connection status signals)
+  public broadcastControl(payload: Record<string, unknown>): void {
+    if (!this.wss || this.wss.clients.size === 0) return;
+
+    const frame = JSON.stringify(payload);
+    for (const client of this.wss.clients) {
+      if (client.readyState !== WebSocket.OPEN) continue;
+      client.send(frame);
+    }
   }
 
   public get clientCount(): number {
@@ -177,5 +205,23 @@ export class SocketServer {
     const frame = JSON.stringify({ snapshot: true, updates });
     ws.send(frame);
     Logger.info(`Sent snapshot (${this.stateCache.size} channels) to new client`);
+  }
+
+  // Sends the full accumulated state to ALL connected clients (used after state replacement)
+  private broadcastSnapshotToAll(): void {
+    if (!this.wss || this.wss.clients.size === 0 || this.stateCache.size === 0) return;
+
+    const updates: Record<string, unknown> = {};
+    for (const [channel, state] of this.stateCache) {
+      updates[channel] = state;
+    }
+
+    const frame = JSON.stringify({ snapshot: true, updates });
+    for (const client of this.wss.clients) {
+      if (client.readyState !== WebSocket.OPEN) continue;
+      client.send(frame);
+    }
+
+    Logger.info(`Broadcast snapshot (${this.stateCache.size} channels) to ${this.wss.clients.size} clients`);
   }
 }

@@ -177,12 +177,14 @@ export function TimingTower({ className }: TimingTowerProps) {
                 )}
               </AnimatePresence>
               {eliminationPos !== null && row.position === eliminationPos && (
-                <div className="flex items-center gap-2 px-2 py-0.5">
-                  <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
-                  <span className="shrink-0 text-2xs font-bold uppercase tracking-widest text-red-500/70">
-                    ELIM
-                  </span>
-                  <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
+                <div className="relative h-0">
+                  <div className="absolute inset-x-0 top-0 flex -translate-y-1/2 items-center gap-2 px-2">
+                    <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
+                    <span className="shrink-0 bg-background px-1 text-2xs font-bold uppercase tracking-widest text-red-500/70">
+                      ELIM
+                    </span>
+                    <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
+                  </div>
                 </div>
               )}
             </motion.div>

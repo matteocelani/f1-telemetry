@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { Flag, Siren } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { DriverTag } from '@/modules/timing/hooks/useDriverLookup';
 import type {
   RCBadgeVariant,
   RCIconVariant,
@@ -11,6 +12,7 @@ import type {
 
 interface RaceControlMessageProps {
   message: UIRaceControlMessage;
+  driverMap: Map<string, DriverTag>;
 }
 
 const BADGE_STYLES: Record<RCBadgeVariant, string> = {
@@ -41,7 +43,9 @@ const ICON_CONFIG: Record<
   none: null,
 };
 
-export function RaceControlMessage({ message }: RaceControlMessageProps) {
+const DRIVER_REF_PATTERN = /(\d{1,2})\s+\(([A-Z]{3})\)/g;
+
+export function RaceControlMessage({ message, driverMap }: RaceControlMessageProps) {
   const time = useMemo(() => {
     const date = new Date(message.utc);
     return date.toLocaleTimeString('en-GB', {
@@ -50,6 +54,11 @@ export function RaceControlMessage({ message }: RaceControlMessageProps) {
       second: '2-digit',
     });
   }, [message.utc]);
+
+  const parsedContent = useMemo(
+    () => parseMessageContent(message.message, driverMap),
+    [message.message, driverMap]
+  );
 
   const accent = ROW_ACCENT[message.badge];
   const iconCfg = ICON_CONFIG[message.icon];
@@ -76,9 +85,53 @@ export function RaceControlMessage({ message }: RaceControlMessageProps) {
         )}
       </div>
 
-      <p className="text-xs leading-snug text-foreground xl:text-sm font-medium">
-        {message.message}
+      <p className="text-xs font-medium leading-snug text-foreground xl:text-sm">
+        {parsedContent}
       </p>
     </div>
   );
+}
+
+function parseMessageContent(
+  text: string,
+  driverMap: Map<string, DriverTag>
+): ReactNode {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  // Global flag requires manual reset between calls.
+  DRIVER_REF_PATTERN.lastIndex = 0;
+
+  while ((match = DRIVER_REF_PATTERN.exec(text)) !== null) {
+    const [fullMatch, driverNo, tla] = match;
+    const start = match.index;
+
+    if (start > lastIndex) {
+      parts.push(text.slice(lastIndex, start));
+    }
+
+    const driver = driverMap.get(driverNo);
+    if (driver) {
+      parts.push(
+        <span
+          key={start}
+          className="inline-flex items-center rounded px-1.5 align-baseline leading-normal text-xs font-bold"
+          style={{ backgroundColor: `${driver.teamColor}20`, color: driver.teamColor }}
+        >
+          {driverNo} {tla}
+        </span>
+      );
+    } else {
+      parts.push(fullMatch);
+    }
+
+    lastIndex = start + fullMatch.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
 }

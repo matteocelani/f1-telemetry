@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { NO_POSITION } from '@/constants/numbers';
+import { COMPOUND_BG } from '@/modules/timing/constants';
 import type {
   UITimingRow,
   SectorColorClass,
@@ -27,15 +28,6 @@ const SPEED_COLOR: Record<SectorColorClass, string> = {
   none: 'text-muted-foreground/30',
 };
 
-const TYRE_BG = {
-  SOFT: 'bg-red-500',
-  MEDIUM: 'bg-yellow-500',
-  HARD: 'bg-white',
-  INTERMEDIATE: 'bg-emerald-500',
-  WET: 'bg-blue-500',
-  UNKNOWN: 'bg-muted-foreground',
-} as const satisfies Record<string, string>;
-
 interface DriverRowExpandedProps {
   row: UITimingRow;
 }
@@ -45,7 +37,7 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
 
   return (
     <div
-      className="border-b border-border/20 border-l-2 bg-white/3 px-3 py-4"
+      className="border-b border-border/20 border-l-2 bg-foreground/3 px-3 py-4"
       style={{ borderLeftColor: row.teamColor }}
     >
       {/* Driver + Team identity */}
@@ -92,11 +84,11 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
         </div>
 
         {/* Lap Times */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 xl:col-span-2">
           <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
             Lap Times
           </span>
-          <div className="flex flex-col gap-1.5 rounded-md bg-white/5 p-2">
+          <div className="flex flex-col gap-1.5 rounded-md bg-foreground/5 p-2">
             <div className="flex items-center justify-between">
               <span className="text-2xs text-muted-foreground">Last Lap</span>
               <span
@@ -153,11 +145,11 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
         </div>
 
         {/* Race Info */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 xl:col-span-2">
           <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
             Race Info
           </span>
-          <div className="flex flex-col gap-1.5 rounded-md bg-white/5 p-2">
+          <div className="flex flex-col gap-1.5 rounded-md bg-foreground/5 p-2">
             <div className="flex items-center justify-between">
               <span className="text-2xs text-muted-foreground">Position</span>
               <span
@@ -209,11 +201,11 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
         </div>
 
         {/* Speed Traps */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 sm:col-span-2 xl:col-span-2">
           <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
             Speed Traps
           </span>
-          <div className="flex flex-col gap-1.5 rounded-md bg-white/5 p-2">
+          <div className="flex flex-col gap-1.5 rounded-md bg-foreground/5 p-2">
             {(
               [
                 ['Speed Trap', row.speeds.st],
@@ -247,12 +239,12 @@ export function DriverRowExpanded({ row }: DriverRowExpandedProps) {
               {row.stintHistory.map((stint, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1"
+                  className="flex items-center gap-1.5 rounded-md bg-foreground/5 px-2 py-1"
                 >
                   <div
                     className={cn(
                       'size-3 rounded-full',
-                      TYRE_BG[stint.compound] ?? 'bg-muted-foreground'
+                      COMPOUND_BG[stint.compound] ?? 'bg-muted-foreground'
                     )}
                   />
                   <span className="text-2xs font-bold text-foreground">

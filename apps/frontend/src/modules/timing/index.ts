@@ -5,8 +5,10 @@ export type {
   LiveTimingContextType,
   SegmentColorClass,
   SectorColorClass,
+  StrategyDriverRow,
   UIHeaderData,
   UISector,
+  UIStint,
   UITimingRow,
   UIWeatherData,
 } from '@/modules/timing/types';

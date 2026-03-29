@@ -87,6 +87,32 @@ export interface UIStint {
   compound: TyreCompound;
   isNew: boolean;
   totalLaps: number;
+  startLap: number;
+}
+
+export interface StrategyDriverRow {
+  driverNo: string;
+  position: number;
+  tla: string;
+  teamColor: string;
+  isInPit: boolean;
+  stints: UIStint[];
+}
+
+// Pace Radar
+
+export type PaceMetricKey = 's1' | 's2' | 's3' | 'st' | 'fl';
+
+export interface PaceMetricOption {
+  key: PaceMetricKey;
+  label: string;
+  description: string;
+}
+
+export interface LapSnapshot {
+  lapTimeMs: number;
+  color: SectorColorClass;
+  compound: TyreCompound;
 }
 
 // Header

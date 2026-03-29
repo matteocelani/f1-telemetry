@@ -19,7 +19,7 @@ interface SectorBlockProps {
 
 export function SectorBlock({ sector, label }: SectorBlockProps) {
   return (
-    <div className="flex flex-col gap-1 rounded-md bg-white/5 p-2">
+    <div className="flex flex-col gap-1 rounded-md bg-foreground/5 p-2">
       <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
         {label}
       </span>

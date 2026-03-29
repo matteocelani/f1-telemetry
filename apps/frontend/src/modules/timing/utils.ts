@@ -1,4 +1,4 @@
-import { GRACE_PERIOD_MS, REGIONAL_INDICATOR_OFFSET } from '@/constants/numbers';
+import { GRACE_PERIOD_MS, MS_PER_MINUTE, MS_PER_SECOND, REGIONAL_INDICATOR_OFFSET } from '@/constants/numbers';
 import { ALPHA3_TO_ALPHA2 } from '@/modules/timing/constants';
 import type { RaceEntry } from '@/types/data';
 
@@ -10,6 +10,19 @@ export function countryFlag(code: string): string {
     alpha2.charCodeAt(0) + REGIONAL_INDICATOR_OFFSET,
     alpha2.charCodeAt(1) + REGIONAL_INDICATOR_OFFSET
   );
+}
+
+export function lapTimeToMs(value: string): number {
+  if (!value) return Infinity;
+  const colonIdx = value.indexOf(':');
+  if (colonIdx !== -1) {
+    return (
+      parseInt(value.slice(0, colonIdx), 10) * MS_PER_MINUTE +
+      parseFloat(value.slice(colonIdx + 1)) * MS_PER_SECOND
+    );
+  }
+  const parsed = parseFloat(value) * MS_PER_SECOND;
+  return isNaN(parsed) ? Infinity : parsed;
 }
 
 export function getNextSession(
