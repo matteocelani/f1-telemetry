@@ -38,7 +38,7 @@ export const SESSION_SHORT: Record<string, string> = {
 export const COMPOUND_BG: Record<TyreCompound, string> = {
   SOFT: 'bg-red-500',
   MEDIUM: 'bg-yellow-500',
-  HARD: 'bg-white',
+  HARD: 'bg-stone-300 dark:bg-white',
   INTERMEDIATE: 'bg-emerald-500',
   WET: 'bg-blue-500',
   UNKNOWN: 'bg-muted-foreground',

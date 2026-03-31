@@ -19,8 +19,6 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
   const { rows, currentLap, totalLaps } = useStrategyRows();
 
   const raceLaps = totalLaps > 0 ? totalLaps : DEFAULT_TOTAL_LAPS;
-  const nowPercent = raceLaps > 0 ? (currentLap / raceLaps) * 100 : 0;
-
   const hasData = rows.length > 0 && currentLap > 0;
 
   return (
@@ -33,7 +31,6 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
                 key={row.driverNo}
                 row={row}
                 raceLaps={raceLaps}
-                nowPercent={nowPercent}
               />
             ))}
           </div>
@@ -48,10 +45,9 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
 interface DriverStintRowProps {
   row: StrategyDriverRow;
   raceLaps: number;
-  nowPercent: number;
 }
 
-function DriverStintRow({ row, raceLaps, nowPercent }: DriverStintRowProps) {
+function DriverStintRow({ row, raceLaps }: DriverStintRowProps) {
   const blocks = useMemo(
     () => buildStintBlocks(row.stints, raceLaps),
     [row.stints, raceLaps]
@@ -76,14 +72,6 @@ function DriverStintRow({ row, raceLaps, nowPercent }: DriverStintRowProps) {
         {blocks.map((block, i) => (
           <StintBlock key={i} block={block} isLast={i === blocks.length - 1} isInPit={row.isInPit} />
         ))}
-
-        {/* NOW marker */}
-        {nowPercent > 0 && nowPercent <= 100 && (
-          <div
-            className="absolute top-0 h-full w-px bg-foreground/70"
-            style={{ left: `${nowPercent}%` }}
-          />
-        )}
       </div>
     </div>
   );
@@ -96,6 +84,7 @@ interface StintBlockData {
   isNew: boolean;
   leftPercent: number;
   widthPercent: number;
+  totalLaps: number;
 }
 
 interface StintBlockProps {
@@ -123,7 +112,7 @@ function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
     >
       {block.widthPercent > MIN_STINT_LABEL_WIDTH_PERCENT && (
         <span className="text-2xs font-black text-black/70 select-none">
-          {block.label}
+          {block.label} {block.totalLaps}
         </span>
       )}
     </div>
@@ -147,6 +136,7 @@ function buildStintBlocks(
       isNew: stint.isNew,
       leftPercent: Math.max(0, leftPercent),
       widthPercent: Math.max(0, Math.min(widthPercent, 100 - leftPercent)),
+      totalLaps: stint.totalLaps,
     };
   });
 }

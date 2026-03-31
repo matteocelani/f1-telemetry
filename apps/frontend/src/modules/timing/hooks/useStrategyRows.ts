@@ -1,9 +1,14 @@
 import { useMemo } from 'react';
 import { NO_POSITION } from '@/constants/numbers';
+import driversData from '@/data/drivers.json';
 import type { StrategyDriverRow, UIStint } from '@/modules/timing/types';
 import { useLapCount } from '@/store/lap-count';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
+
+const DRIVER_TLA_MAP = new Map(
+  driversData.map((d) => [d.driverNumber, d.tla])
+);
 
 export function useStrategyRows(): {
   rows: StrategyDriverRow[];
@@ -41,7 +46,7 @@ export function useStrategyRows(): {
       rows.push({
         driverNo,
         position: isNaN(position) ? NO_POSITION : position,
-        tla: driverInfo.Tla ?? driverNo,
+        tla: driverInfo.Tla ?? DRIVER_TLA_MAP.get(driverNo) ?? driverNo,
         teamColor: driverInfo.TeamColour
           ? `#${driverInfo.TeamColour}`
           : '#666666',
