@@ -11,21 +11,20 @@ export interface CircuitData {
   startOffset: number;
 }
 
-export interface TrackDot {
+export interface DriverDotMeta {
   driverNo: string;
   tla: string;
   teamColor: string;
-  percent: number;
   inPit: boolean;
-  isWrapping: boolean;
 }
 
 export interface TrackMapData {
-  dots: TrackDot[];
   circuit: CircuitData | null;
+  drivers: DriverDotMeta[];
   hasData: boolean;
   isSegmentMode: boolean;
   startPercent: number;
+  projectPercent: (driverNo: string) => number;
 }
 
 export type SectorColorClass = 'purple' | 'green' | 'yellow' | 'none';

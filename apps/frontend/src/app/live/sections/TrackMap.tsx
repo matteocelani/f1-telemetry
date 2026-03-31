@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef } from 'react';
 import { Info, MapPin } from 'lucide-react';
 import type { TrackStatusCode } from '@f1-telemetry/core';
 import {
@@ -23,8 +24,6 @@ const LABEL_OFFSET_Y = -11;
 const LABEL_OFFSET_Y_SELECTED = -14;
 const TRACK_STROKE_WIDTH = 3;
 const TRACK_GLOW_WIDTH = 8;
-const GPS_TRANSITION_MS = 300;
-const SEGMENT_TRANSITION_MS = 1500;
 const GLOW_RADIUS = 18;
 const START_LINE_LENGTH = 12;
 const START_LINE_WIDTH = 2;
@@ -37,17 +36,46 @@ const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
 };
 
 export function TrackMap({ className }: TrackMapProps) {
-  const { dots, circuit, isSegmentMode, startPercent } = useTrackMap();
+  const { drivers, circuit, isSegmentMode, startPercent, projectPercent } =
+    useTrackMap();
   const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
-  const transitionMs = isSegmentMode
-    ? SEGMENT_TRANSITION_MS
-    : GPS_TRANSITION_MS;
+
+  const dotRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const frameIdRef = useRef(0);
 
   const trackStatusColor = header.trackStatus
     ? TRACK_STATUS_COLORS[header.trackStatus]
     : undefined;
 
-  const visibleDots = dots.filter((d) => !d.inPit);
+  const visibleDrivers = drivers.filter((d) => !d.inPit);
+
+  // Callback ref: registers/unregisters SVG group elements for direct DOM updates
+  const registerDotRef = useCallback(
+    (driverNo: string) => (el: SVGGElement | null) => {
+      if (el) {
+        dotRefs.current.set(driverNo, el);
+      } else {
+        dotRefs.current.delete(driverNo);
+      }
+    },
+    []
+  );
+
+  // 60fps animation loop: projects positions and writes directly to SVG DOM
+  useEffect(() => {
+    if (!circuit) return;
+
+    const animate = () => {
+      for (const [driverNo, el] of dotRefs.current) {
+        const percent = projectPercent(driverNo);
+        el.style.offsetDistance = `${percent}%`;
+      }
+      frameIdRef.current = requestAnimationFrame(animate);
+    };
+
+    frameIdRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameIdRef.current);
+  }, [circuit, projectPercent]);
 
   if (!circuit) {
     return (
@@ -72,7 +100,7 @@ export function TrackMap({ className }: TrackMapProps) {
         className
       )}
     >
-      {isSegmentMode && visibleDots.length > 0 && (
+      {isSegmentMode && visibleDrivers.length > 0 && (
         <Popover>
           <PopoverTrigger asChild>
             <button className="absolute bottom-2 left-2 flex cursor-pointer items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 transition-colors hover:bg-muted/80">
@@ -144,9 +172,9 @@ export function TrackMap({ className }: TrackMapProps) {
           }}
         />
 
-        {visibleDots.map((dot) => {
-          const isSelected = selectedDriver === dot.driverNo;
-          const isP1 = dot.driverNo === visibleDots[0]?.driverNo;
+        {visibleDrivers.map((driver) => {
+          const isSelected = selectedDriver === driver.driverNo;
+          const isP1 = driver.driverNo === visibleDrivers[0]?.driverNo;
           const radius = isSelected
             ? DOT_RADIUS_SELECTED
             : isP1
@@ -156,24 +184,22 @@ export function TrackMap({ className }: TrackMapProps) {
 
           return (
             <g
-              key={dot.driverNo}
+              key={driver.driverNo}
+              ref={registerDotRef(driver.driverNo)}
               style={{
                 offsetPath: `path("${circuit.path}")`,
-                offsetDistance: `${dot.percent}%`,
+                offsetDistance: '0%',
                 offsetRotate: '0deg',
-                transition: dot.isWrapping
-                  ? 'none'
-                  : `offset-distance ${transitionMs}ms ${isSegmentMode ? 'linear' : 'ease-out'}`,
               }}
               className="cursor-pointer"
               onClick={() =>
-                setSelectedDriver(isSelected ? null : dot.driverNo)
+                setSelectedDriver(isSelected ? null : driver.driverNo)
               }
             >
               {isSelected && (
-                <circle r={GLOW_RADIUS} fill={dot.teamColor} opacity="0.25" />
+                <circle r={GLOW_RADIUS} fill={driver.teamColor} opacity="0.25" />
               )}
-              <circle r={radius} fill={dot.teamColor} />
+              <circle r={radius} fill={driver.teamColor} />
               <text
                 y={labelY}
                 textAnchor="middle"
@@ -183,7 +209,7 @@ export function TrackMap({ className }: TrackMapProps) {
                 fontWeight="bold"
                 className="pointer-events-none select-none"
               >
-                {dot.tla}
+                {driver.tla}
               </text>
             </g>
           );
