@@ -12,7 +12,7 @@ interface ReplayFrame {
 
 function loadReplayData(): ReplayFrame[] {
   const filePath =
-    process.argv[2] ?? resolve(__dirname, '../data/suzuka-qualifying.json');
+    process.argv[2] ?? resolve(__dirname, '../data/suzuka-race.json');
   Logger.info(`Loading replay data from ${filePath}`);
 
   const raw = readFileSync(filePath, 'utf-8');

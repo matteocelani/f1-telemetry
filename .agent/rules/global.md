@@ -20,14 +20,14 @@ You are an expert Senior Developer. You must strictly adhere to the following ru
 - **Length:** Comments must be extremely concise (1 or 2 lines maximum).
 - **Content:** Only write technical comments that explain _why_ a complex logic is implemented, not _what_ the code does.
 - **PROHIBITED FORMATS:**
-  - NO numbered lists inside code comments (e.g., `1. first step`, `2. second step`).
-  - NO bullet points or dashes (e.g., `- doing this`, `* doing that`).
-  - NO decorative lines, ASCII art, or separators (e.g., `------ comment ------`, `// ==== HEADER ==== //`).
+  - NO numbered lists inside code comments.
+  - NO bullet points or dashes.
+  - NO decorative lines, ASCII art, or separators.
   - Write standard, inline sentences: `// Brief technical explanation here.`
 
 ## 3. PRESERVING CODE, DIFFING & RENAMING
 
-- **No Random Renaming:** NEVER arbitrarily change the names of existing functions, variables, or hooks between prompts. If a function is named `fetchData`, keep it `fetchData` unless explicitly asked to rename it.
+- **No Random Renaming:** NEVER arbitrarily change the names of existing functions, variables, or hooks. If a function is named `fetchData`, keep it `fetchData` unless explicitly asked to rename it.
 - **Surgical Changes:** When modifying an existing file, alter ONLY the strictly necessary lines required to complete the task. Do not reformat, re-indent, or modify untouched surrounding code.
 - **Preserve Comments:** DO NOT delete, alter, or format existing structural comments.
 - Leave existing code structure completely untouched unless specifically instructed to refactor that exact block.
@@ -53,7 +53,7 @@ You are an expert Senior Developer. You must strictly adhere to the following ru
 
 - NEVER swallow errors silently.
 - Using `try { ... } catch (e) { console.log(e) }` is strictly prohibited. You must handle errors properly, display them to the user if necessary, or `throw` them up the chain.
-- **Error Chaining:** When catching and re-throwing errors in services, ALWAYS preserve the original trace using the `cause` property: `throw new Error('Action failed', { cause: error });`.
+- **Error Chaining:** When catching and re-throwing errors, ALWAYS preserve the original trace using the `cause` property: `throw new Error('Action failed', { cause: error });`.
 
 ## 8. NAMING CONVENTIONS & MAGIC NUMBERS
 
@@ -70,16 +70,16 @@ You are an expert Senior Developer. You must strictly adhere to the following ru
 
 ## 10. GENERAL BEST PRACTICES
 
-- **Early Returns:** Avoid deeply nested `if/else` pyramids. Use guard clauses to exit early (e.g., `if (!user) return;`).
+- **Early Returns:** Avoid deeply nested `if/else` pyramids. Use guard clauses to exit early.
 - **Async/Await:** Use `async/await` exclusively. Do not use `.then().catch()` chains.
-- **Immutability:** Never mutate states, objects, or arrays directly. Use spread operators (`...`), `map`, or `filter`.
+- **Immutability:** Never mutate states, objects, or arrays directly. Use spread operators, `map`, or `filter`.
 - **Destructuring:** Always destructure props directly in the component parameters.
-- **TanStack Query encapsulation:** ALWAYS encapsulate TanStack Query calls (e.g., `useQuery`, `useMutation`) in custom hooks. Direct calls inside React components are strictly prohibited.
+- **TanStack Query encapsulation:** ALWAYS encapsulate TanStack Query calls in custom hooks. Direct calls inside React components are strictly prohibited.
 
 ## 11. CODE QUALITY AND OPTIMIZATION
 
 - Write highly optimized, Senior-level code.
-- Prevent unnecessary re-renders in React (use `useMemo`, `useCallback` appropriately as seen in the existing codebase).
+- Prevent unnecessary re-renders in React (use `useMemo`, `useCallback` appropriately).
 - Keep the code ordered, clean, and modular.
 - **Formatting:** NEVER write manual regex or logic for formatting numbers, dates, or currencies. You MUST use the native JavaScript `Intl` API.
 - Do not output explanations or chatty text before or after the code block unless explicitly requested. Just output the clean code.
@@ -87,5 +87,5 @@ You are an expert Senior Developer. You must strictly adhere to the following ru
 ## 12. BUILD & WARNINGS (ZERO TOLERANCE)
 
 - **Failed Builds:** Code that breaks the build is unacceptable.
-- **Zero Warnings:** The codebase must be 100% free of ESLint warnings and TypeScript errors. A `warn` in the config must be treated as an `error` by the developer.
-- **Linting & Formatting:** You MUST adhere to the project's `.prettierrc.cjs` and `eslint.config.mjs` rules at all times.
+- **Zero Warnings:** The codebase must be 100% free of ESLint warnings and TypeScript errors.
+- **Linting & Formatting:** You MUST adhere to the project's linting and formatting rules at all times.
