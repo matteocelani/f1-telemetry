@@ -68,12 +68,10 @@ function DriverStintRow({ row, raceLaps }: DriverStintRowProps) {
 
       {/* Mandatory stop dot — fixed column so all dots align vertically */}
       <div className="flex w-3 shrink-0 items-center justify-center">
-        {row.hasMandatoryStop && (
-          <div
-            className="size-1.5 rounded-full bg-amber-500"
-            title="Must pit: needs 2 different dry-weather tyre specs (FIA B6.3.6)"
-          />
-        )}
+        <div
+          className={`size-1.5 rounded-full ${row.hasMandatoryStop ? 'bg-red-500' : 'bg-green-500'}`}
+          title="Must pit: needs 2 different dry-weather tyre specs (FIA B6.3.6)"
+        />
       </div>
 
       {/* Timeline bar */}
@@ -117,7 +115,7 @@ function StintBlock({ block, isFirst, isLast }: StintBlockProps) {
         block.bgClass,
         !block.isNew && 'opacity-70',
         isFirst && 'rounded-l-sm',
-        isLast && 'rounded-r-sm border-r-0',
+        isLast && 'rounded-r-sm border-r-0'
       )}
       style={{
         left: `${block.leftPercent}%`,

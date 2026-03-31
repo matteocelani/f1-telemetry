@@ -1,8 +1,7 @@
 /**
- * Kinematic Dead-Reckoning Engine for the F1 Track Map.
- * Uses per-segment EWMA dwell profiles to project non-uniform car velocity,
- * rubber-band correction for seamless anchor transitions, and a 60fps rAF loop
- * that writes directly to SVG DOM refs — fully bypassing React's render cycle.
+ * Data-driven Track Map positioning engine.
+ * Computes driver positions from real F1 micro-sector data with smooth lerp
+ * interpolation via a 60fps rAF loop that writes directly to SVG DOM refs.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DriverTiming } from '@f1-telemetry/core';
@@ -38,54 +37,38 @@ interface AffineTransform {
   scale: number;
 }
 
-// Per-driver motion state anchored to the last confirmed micro-sector crossing.
-interface DriverKinematicState {
+interface DriverTrackState {
   anchorPercent: number;
   anchorTime: number;
-  // Visual offset applied at anchor time to prevent jumps; decays to 0 over CORRECTION_DECAY_MS.
-  correctionOffset: number;
-  prevCumulative: number;
+  nextBoundaryPercent: number;
+  estimatedDwellMs: number;
+  visualPercent: number;
   lapCount: number;
-  segIndex: number;
-}
-
-// Track-wide learned timing profile: dwells[k] = expected ms to traverse segment k.
-// Shared across all drivers since the track geometry is identical for everyone.
-interface SegmentDwellProfile {
-  dwells: number[];
-  // Fastest observed dwell per segment; used in timed sessions to reject out-lap data.
-  bests: number[];
-  observations: number;
-  lapTimeMs: number;
-  isTimedSession: boolean;
+  completedSegments: number;
 }
 
 // Constants
-
 const MIN_DRIVERS_FOR_BOUNDS = 5;
 const WARMUP_FRAMES = 3;
 const CURVATURE_WEIGHT = 4;
 const SMOOTHING_WINDOW = 5;
-const DEFAULT_LAP_TIME_MS = 90_000;
 const PERCENT_PER_LAP = 100;
+const LERP_FACTOR = 0.15;
+const LERP_SNAP_THRESHOLD = 0.01;
+const DEFAULT_LAP_TIME_MS = 90_000;
+const MAX_PROJECTION_RATIO = 0.95;
+// F1 resets segments to 0 before incrementing lap count; ignore drops larger than this threshold.
+const LAP_BOUNDARY_SEG_DROP = 3;
 
-// Kinematic engine
-const CORRECTION_DECAY_MS = 1000;
-const MIN_ANCHOR_DELTA_MS = 50;
-const SEGMENT_HEADROOM = 0.05;
-const SHOCK_DECAY_RATE = 2;
+// Sector/segment key arrays: avoids Object.keys().sort() on every call.
+const SECTOR_KEYS = ['0', '1', '2'] as const;
+const SEGMENT_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
 
-// Adaptive EWMA for segment profile learning
-const COLD_START_ALPHA = 0.5;
-const BASE_EWMA_ALPHA = 0.3;
-const MAX_EWMA_ALPHA = 0.8;
-const WARM_LAP_THRESHOLD = 3;
+// F1 segment completion statuses (2048=normal, 2049=purple, 2051=green+sector).
+// Status 2064 means "not yet reached" or "yellow flag" and must NOT count as completed.
+const COMPLETED_STATUSES = new Set([2048, 2049, 2051]);
 
-// In Practice/Qualifying, reject segment dwells slower than best × this ratio (out-laps).
-const OUTLAP_REJECTION_RATIO = 1.2;
-const TIMED_SESSIONS = new Set(['Practice', 'Qualifying', 'Sprint Qualifying']);
-
-// Module-level data
+// Module-level data — precomputed once at import time.
 const races = calendarData as unknown as RaceEntry[];
 const circuits = circuitsData as unknown as CircuitData[];
 const teams = teamsData as Record<string, TeamData>;
@@ -101,33 +84,31 @@ for (const driver of driversData) {
   }
 }
 
+// Precompute race date ranges so findCurrentRace avoids creating Date objects per call.
+const RACE_DATE_RANGES: { race: RaceEntry; earliest: number; latest: number }[] =
+  races.map((race) => {
+    const timestamps = Object.values(race.sessions).map((s) =>
+      new Date(s).getTime()
+    );
+    return {
+      race,
+      earliest: Math.min(...timestamps),
+      latest: Math.max(...timestamps),
+    };
+  });
+
 // Geometry helpers
 
 function findCurrentRace(): RaceEntry | undefined {
   const now = Date.now();
-  const WEEKEND_BUFFER_DAYS = 2;
-  const WEEKEND_BUFFER_MS = WEEKEND_BUFFER_DAYS * MS_PER_DAY;
+  const WEEKEND_BUFFER_MS = 2 * MS_PER_DAY;
 
-  for (const race of races) {
-    const sessionDates = Object.values(race.sessions).map((s) =>
-      new Date(s).getTime()
-    );
-    const earliest = Math.min(...sessionDates);
-    const latest = Math.max(...sessionDates);
-    if (
-      now >= earliest - WEEKEND_BUFFER_MS &&
-      now <= latest + WEEKEND_BUFFER_MS
-    ) {
+  for (const { race, earliest, latest } of RACE_DATE_RANGES) {
+    if (now >= earliest - WEEKEND_BUFFER_MS && now <= latest + WEEKEND_BUFFER_MS) {
       return race;
     }
   }
-
-  return races.find((race) => {
-    const sessionDates = Object.values(race.sessions).map((s) =>
-      new Date(s).getTime()
-    );
-    return Math.max(...sessionDates) > now;
-  });
+  return RACE_DATE_RANGES.find(({ latest }) => latest > Date.now())?.race;
 }
 
 function findCircuit(meetingName: string | undefined): CircuitData | null {
@@ -138,10 +119,7 @@ function findCircuit(meetingName: string | undefined): CircuitData | null {
     race = races.find((r) => r.name.toLowerCase().includes(nameLower));
   }
 
-  if (!race) {
-    race = findCurrentRace();
-  }
-
+  if (!race) race = findCurrentRace();
   if (!race) return null;
   return circuits.find((c) => c.circuitId === race!.id) ?? null;
 }
@@ -166,7 +144,6 @@ function computeArcDistances(points: [number, number][]): number[] {
   return d;
 }
 
-// Discrete unsigned curvature |dθ/ds| smoothed with moving average.
 function computeSmoothedCurvatures(points: [number, number][]): number[] {
   const n = points.length;
   if (n < 3) return new Array(n).fill(0);
@@ -180,13 +157,11 @@ function computeSmoothedCurvatures(points: [number, number][]): number[] {
     const la = Math.sqrt(ax * ax + ay * ay);
     const lb = Math.sqrt(bx * bx + by * by);
     if (la < 1e-6 || lb < 1e-6) continue;
-    // |cross| / (|a||b|) = sin(angle), divided by avg edge length = curvature
     raw[i] = Math.abs(ax * by - ay * bx) / (la * lb * ((la + lb) / 2));
   }
   raw[0] = raw[1];
   raw[n - 1] = raw[n - 2];
 
-  // Smoothing pass
   const half = Math.floor(SMOOTHING_WINDOW / 2);
   const smoothed: number[] = new Array(n).fill(0);
   for (let i = 0; i < n; i++) {
@@ -201,7 +176,6 @@ function computeSmoothedCurvatures(points: [number, number][]): number[] {
   return smoothed;
 }
 
-// Linear interpolation lookup in a monotonic table.
 function lerpLookup(xs: number[], ys: number[], targetX: number): number {
   for (let i = 1; i < xs.length; i++) {
     if (xs[i] >= targetX) {
@@ -213,7 +187,6 @@ function lerpLookup(xs: number[], ys: number[], targetX: number): number {
   return ys[ys.length - 1];
 }
 
-// Curvature-weighted boundary mapping: denser in corners, sparser on straights.
 function computeSegmentBoundaries(
   points: [number, number][],
   arcDist: number[],
@@ -228,7 +201,6 @@ function computeSegmentBoundaries(
 
   const maxCurv = Math.max(...curvatures, 1e-6);
 
-  // Cumulative curvature-weighted distance along the SVG path
   const wDist = [0];
   for (let i = 1; i < points.length; i++) {
     const ds = arcDist[i] - arcDist[i - 1];
@@ -238,18 +210,15 @@ function computeSegmentBoundaries(
   }
   const totalW = wDist[wDist.length - 1];
 
-  // Weighted distance at the start/finish line
   const startArc = (startOffsetPercent / 100) * totalArc;
   const startW = lerpLookup(arcDist, wDist, startArc);
 
-  // Distribute evenly in weighted space; monotonic to prevent backwards CSS animation.
   const boundaries: number[] = [];
   for (let k = 0; k <= totalSegments; k++) {
     const targetW = startW + (k / totalSegments) * totalW;
     const wrappedW = targetW > totalW ? targetW - totalW : targetW;
     const arc = lerpLookup(wDist, arcDist, wrappedW);
     let pct = (arc / totalArc) * 100;
-    // Ensure monotonic: after the path wraps, add 100%
     if (targetW > totalW) pct += 100;
     boundaries.push(pct);
   }
@@ -261,23 +230,11 @@ function countSegments(driver: DriverTiming): number {
   const sectors = driver.Sectors;
   if (!sectors) return 0;
   let n = 0;
-  for (const sKey of Object.keys(sectors)) {
+  for (const sKey of SECTOR_KEYS) {
     const segs = sectors[sKey]?.Segments;
     if (segs) n += Object.keys(segs).length;
   }
   return n;
-}
-
-function parseLapTimeMs(value: string | undefined): number | null {
-  if (!value) return null;
-  const parts = value.split(':');
-  if (parts.length === 2) {
-    const mins = parseInt(parts[0], 10);
-    const secs = parseFloat(parts[1]);
-    if (isNaN(mins) || isNaN(secs)) return null;
-    return (mins * 60 + secs) * 1000;
-  }
-  return null;
 }
 
 function findNearestPointIndex(
@@ -299,175 +256,42 @@ function findNearestPointIndex(
   return bestIdx;
 }
 
+function parseLapTimeMs(value: string | undefined): number | null {
+  if (!value) return null;
+  const colonIdx = value.indexOf(':');
+  if (colonIdx === -1) return null;
+  const mins = parseInt(value.substring(0, colonIdx), 10);
+  const secs = parseFloat(value.substring(colonIdx + 1));
+  if (isNaN(mins) || isNaN(secs)) return null;
+  return (mins * 60 + secs) * 1000;
+}
+
 function indexToPercent(index: number, distances: number[]): number {
   const total = distances[distances.length - 1];
   if (total === 0) return 0;
   return (distances[index] / total) * 100;
 }
 
-// Flattens all sector segment statuses into a single ordered array.
-function flattenSegmentStatuses(driver: DriverTiming): number[] {
+// Counts completed micro-sectors using pre-sorted key arrays (no Object.keys().sort()).
+function countCompletedSegments(driver: DriverTiming): number {
   const sectors = driver.Sectors;
-  if (!sectors) return [];
-  const statuses: number[] = [];
-  for (const sKey of Object.keys(sectors).sort()) {
+  if (!sectors) return 0;
+
+  let completed = 0;
+  for (const sKey of SECTOR_KEYS) {
     const segs = sectors[sKey]?.Segments;
     if (!segs) continue;
-    for (const segKey of Object.keys(segs).sort(
-      (a, b) => Number(a) - Number(b)
-    )) {
-      statuses.push(segs[segKey]?.Status ?? 0);
+    for (const segKey of SEGMENT_KEYS) {
+      const seg = segs[segKey];
+      if (!seg) continue;
+      if (COMPLETED_STATUSES.has(seg.Status ?? 0)) {
+        completed++;
+      } else {
+        return completed;
+      }
     }
   }
-  return statuses;
-}
-
-// Returns the furthest consecutive non-zero segment index; stale deep-merge data from prior laps is unreachable.
-function scanForwardSegment(statuses: number[], startIndex: number): number {
-  let furthest = startIndex;
-  for (let i = startIndex; i < statuses.length; i++) {
-    if (statuses[i] > 0) {
-      furthest = i;
-    } else {
-      break;
-    }
-  }
-  return furthest;
-}
-
-// Kinematic engine
-
-// Adaptive EWMA alpha: corners learn slowly (stable), straights learn fast (predictable).
-function computeAdaptiveAlpha(
-  profile: SegmentDwellProfile,
-  segIdx: number
-): number {
-  const totalSegs = profile.dwells.length;
-  const isWarm =
-    profile.observations >= totalSegs * WARM_LAP_THRESHOLD;
-  if (!isWarm) return COLD_START_ALPHA;
-
-  const uniformDwell = profile.lapTimeMs / Math.max(1, totalSegs);
-  const segDwell = profile.dwells[segIdx] ?? uniformDwell;
-  return Math.min(MAX_EWMA_ALPHA, BASE_EWMA_ALPHA * (uniformDwell / Math.max(segDwell, 1)));
-}
-
-// Segment-based projection: non-uniform velocity per micro-sector with pace shock damping.
-function projectSegmentPosition(
-  kin: DriverKinematicState,
-  profile: SegmentDwellProfile,
-  boundaries: number[]
-): number {
-  if (boundaries.length < 2) return kin.prevCumulative;
-
-  const now = Date.now();
-  const elapsed = now - kin.anchorTime;
-  const totalSegs = boundaries.length - 1;
-
-  // Projecting through the segment AFTER the last completed one
-  const projSegIdx = kin.segIndex + 1;
-  const projSegWrapped = ((projSegIdx % totalSegs) + totalSegs) % totalSegs;
-
-  // Segment span from the anchor to the next boundary
-  const segEnd = boundaries[Math.min(projSegIdx + 1, boundaries.length - 1)];
-  const segStart = boundaries[Math.min(projSegIdx, boundaries.length - 1)];
-  const span = segEnd - segStart;
-
-  // Expected dwell from the learned profile (cold start: uniform distribution)
-  const defaultDwell = profile.lapTimeMs / Math.max(1, totalSegs);
-  const expectedDwell =
-    profile.dwells[projSegWrapped] > 0
-      ? profile.dwells[projSegWrapped]
-      : defaultDwell;
-
-  // Progress ratio within segment
-  let ratio: number;
-  if (expectedDwell <= 0) {
-    ratio = 0;
-  } else if (elapsed <= expectedDwell) {
-    ratio = elapsed / expectedDwell;
-  } else {
-    // Pace shock (Safety Car, rain, incident): the car is taking longer than expected.
-    // Instead of overshooting into the next segment, we asymptotically approach 95%
-    // of the boundary. The dot decelerates naturally and "waits" for the real anchor.
-    const overrun = elapsed / expectedDwell - 1;
-    ratio = 1 - SEGMENT_HEADROOM / (1 + overrun * SHOCK_DECAY_RATE);
-  }
-
-  const basePercent = kin.anchorPercent + span * ratio;
-
-  // Rubber-band correction: at anchor time the dot was at a different visual position.
-  // This offset bridges the gap and linearly decays to 0, preventing visible jumps.
-  const corrDecay = Math.max(0, 1 - elapsed / CORRECTION_DECAY_MS);
-  const corrected = basePercent + kin.correctionOffset * corrDecay;
-
-  // Monotonic constraint: position can never decrease (prevents backward teleports).
-  return Math.max(corrected, kin.prevCumulative);
-}
-
-// Updates kinematic state and segment profile when a new anchor arrives from F1 data.
-function applyAnchor(
-  prev: DriverKinematicState | undefined,
-  anchorPercent: number,
-  now: number,
-  currentLap: number,
-  segIndex: number,
-  profile: SegmentDwellProfile,
-  boundaries: number[]
-): DriverKinematicState {
-  if (!prev) {
-    return {
-      anchorPercent,
-      anchorTime: now,
-      correctionOffset: 0,
-      prevCumulative: anchorPercent,
-      lapCount: currentLap,
-      segIndex,
-    };
-  }
-
-  const dt = now - prev.anchorTime;
-  if (dt < MIN_ANCHOR_DELTA_MS) {
-    return { ...prev, segIndex, lapCount: currentLap };
-  }
-
-  // Snapshot where the dot appears right now so we can bridge from it seamlessly.
-  const currentVisual = projectSegmentPosition(prev, profile, boundaries);
-
-  // Learn from real data: update the dwell profile with the actual time this segment took.
-  if (segIndex >= 0 && segIndex < profile.dwells.length && dt > MIN_ANCHOR_DELTA_MS) {
-    // Always track the fastest observed dwell for out-lap filtering.
-    if (dt < profile.bests[segIndex]) {
-      profile.bests[segIndex] = dt;
-    }
-
-    // In Practice/Qualifying, out-laps and in-laps are 2-3x slower than push-laps.
-    // Only update the EWMA when the observed dwell is within tolerance of the best,
-    // so the profile converges to representative push-lap pace, not polluted averages.
-    const isBestKnown = isFinite(profile.bests[segIndex]);
-    const isRepresentative = !profile.isTimedSession
-      || !isBestKnown
-      || dt <= profile.bests[segIndex] * OUTLAP_REJECTION_RATIO;
-
-    if (isRepresentative) {
-      const alpha = computeAdaptiveAlpha(profile, segIndex);
-      profile.dwells[segIndex] =
-        alpha * dt + (1 - alpha) * profile.dwells[segIndex];
-      profile.observations++;
-    }
-  }
-
-  // correction = currentVisual - anchor ensures s(0) = currentVisual (no jump).
-  const correctionOffset = currentVisual - anchorPercent;
-
-  return {
-    anchorPercent,
-    anchorTime: now,
-    correctionOffset,
-    prevCumulative: Math.max(prev.prevCumulative, anchorPercent),
-    lapCount: currentLap,
-    segIndex,
-  };
+  return completed;
 }
 
 // Hook
@@ -486,18 +310,13 @@ export function useTrackMap(): TrackMapData {
     maxY: -Infinity,
     frameCount: 0,
   });
-  const kinematicRef = useRef<Record<string, DriverKinematicState>>({});
-  const segmentProfileRef = useRef<SegmentDwellProfile>({
-    dwells: [],
-    bests: [],
-    observations: 0,
-    lapTimeMs: DEFAULT_LAP_TIME_MS,
-    isTimedSession: false,
-  });
-  const boundariesRef = useRef<number[]>([]);
+  const trackStateRef = useRef<Record<string, DriverTrackState>>({});
   const driversRef = useRef<Record<string, DriverDotMeta>>({});
   const prevGpsModeRef = useRef(false);
-  const prevDriverKeyRef = useRef('');
+  const driverRevRef = useRef(0);
+  const prevDriverRevRef = useRef(-1);
+  // Reusable object for projectAll output — avoids creating a new object every frame.
+  const projectedRef = useRef<Record<string, number>>({});
   const [drivers, setDrivers] = useState<DriverDotMeta[]>([]);
 
   const circuit = useMemo(
@@ -512,7 +331,6 @@ export function useTrackMap(): TrackMapData {
 
   const startOffsetPct = circuit?.startOffset ?? 0;
 
-  // Detect segment count from first driver with data
   const totalSegments = useMemo(() => {
     for (const timing of Object.values(timingLines)) {
       const n = countSegments(timing);
@@ -521,7 +339,6 @@ export function useTrackMap(): TrackMapData {
     return 0;
   }, [timingLines]);
 
-  // Precompute curvature-weighted boundaries (per circuit + segment count)
   const boundaries = useMemo(() => {
     if (!circuit || totalSegments === 0 || arcDistances.length === 0) return [];
     return computeSegmentBoundaries(
@@ -532,36 +349,15 @@ export function useTrackMap(): TrackMapData {
     );
   }, [circuit, totalSegments, arcDistances, startOffsetPct]);
 
-  // Sync boundaries to ref for the rAF projection function
-  boundariesRef.current = boundaries;
-
-  // Initialize segment profile when segment count or session type changes
-  useEffect(() => {
-    if (totalSegments === 0) return;
-    const profile = segmentProfileRef.current;
-    const sessionType = sessionInfo?.Type ?? 'Race';
-    profile.isTimedSession = TIMED_SESSIONS.has(sessionType);
-    if (profile.dwells.length !== totalSegments) {
-      const uniform = profile.lapTimeMs / totalSegments;
-      profile.dwells = new Array(totalSegments).fill(uniform);
-      profile.bests = new Array(totalSegments).fill(Infinity);
-      profile.observations = 0;
-    }
-  }, [totalSegments, sessionInfo]);
-
   const hasGps = Object.keys(positions).length >= MIN_DRIVERS_FOR_BOUNDS;
   const isSegmentMode = !hasGps;
 
-  // Process anchors when data changes
+  // Compute target positions from real data and update structural driver list.
   useEffect(() => {
     if (!circuit || arcDistances.length === 0) return;
 
-    const now = Date.now();
-    const profile = segmentProfileRef.current;
-
-    // Reset kinematic states on mode switch
     if (prevGpsModeRef.current !== hasGps) {
-      kinematicRef.current = {};
+      trackStateRef.current = {};
       prevGpsModeRef.current = hasGps;
     }
 
@@ -620,7 +416,6 @@ export function useTrackMap(): TrackMapData {
     const transform = transformRef.current;
 
     if (hasGps && transform) {
-      // GPS mode: each position update is a kinematic anchor
       for (const [driverNo, pos] of gpsEntries) {
         const meta = DRIVER_META[driverNo];
         const timing = timingLines[driverNo];
@@ -634,18 +429,17 @@ export function useTrackMap(): TrackMapData {
         const rawPercent = indexToPercent(idx, arcDistances);
         const anchorPercent = currentLap * PERCENT_PER_LAP + rawPercent;
 
-        const prev = kinematicRef.current[driverNo];
-        if (!prev || anchorPercent >= prev.anchorPercent) {
-          kinematicRef.current[driverNo] = applyAnchor(
-            prev,
-            anchorPercent,
-            now,
-            currentLap,
-            -1,
-            profile,
-            boundaries
-          );
-        }
+        const prev = trackStateRef.current[driverNo];
+
+        trackStateRef.current[driverNo] = {
+          anchorPercent,
+          anchorTime: Date.now(),
+          nextBoundaryPercent: anchorPercent,
+          estimatedDwellMs: 0,
+          visualPercent: prev?.visualPercent ?? anchorPercent,
+          lapCount: currentLap,
+          completedSegments: 0,
+        };
 
         newDrivers[driverNo] = {
           driverNo,
@@ -655,7 +449,6 @@ export function useTrackMap(): TrackMapData {
         };
       }
     } else if (boundaries.length > 0) {
-      // Segment mode: detect micro-sector changes as kinematic anchors
       for (const [driverNo, timing] of Object.entries(timingLines)) {
         if (timing.Retired || timing.Stopped) continue;
 
@@ -664,16 +457,6 @@ export function useTrackMap(): TrackMapData {
 
         const currentLap = timing.NumberOfLaps ?? 0;
 
-        // Update segment profile lap time from driver's latest lap
-        const lapTime = parseLapTimeMs(timing.LastLapTime?.Value);
-        if (lapTime) {
-          profile.lapTimeMs =
-            BASE_EWMA_ALPHA * lapTime +
-            (1 - BASE_EWMA_ALPHA) * profile.lapTimeMs;
-        }
-
-        // F1 sometimes sends InPit:true but never the corresponding false.
-        // Cross-reference with stint data: if the active stint has ≥2 laps, driver is on track.
         const activeStints = appLines[driverNo]?.Stints ?? [];
         const lastStintLaps = activeStints.length > 0
           ? (activeStints[activeStints.length - 1]?.TotalLaps ?? 0)
@@ -681,7 +464,7 @@ export function useTrackMap(): TrackMapData {
         const isInPit = Boolean(timing.InPit) && lastStintLaps < MIN_PIT_CONFIRM_LAPS;
 
         if (isInPit) {
-          delete kinematicRef.current[driverNo];
+          delete trackStateRef.current[driverNo];
           newDrivers[driverNo] = {
             driverNo,
             tla: meta.tla,
@@ -691,63 +474,50 @@ export function useTrackMap(): TrackMapData {
           continue;
         }
 
-        const prev = kinematicRef.current[driverNo];
+        const completed = countCompletedSegments(timing);
+        const prev = trackStateRef.current[driverNo];
 
-        // Lap reset: preserve segment profile knowledge, reset segment tracking
-        if (prev && currentLap > prev.lapCount) {
-          const startPercent =
-            currentLap * PERCENT_PER_LAP +
-            (boundaries[1] ?? boundaries[0]);
-          kinematicRef.current[driverNo] = {
-            anchorPercent: startPercent,
-            anchorTime: now,
-            correctionOffset: 0,
-            prevCumulative: prev.prevCumulative,
-            lapCount: currentLap,
-            segIndex: -1,
+        // Lap boundary guard: F1 resets segments to 0 BEFORE incrementing NumberOfLaps.
+        // If completed drops significantly on the same lap, this is a segment reset — hold the old anchor.
+        const segDrop = prev ? prev.completedSegments - completed : 0;
+        const isLapBoundaryReset = prev
+          && prev.lapCount === currentLap
+          && segDrop > LAP_BOUNDARY_SEG_DROP;
+
+        if (isLapBoundaryReset) {
+          // Keep the previous state — don't move the dot backward
+          newDrivers[driverNo] = {
+            driverNo,
+            tla: meta.tla,
+            teamColor: meta.color,
+            inPit: false,
           };
+          continue;
         }
 
-        const driverSegCount = countSegments(timing);
-        if (driverSegCount !== totalSegments) continue;
+        const anchorBoundary = completed < boundaries.length
+          ? boundaries[completed]
+          : boundaries[boundaries.length - 1];
+        const anchorPercent = currentLap * PERCENT_PER_LAP + anchorBoundary;
 
-        const statuses = flattenSegmentStatuses(timing);
-        const currentState = kinematicRef.current[driverNo];
-        const scanStart = Math.max(0, currentState?.segIndex ?? 0);
-        const leadSeg = scanForwardSegment(statuses, scanStart);
-        const hasValidSegment = statuses.length > 0 && statuses[leadSeg] > 0;
+        const nextIdx = Math.min(completed + 1, boundaries.length - 1);
+        const nextBoundaryPercent = currentLap * PERCENT_PER_LAP + boundaries[nextIdx];
 
-        if (
-          hasValidSegment &&
-          (!currentState || currentState.segIndex !== leadSeg)
-        ) {
-          const anchorPercent =
-            currentLap * PERCENT_PER_LAP +
-            (boundaries[leadSeg + 1] ?? boundaries[boundaries.length - 1]);
-          kinematicRef.current[driverNo] = applyAnchor(
-            currentState,
-            anchorPercent,
-            now,
-            currentLap,
-            leadSeg,
-            profile,
-            boundaries
-          );
-        } else if (!currentState) {
-          // Cold start: no segment data yet, initialize at lap start
-          const startPercent =
-            currentLap * PERCENT_PER_LAP +
-            (boundaries[1] ?? boundaries[0]);
-          kinematicRef.current[driverNo] = applyAnchor(
-            undefined,
-            startPercent,
-            now,
-            currentLap,
-            -1,
-            profile,
-            boundaries
-          );
-        }
+        const lapTimeMs = parseLapTimeMs(timing.LastLapTime?.Value) ?? DEFAULT_LAP_TIME_MS;
+        const totalSegs = boundaries.length - 1;
+        const estimatedDwellMs = totalSegs > 0 ? lapTimeMs / totalSegs : DEFAULT_LAP_TIME_MS;
+
+        const isNewAnchor = !prev || prev.completedSegments !== completed || prev.lapCount !== currentLap;
+
+        trackStateRef.current[driverNo] = {
+          anchorPercent,
+          anchorTime: isNewAnchor ? Date.now() : prev.anchorTime,
+          nextBoundaryPercent,
+          estimatedDwellMs,
+          visualPercent: prev?.visualPercent ?? anchorPercent,
+          lapCount: currentLap,
+          completedSegments: completed,
+        };
 
         newDrivers[driverNo] = {
           driverNo,
@@ -760,19 +530,30 @@ export function useTrackMap(): TrackMapData {
 
     driversRef.current = newDrivers;
 
-    // Clean up stale kinematic states
-    for (const key of Object.keys(kinematicRef.current)) {
-      if (!newDrivers[key]) delete kinematicRef.current[key];
+    for (const key of Object.keys(trackStateRef.current)) {
+      if (!newDrivers[key]) delete trackStateRef.current[key];
     }
 
-    // Only trigger React re-render on structural driver changes
-    const driverKey = Object.keys(newDrivers)
-      .sort()
-      .map((k) => `${k}:${newDrivers[k].inPit ? 1 : 0}`)
-      .join('|');
+    // Cheap structural change detection: increment revision on any change.
+    const driverKeys = Object.keys(newDrivers);
+    let hasChanged = driverKeys.length !== Object.keys(driversRef.current).length;
+    if (!hasChanged) {
+      for (const k of driverKeys) {
+        const prev = driversRef.current[k];
+        const next = newDrivers[k];
+        if (!prev || prev.inPit !== next.inPit) {
+          hasChanged = true;
+          break;
+        }
+      }
+    }
 
-    if (driverKey !== prevDriverKeyRef.current) {
-      prevDriverKeyRef.current = driverKey;
+    if (hasChanged) {
+      driverRevRef.current++;
+    }
+
+    if (driverRevRef.current !== prevDriverRevRef.current) {
+      prevDriverRevRef.current = driverRevRef.current;
       setDrivers(Object.values(newDrivers));
     }
   }, [
@@ -783,21 +564,51 @@ export function useTrackMap(): TrackMapData {
     arcDistances,
     boundaries,
     hasGps,
-    totalSegments,
     startOffsetPct,
   ]);
 
-  // Called by TrackMap's rAF loop at 60fps. Reads from refs only (no React state),
-  // so it never triggers a re-render. TrackMap writes the result to el.style.offsetDistance.
-  const projectPercent = useCallback(
-    (driverNo: string): number => {
-      const kin = kinematicRef.current[driverNo];
-      if (!kin) return 0;
-      return projectSegmentPosition(
-        kin,
-        segmentProfileRef.current,
-        boundariesRef.current
-      );
+  // Projects ALL drivers with forward projection + lerp. Zero allocations in the hot path.
+  // Called once per rAF frame. NaN-safe: corrupted values fall back to anchor or 0.
+  const projectAll = useCallback(
+    (): Record<string, number> => {
+      const states = trackStateRef.current;
+      const now = Date.now();
+      const result = projectedRef.current;
+
+      // Clear previous keys that no longer exist
+      for (const key in result) {
+        if (!(key in states)) delete result[key];
+      }
+
+      for (const driverNo in states) {
+        const state = states[driverNo];
+
+        // Forward projection between segment boundaries using elapsed time
+        let targetPercent = state.anchorPercent;
+        if (state.estimatedDwellMs > 0) {
+          const elapsed = now - state.anchorTime;
+          const span = state.nextBoundaryPercent - state.anchorPercent;
+          const progress = Math.min(elapsed / state.estimatedDwellMs, MAX_PROJECTION_RATIO);
+          targetPercent = state.anchorPercent + span * (progress > 0 ? progress : 0);
+        }
+
+        // Lerp toward the projected target
+        const delta = targetPercent - state.visualPercent;
+        if (Math.abs(delta) < LERP_SNAP_THRESHOLD) {
+          state.visualPercent = targetPercent;
+        } else {
+          state.visualPercent += delta * LERP_FACTOR;
+        }
+
+        // NaN guard
+        if (!Number.isFinite(state.visualPercent)) {
+          state.visualPercent = Number.isFinite(state.anchorPercent) ? state.anchorPercent : 0;
+        }
+
+        result[driverNo] = state.visualPercent;
+      }
+
+      return result;
     },
     []
   );
@@ -808,6 +619,6 @@ export function useTrackMap(): TrackMapData {
     hasData: drivers.length > 0,
     isSegmentMode,
     startPercent: startOffsetPct,
-    projectPercent,
+    projectAll,
   };
 }

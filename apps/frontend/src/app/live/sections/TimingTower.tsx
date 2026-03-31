@@ -170,7 +170,7 @@ export function TimingTower({ className }: TimingTowerProps) {
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: ROW_EXPAND_DURATION }}
-                    className="overflow-hidden pb-3"
+                    className="overflow-hidden pb-8 xl:pb-3"
                   >
                     <DriverRowExpanded row={row} />
                   </motion.div>

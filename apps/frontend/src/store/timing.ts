@@ -9,6 +9,9 @@ interface TimingState {
   noEntries: number[];
   // 0-indexed part in which each driver was knocked out (Q1=0, Q2=1, Q3=2).
   knockedOutParts: Record<string, number>;
+  // F1 sends Retired/Stopped as transient flags that reset to false after seconds.
+  // This set latches driver numbers permanently once either flag is seen as true.
+  retiredDrivers: Set<string>;
   updateLines: (deltaLines: Record<string, Partial<DriverTiming>>) => void;
   setDriverList: (list: Record<string, DriverInfo>) => void;
   setSessionMeta: (sessionPart: number, noEntries: number[]) => void;
@@ -21,11 +24,13 @@ export const useTiming = create<TimingState>((set) => ({
   sessionPart: 1,
   noEntries: [],
   knockedOutParts: {},
+  retiredDrivers: new Set<string>(),
 
   updateLines: (deltaLines) =>
     set((state) => {
       const nextLines = { ...state.lines };
       const nextKnockedOutParts = { ...state.knockedOutParts };
+      let nextRetired = state.retiredDrivers;
       for (const [driverNo, delta] of Object.entries(deltaLines)) {
         if (!isDriverNo(driverNo)) continue;
         // Capture the elimination part on the first KnockedOut transition.
@@ -34,12 +39,17 @@ export const useTiming = create<TimingState>((set) => ({
         if (delta.KnockedOut === true && !(driverNo in nextKnockedOutParts)) {
           nextKnockedOutParts[driverNo] = state.sessionPart - 1;
         }
+        // DNF latch: once Retired or Stopped is true, remember permanently.
+        if ((delta.Retired === true || delta.Stopped === true) && !nextRetired.has(driverNo)) {
+          nextRetired = new Set(nextRetired);
+          nextRetired.add(driverNo);
+        }
         nextLines[driverNo] = mergeDeltaUpdate(
           nextLines[driverNo] ?? {},
           delta
         ) as DriverTiming;
       }
-      return { lines: nextLines, knockedOutParts: nextKnockedOutParts };
+      return { lines: nextLines, knockedOutParts: nextKnockedOutParts, retiredDrivers: nextRetired };
     }),
 
   setDriverList: (list) =>
@@ -53,5 +63,5 @@ export const useTiming = create<TimingState>((set) => ({
 
   setSessionMeta: (sessionPart, noEntries) => set({ sessionPart, noEntries }),
 
-  reset: () => set({ lines: {}, driverList: {}, sessionPart: 1, noEntries: [], knockedOutParts: {} }),
+  reset: () => set({ lines: {}, driverList: {}, sessionPart: 1, noEntries: [], knockedOutParts: {}, retiredDrivers: new Set<string>() }),
 }));

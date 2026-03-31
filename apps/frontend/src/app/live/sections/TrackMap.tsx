@@ -37,7 +37,7 @@ const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
 };
 
 export function TrackMap({ className }: TrackMapProps) {
-  const { drivers, circuit, isSegmentMode, startPercent, projectPercent } =
+  const { drivers, circuit, isSegmentMode, startPercent, projectAll } =
     useTrackMap();
   const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
 
@@ -62,21 +62,24 @@ export function TrackMap({ className }: TrackMapProps) {
     []
   );
 
-  // 60fps animation loop: projects positions and writes directly to SVG DOM
+  // 60fps animation loop: projects all drivers with position clamping, writes directly to SVG DOM.
   useEffect(() => {
     if (!circuit) return;
 
     const animate = () => {
+      const projected = projectAll();
       for (const [driverNo, el] of dotRefs.current) {
-        const percent = projectPercent(driverNo);
-        el.style.offsetDistance = `${percent}%`;
+        const percent = projected[driverNo];
+        if (Number.isFinite(percent)) {
+          el.style.offsetDistance = `${percent}%`;
+        }
       }
       frameIdRef.current = requestAnimationFrame(animate);
     };
 
     frameIdRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameIdRef.current);
-  }, [circuit, projectPercent]);
+  }, [circuit, projectAll]);
 
   if (!circuit) {
     return (

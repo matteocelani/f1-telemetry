@@ -24,7 +24,7 @@ export interface TrackMapData {
   hasData: boolean;
   isSegmentMode: boolean;
   startPercent: number;
-  projectPercent: (driverNo: string) => number;
+  projectAll: () => Record<string, number>;
 }
 
 export type SectorColorClass = 'purple' | 'green' | 'yellow' | 'none';
