@@ -96,6 +96,8 @@ export interface StrategyDriverRow {
   teamColor: string;
   isInPit: boolean;
   stints: UIStint[];
+  // FIA B6.3.6: driver must use ≥2 dry-weather tyre specs during the race.
+  hasMandatoryStop: boolean;
 }
 
 // Pace Radar

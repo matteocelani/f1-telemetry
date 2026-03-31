@@ -54,23 +54,37 @@ function DriverStintRow({ row, raceLaps }: DriverStintRowProps) {
   );
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Driver label */}
-      <div className="flex w-10 shrink-0 items-center gap-1.5">
-        <div
-          className="h-3 w-1 shrink-0 rounded-full"
-          style={{ backgroundColor: row.teamColor }}
-        />
-        <span className="text-2xs font-bold tabular-nums text-foreground">
-          {row.tla}
-        </span>
+    <div className="flex items-center gap-1">
+      {/* Team color bar */}
+      <div
+        className="h-5 w-1 shrink-0 rounded-full"
+        style={{ backgroundColor: row.teamColor }}
+      />
+
+      {/* Driver TLA — fixed width for column alignment */}
+      <span className="w-8 shrink-0 text-2xs font-bold tabular-nums text-foreground">
+        {row.tla}
+      </span>
+
+      {/* Mandatory stop dot — fixed column so all dots align vertically */}
+      <div className="flex w-3 shrink-0 items-center justify-center">
+        {row.hasMandatoryStop && (
+          <div
+            className="size-1.5 rounded-full bg-amber-500"
+            title="Must pit: needs 2 different dry-weather tyre specs (FIA B6.3.6)"
+          />
+        )}
       </div>
 
       {/* Timeline bar */}
       <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-muted/40">
-        {/* Stint blocks */}
         {blocks.map((block, i) => (
-          <StintBlock key={i} block={block} isLast={i === blocks.length - 1} isInPit={row.isInPit} />
+          <StintBlock
+            key={i}
+            block={block}
+            isFirst={i === 0}
+            isLast={i === blocks.length - 1}
+          />
         ))}
       </div>
     </div>
@@ -89,11 +103,11 @@ interface StintBlockData {
 
 interface StintBlockProps {
   block: StintBlockData;
+  isFirst: boolean;
   isLast: boolean;
-  isInPit: boolean;
 }
 
-function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
+function StintBlock({ block, isFirst, isLast }: StintBlockProps) {
   if (block.widthPercent <= 0) return null;
 
   return (
@@ -102,7 +116,8 @@ function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
         'absolute top-0 h-full flex items-center justify-center border-r border-background/60',
         block.bgClass,
         !block.isNew && 'opacity-70',
-        isLast && isInPit && 'animate-pulse',
+        isFirst && 'rounded-l-sm',
+        isLast && 'rounded-r-sm border-r-0',
       )}
       style={{
         left: `${block.leftPercent}%`,

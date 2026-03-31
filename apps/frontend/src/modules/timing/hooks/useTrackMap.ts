@@ -18,6 +18,7 @@ import type {
 } from '@/modules/timing/types';
 import { useSession } from '@/store/session';
 import { useTiming } from '@/store/timing';
+import { useTimingApp } from '@/store/timing-app';
 import { useTrack } from '@/store/track';
 import type { RaceEntry } from '@/types/data';
 
@@ -473,6 +474,7 @@ function applyAnchor(
 export function useTrackMap(): TrackMapData {
   const positions = useTrack((s) => s.positions);
   const timingLines = useTiming((s) => s.lines);
+  const appLines = useTimingApp((s) => s.lines);
   const sessionInfo = useSession((s) => s.sessionInfo);
 
   const transformRef = useRef<AffineTransform | null>(null);
@@ -669,7 +671,15 @@ export function useTrackMap(): TrackMapData {
             (1 - BASE_EWMA_ALPHA) * profile.lapTimeMs;
         }
 
-        if (timing.InPit) {
+        // F1 sometimes sends InPit:true but never the corresponding false.
+        // Cross-reference with stint data: if the active stint has ≥2 laps, driver is on track.
+        const activeStints = appLines[driverNo]?.Stints ?? [];
+        const lastStintLaps = activeStints.length > 0
+          ? (activeStints[activeStints.length - 1]?.TotalLaps ?? 0)
+          : 0;
+        const isInPit = Boolean(timing.InPit) && lastStintLaps < 2;
+
+        if (isInPit) {
           delete kinematicRef.current[driverNo];
           newDrivers[driverNo] = {
             driverNo,
@@ -767,6 +777,7 @@ export function useTrackMap(): TrackMapData {
   }, [
     positions,
     timingLines,
+    appLines,
     circuit,
     arcDistances,
     boundaries,
