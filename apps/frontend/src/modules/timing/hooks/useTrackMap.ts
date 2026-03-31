@@ -11,6 +11,7 @@ import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import driversData from '@/data/drivers.json';
 import teamsData from '@/data/teams.json';
+import { MIN_PIT_CONFIRM_LAPS } from '@/modules/timing/constants';
 import type {
   CircuitData,
   DriverDotMeta,
@@ -677,7 +678,7 @@ export function useTrackMap(): TrackMapData {
         const lastStintLaps = activeStints.length > 0
           ? (activeStints[activeStints.length - 1]?.TotalLaps ?? 0)
           : 0;
-        const isInPit = Boolean(timing.InPit) && lastStintLaps < 2;
+        const isInPit = Boolean(timing.InPit) && lastStintLaps < MIN_PIT_CONFIRM_LAPS;
 
         if (isInPit) {
           delete kinematicRef.current[driverNo];

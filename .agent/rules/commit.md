@@ -10,11 +10,12 @@ trigger: always_on
 
 **EXECUTION STEPS:**
 
-1. **Pre-flight Validation (CRITICAL):** Before staging anything, read and enforce the rules defined in:
+1. **Pre-flight Validation (BLOCKING — DO NOT SKIP):**
+   STOP. Read these three files NOW before doing anything else:
    - `CLAUDE.md` — Primary source of truth for all coding and architecture rules.
    - `.agent/rules/global.md` — Frontend coding standards (TypeScript, styling, patterns).
    - `.agent/rules/project.md` — Architecture, folder structure, state management.
-   Review ALL changed files (`git diff` + `git diff --staged`) against these rules. Check for:
+   Then run `git diff` + `git diff --staged` and scan EVERY changed line against those rules. Check for:
    - `any` usage in TypeScript
    - Relative imports (must be `@/` absolute)
    - Inline CSS (`style={{}}`) where Tailwind should be used
@@ -25,7 +26,7 @@ trigger: always_on
    - Swallowed errors (`catch (e) { console.log(e) }`)
    - Raw `useQuery`/`useMutation` calls outside custom hooks
    - Wrong import order
-   If violations are found: **fix them automatically**, then continue. If a fix is ambiguous, ask the user.
+   Do NOT proceed to step 2 until you have confirmed zero violations. If violations are found: **fix them automatically**, then re-check. If a fix is ambiguous, ask the user.
 2. **Run TypeScript Check:** Execute `pnpm --filter frontend lint` (or equivalent). If errors exist, fix them before proceeding. Zero errors required.
 3. **Stage All Changes:** Execute `git add .` to stage all modified, deleted, and new files.
 4. **Analyze STAGED Changes (CRITICAL):** Execute `git diff --staged` to read the EXACT code differences. Base the commit message strictly on this output. Do NOT rely on chat history. Analyze EVERY file in the staged diff.

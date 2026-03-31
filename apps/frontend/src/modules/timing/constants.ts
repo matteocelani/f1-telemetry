@@ -59,6 +59,10 @@ export const DEFAULT_TOTAL_LAPS = 70;
 // Minimum stint block width (%) to render the compound label inside it
 export const MIN_STINT_LABEL_WIDTH_PERCENT = 6;
 
+// FIA B6.3.6: minimum dry-weather tyre specs required during a race.
+// Used to detect stuck InPit flags (if active stint has ≥ this many laps, driver is on track).
+export const MIN_PIT_CONFIRM_LAPS = 2;
+
 // Pace Radar metrics
 export const PACE_METRICS: readonly PaceMetricOption[] = [
   { key: 's1', label: 'S1', description: 'Sector 1 — Best Time' },

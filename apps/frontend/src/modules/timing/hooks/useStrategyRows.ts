@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { NO_POSITION } from '@/constants/numbers';
 import driversData from '@/data/drivers.json';
+import { MIN_PIT_CONFIRM_LAPS } from '@/modules/timing/constants';
 import type { StrategyDriverRow, UIStint } from '@/modules/timing/types';
 import { useLapCount } from '@/store/lap-count';
 import { useTiming } from '@/store/timing';
@@ -94,7 +95,7 @@ export function useStrategyRows(): {
           : '#666666',
         // F1 sometimes sends InPit:true but never the corresponding false.
         // If the active stint has ≥2 laps, the driver is clearly on track.
-        isInPit: (pos?.isInPit ?? false) && (stints.at(-1)?.totalLaps ?? 0) < 2,
+        isInPit: (pos?.isInPit ?? false) && (stints.at(-1)?.totalLaps ?? 0) < MIN_PIT_CONFIRM_LAPS,
         stints,
         hasMandatoryStop,
       });
