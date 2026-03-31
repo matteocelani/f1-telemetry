@@ -29,10 +29,11 @@ const START_LINE_LENGTH = 12;
 const START_LINE_WIDTH = 2;
 
 const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
-  '4': '#ef4444',
+  '2': '#eab308',
+  '4': '#f97316',
   '5': '#ef4444',
   '6': '#eab308',
-  '7': '#eab308',
+  '7': '#22c55e',
 };
 
 export function TrackMap({ className }: TrackMapProps) {
@@ -113,7 +114,7 @@ export function TrackMap({ className }: TrackMapProps) {
           <PopoverContent side="top" align="start" className="w-72 p-3">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
-                <Info className="size-3.5 shrink-0 text-amber-500" />
+                <Info className="size-3.5 shrink-0 text-foreground" />
                 <span className="text-sm font-semibold text-foreground">
                   Estimated positions
                 </span>
@@ -197,7 +198,11 @@ export function TrackMap({ className }: TrackMapProps) {
               }
             >
               {isSelected && (
-                <circle r={GLOW_RADIUS} fill={driver.teamColor} opacity="0.25" />
+                <circle
+                  r={GLOW_RADIUS}
+                  fill={driver.teamColor}
+                  opacity="0.25"
+                />
               )}
               <circle r={radius} fill={driver.teamColor} />
               <text
