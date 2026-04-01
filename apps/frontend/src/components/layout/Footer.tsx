@@ -22,6 +22,12 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © {currentYear} Open Source Project. Built for the community.
           </p>
+          <p className="max-w-md text-center text-2xs leading-relaxed text-muted-foreground/60 md:text-left">
+            This project is not associated with, endorsed by, or officially connected to
+            Formula 1, the FIA, Formula One World Championship Limited, Formula One
+            Management, or any of their subsidiaries or affiliates. F1 and related marks
+            are trademarks of Formula One Licensing B.V.
+          </p>
         </div>
 
         <div className="flex items-center gap-6">

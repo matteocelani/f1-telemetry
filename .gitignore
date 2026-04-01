@@ -28,6 +28,9 @@ out
 .env.*
 !.env.example
 
+# temporary notes and drafts — never committed
+tmp/
+
 # editors and OS
 .vscode/*
 !.vscode/extensions.json
