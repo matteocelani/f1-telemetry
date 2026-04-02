@@ -63,14 +63,17 @@ function ColumnHeader({
 }
 
 export function TimingTower({ className }: TimingTowerProps) {
-  const { rows, isDetailedView, eliminationPos } = useLiveTiming();
+  const { rows, isDetailedView, eliminationPos, knockoutLines, setSelectedDriver } = useLiveTiming();
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
 
   const isExpanded = expandedDriver !== null;
 
   const handleToggle = useCallback((driverNo: string) => {
-    setExpandedDriver((prev) => (prev === driverNo ? null : driverNo));
-  }, []);
+    const isDeselecting = expandedDriver === driverNo;
+    setExpandedDriver(isDeselecting ? null : driverNo);
+    // Sync with track map: selecting a driver in the tower highlights their dot.
+    setSelectedDriver(isDeselecting ? null : driverNo);
+  }, [expandedDriver, setSelectedDriver]);
 
   return (
     <div className={cn('flex flex-col overflow-x-auto', className)}>
@@ -186,6 +189,19 @@ export function TimingTower({ className }: TimingTowerProps) {
                     <div className="h-px flex-1 border-t border-dashed border-red-500/50" />
                   </div>
                 </div>
+              )}
+              {knockoutLines.map((line) =>
+                line.afterPosition === row.position ? (
+                  <div key={line.label} className="relative h-0">
+                    <div className="absolute inset-x-0 top-0 flex -translate-y-1/2 items-center gap-2 px-2">
+                      <div className="h-px flex-1 border-t border-border/60" />
+                      <span className="shrink-0 bg-background px-1 text-2xs font-bold uppercase tracking-widest text-muted-foreground/50">
+                        {line.label}
+                      </span>
+                      <div className="h-px flex-1 border-t border-border/60" />
+                    </div>
+                  </div>
+                ) : null
               )}
             </motion.div>
           ))}

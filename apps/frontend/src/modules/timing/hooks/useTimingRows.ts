@@ -394,10 +394,26 @@ export function useTimingRows(): TimingRowsResult {
         noEntries.length > effectiveSessionPart
           ? noEntries[effectiveSessionPart]
           : null;
+
+      // Build knockout separator lines between active/Q2-KO/Q1-KO groups.
+      const knockoutLines: { afterPosition: number; label: string }[] = [];
+      for (let j = 1; j < remapped.length; j++) {
+        const prevGroup = getQualifyingGroup(remapped[j - 1], koPartIndices, effectiveSessionPart);
+        const currGroup = getQualifyingGroup(remapped[j], koPartIndices, effectiveSessionPart);
+        if (currGroup > prevGroup && currGroup >= 2) {
+          const partLabel = effectiveSessionPart - currGroup + 1;
+          knockoutLines.push({
+            afterPosition: remapped[j - 1].position,
+            label: `Q${partLabel} Eliminated`,
+          });
+        }
+      }
+
       return {
         rows: remapped,
         sessionPart: effectiveSessionPart,
         eliminationPos,
+        knockoutLines,
         isQualifying: true,
       };
     }
@@ -435,6 +451,7 @@ export function useTimingRows(): TimingRowsResult {
       rows: remapped,
       sessionPart: effectiveSessionPart,
       eliminationPos: null,
+      knockoutLines: [],
       isQualifying: false,
     };
   }, [

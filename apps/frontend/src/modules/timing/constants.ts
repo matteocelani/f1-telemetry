@@ -72,15 +72,6 @@ export const PACE_METRICS: readonly PaceMetricOption[] = [
   { key: 'fl', label: 'FL', description: 'Finish Line — Exit Speed' },
 ] as const;
 
-// Max lap history entries per driver for the sparkline
-export const MAX_LAP_HISTORY = 10;
-
-// Drivers shown in the lap trend sparkline
-export const LAP_TREND_DRIVER_COUNT = 3;
-
-// Drivers shown in the speed snapshot ranking
-export const SPEED_SNAPSHOT_COUNT = 5;
-
 // ISO 3166-1 alpha-3 → alpha-2 for F1 host countries
 export const ALPHA3_TO_ALPHA2: Record<string, string> = {
   ABU: 'AE', AUS: 'AU', AUT: 'AT', AZE: 'AZ', BHR: 'BH', BEL: 'BE',

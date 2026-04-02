@@ -110,12 +110,6 @@ export interface PaceMetricOption {
   description: string;
 }
 
-export interface LapSnapshot {
-  lapTimeMs: number;
-  color: SectorColorClass;
-  compound: TyreCompound;
-}
-
 // Header
 
 export interface UIHeaderData {
@@ -184,10 +178,16 @@ export interface TelemetrySeriesMeta {
 
 export type CenterTab = 'map' | 'raceControl' | 'telemetry';
 
+export interface KnockoutLine {
+  afterPosition: number;
+  label: string;
+}
+
 export interface TimingRowsResult {
   rows: UITimingRow[];
   sessionPart: number;
   eliminationPos: number | null;
+  knockoutLines: KnockoutLine[];
   isQualifying: boolean;
 }
 
@@ -198,6 +198,7 @@ export interface LiveTimingContextType {
   rows: UITimingRow[];
   sessionPart: number;
   eliminationPos: number | null;
+  knockoutLines: KnockoutLine[];
   isQualifying: boolean;
   selectedDriver: string | null;
   setSelectedDriver: (driverNo: string | null) => void;

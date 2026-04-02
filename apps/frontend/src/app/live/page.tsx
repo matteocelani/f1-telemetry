@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { BarChart3, Map, Radio } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { BarChart3, Gauge, Map, Radio } from 'lucide-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import {
   ResizableHandle,
@@ -15,15 +15,11 @@ import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
 import { SmartWidget } from '@/app/live/sections/SmartWidget';
 import { TrackMap } from '@/app/live/sections/TrackMap';
 import { TimingTower } from '@/app/live/sections/TimingTower';
+import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
+import { useSession } from '@/store/session';
 
 type PanelId = 'map' | 'raceControl' | 'telemetry';
-
-const PANEL_OPTIONS = [
-  { id: 'map', label: 'Map', Icon: Map },
-  { id: 'telemetry', label: 'Strategy', Icon: BarChart3 },
-  { id: 'raceControl', label: 'Control', Icon: Radio },
-] as const;
 
 function PanelContent({ id, className, hideTitle }: { id: PanelId; className?: string; hideTitle?: boolean }) {
   switch (id) {
@@ -42,7 +38,7 @@ function PanelSelector({
   onSelect,
 }: {
   selected: PanelId;
-  options: typeof PANEL_OPTIONS;
+  options: readonly { id: PanelId; label: string; Icon: React.ComponentType<{ className?: string }> }[];
   onSelect: (id: PanelId) => void;
 }) {
   return (
@@ -68,7 +64,18 @@ function PanelSelector({
 
 export default function LivePage() {
   const { isLive, activeTab, setActiveTab } = useLiveTiming();
+  const sessionType = useSession((s) => s.sessionInfo?.Type);
   const breakpoint = useBreakpoint();
+
+  const isRace = RACE_SESSION_TYPES.includes(
+    sessionType as (typeof RACE_SESSION_TYPES)[number]
+  );
+
+  const panelOptions = useMemo(() => [
+    { id: 'map' as const, label: 'Map', Icon: Map },
+    { id: 'telemetry' as const, label: isRace ? 'Strategy' : 'Pace', Icon: isRace ? BarChart3 : Gauge },
+    { id: 'raceControl' as const, label: 'Control', Icon: Radio },
+  ], [isRace]);
 
   const [tabletTop, setTabletTop] = useState<PanelId>('map');
   const [tabletBottom, setTabletBottom] = useState<PanelId>('telemetry');
@@ -104,7 +111,7 @@ export default function LivePage() {
             <ResizablePanel defaultSize="35%" minSize="15%">
               <div className="flex h-full flex-col">
                 <div className="grid shrink-0 grid-cols-3 border-t border-border">
-                  {PANEL_OPTIONS.map((tab) => (
+                  {panelOptions.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
@@ -143,7 +150,7 @@ export default function LivePage() {
                   <div className="flex h-full flex-col">
                     <PanelSelector
                       selected={tabletTop}
-                      options={PANEL_OPTIONS}
+                      options={panelOptions}
                       onSelect={handleTabletTop}
                     />
                     <div className="flex-1 min-h-0 overflow-hidden">
@@ -158,7 +165,7 @@ export default function LivePage() {
                   <div className="flex h-full flex-col">
                     <PanelSelector
                       selected={tabletBottom}
-                      options={PANEL_OPTIONS}
+                      options={panelOptions}
                       onSelect={handleTabletBottom}
                     />
                     <div className="flex-1 min-h-0 overflow-hidden">
