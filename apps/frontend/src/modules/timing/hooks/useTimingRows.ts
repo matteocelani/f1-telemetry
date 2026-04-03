@@ -206,6 +206,30 @@ function getQualifyingGroup(
   return effectiveSessionPart - koPartIndex;
 }
 
+// Parses F1 gap strings ("+12.345", "1L", "2L", "") into a numeric value for sorting.
+// Lap gaps are converted to a large number so they sort below time-based gaps.
+const SECONDS_PER_LAP_GAP = 120;
+function parseGapToNumber(gap: string): number {
+  if (!gap) return Infinity;
+  const lapMatch = gap.match(/^(\d+)L$/);
+  if (lapMatch) return parseInt(lapMatch[1], 10) * SECONDS_PER_LAP_GAP;
+  const cleaned = gap.replace(/[^0-9.]/g, '');
+  const value = parseFloat(cleaned);
+  return isNaN(value) ? Infinity : value;
+}
+
+// Counts the furthest completed micro-sector across all 3 sectors (0-based cumulative index).
+// A segment is "completed" when its color is not 'none'. More segments = physically further ahead.
+function countCompletedSegments(row: UITimingRow): number {
+  let count = 0;
+  for (const sector of row.sectors) {
+    for (const seg of sector.segments) {
+      if (seg !== 'none') count++;
+    }
+  }
+  return count;
+}
+
 // Merges driverList + timing into sorted UI rows. Skeleton state until data arrives.
 export function useTimingRows(): TimingRowsResult {
   const lines = useTiming(useShallow((s) => s.lines));
@@ -213,6 +237,7 @@ export function useTimingRows(): TimingRowsResult {
   const sessionPart = useTiming((s) => s.sessionPart);
   const noEntries = useTiming(useShallow((s) => s.noEntries));
   const knockedOutParts = useTiming(useShallow((s) => s.knockedOutParts));
+  const retiredDrivers = useTiming((s) => s.retiredDrivers);
   const appLines = useTimingApp(useShallow((s) => s.lines));
   const sessionInfo = useSession((s) => s.sessionInfo);
 
@@ -329,7 +354,7 @@ export function useTimingRows(): TimingRowsResult {
         sectors,
         isInPit: timing?.InPit ?? false,
         isPitOut: timing?.PitOut ?? false,
-        isRetired: timing?.Retired ?? false,
+        isRetired: retiredDrivers.has(driverNo),
         currentTyre: lastStint?.Compound ?? 'UNKNOWN',
         isNewTyre: lastStint?.New ?? false,
         tyreAge: lastStint?.TotalLaps ?? 0,
@@ -369,38 +394,64 @@ export function useTimingRows(): TimingRowsResult {
         noEntries.length > effectiveSessionPart
           ? noEntries[effectiveSessionPart]
           : null;
+
+      // Build knockout separator lines between active/Q2-KO/Q1-KO groups.
+      const knockoutLines: { afterPosition: number; label: string }[] = [];
+      for (let j = 1; j < remapped.length; j++) {
+        const prevGroup = getQualifyingGroup(remapped[j - 1], koPartIndices, effectiveSessionPart);
+        const currGroup = getQualifyingGroup(remapped[j], koPartIndices, effectiveSessionPart);
+        if (currGroup > prevGroup && currGroup >= 2) {
+          const partLabel = effectiveSessionPart - currGroup + 1;
+          knockoutLines.push({
+            afterPosition: remapped[j - 1].position,
+            label: `Q${partLabel} Eliminated`,
+          });
+        }
+      }
+
       return {
         rows: remapped,
         sessionPart: effectiveSessionPart,
         eliminationPos,
+        knockoutLines,
         isQualifying: true,
       };
     }
 
     rows.sort((a, b) => {
-      // Position is king when available
-      if (a.position !== NO_POSITION && b.position !== NO_POSITION)
-        return a.position - b.position;
+      // Retired drivers always sort to the bottom, ordered by laps completed (FIA B2.5.5).
+      if (a.isRetired !== b.isRetired) return a.isRetired ? 1 : -1;
+      if (a.isRetired && b.isRetired) {
+        if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+        return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
+      }
+      // 1st key: F1 Position
+      if (a.position !== NO_POSITION && b.position !== NO_POSITION) {
+        if (a.position !== b.position) return a.position - b.position;
+        // Tie-breaker for duplicate positions (transient F1 delta sync issue)
+        const gapA = parseGapToNumber(a.gap);
+        const gapB = parseGapToNumber(b.gap);
+        if (gapA !== gapB) return gapA - gapB;
+        if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+        // Same lap: driver with more completed micro-sectors is physically ahead.
+        const segsA = countCompletedSegments(a);
+        const segsB = countCompletedSegments(b);
+        if (segsA !== segsB) return segsB - segsA;
+        return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
+      }
       if (a.position !== NO_POSITION) return -1;
       if (b.position !== NO_POSITION) return 1;
-      // Both without position: drivers with any timing data come first
-      const aHasData =
-        a.lastLap !== '' ||
-        a.bestLap !== '' ||
-        a.sectors.some((s) => s.value !== '');
-      const bHasData =
-        b.lastLap !== '' ||
-        b.bestLap !== '' ||
-        b.sectors.some((s) => s.value !== '');
-      if (aHasData !== bHasData) return aHasData ? -1 : 1;
-      // Stable fallback by TLA
-      return a.tla.localeCompare(b.tla);
+      return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
     });
 
+    // Remap to clean 1-22 sequence to eliminate F1 positional collisions from the UI.
+    const remapped = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
+
     return {
-      rows,
+      rows: remapped,
       sessionPart: effectiveSessionPart,
       eliminationPos: null,
+      knockoutLines: [],
       isQualifying: false,
     };
   }, [
@@ -411,5 +462,6 @@ export function useTimingRows(): TimingRowsResult {
     noEntries,
     sessionInfo,
     knockedOutParts,
+    retiredDrivers,
   ]);
 }

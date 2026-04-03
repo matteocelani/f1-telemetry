@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const TYRE_CONFIG: Record<TyreCompound, { label: string; arc: string }> = {
   SOFT: { label: 'S', arc: 'text-red-500' },
   MEDIUM: { label: 'M', arc: 'text-yellow-500' },
-  HARD: { label: 'H', arc: 'text-white' },
+  HARD: { label: 'H', arc: 'text-stone-300 dark:text-white' },
   INTERMEDIATE: { label: 'I', arc: 'text-green-500' },
   WET: { label: 'W', arc: 'text-blue-500' },
   UNKNOWN: { label: '?', arc: 'text-muted-foreground/60' },

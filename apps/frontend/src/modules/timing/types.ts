@@ -11,21 +11,20 @@ export interface CircuitData {
   startOffset: number;
 }
 
-export interface TrackDot {
+export interface DriverDotMeta {
   driverNo: string;
   tla: string;
   teamColor: string;
-  percent: number;
   inPit: boolean;
-  isWrapping: boolean;
 }
 
 export interface TrackMapData {
-  dots: TrackDot[];
   circuit: CircuitData | null;
+  drivers: DriverDotMeta[];
   hasData: boolean;
   isSegmentMode: boolean;
   startPercent: number;
+  projectAll: () => Record<string, number>;
 }
 
 export type SectorColorClass = 'purple' | 'green' | 'yellow' | 'none';
@@ -97,6 +96,8 @@ export interface StrategyDriverRow {
   teamColor: string;
   isInPit: boolean;
   stints: UIStint[];
+  // FIA B6.3.6: driver must use ≥2 dry-weather tyre specs during the race.
+  hasMandatoryStop: boolean;
 }
 
 // Pace Radar
@@ -107,12 +108,6 @@ export interface PaceMetricOption {
   key: PaceMetricKey;
   label: string;
   description: string;
-}
-
-export interface LapSnapshot {
-  lapTimeMs: number;
-  color: SectorColorClass;
-  compound: TyreCompound;
 }
 
 // Header
@@ -183,10 +178,16 @@ export interface TelemetrySeriesMeta {
 
 export type CenterTab = 'map' | 'raceControl' | 'telemetry';
 
+export interface KnockoutLine {
+  afterPosition: number;
+  label: string;
+}
+
 export interface TimingRowsResult {
   rows: UITimingRow[];
   sessionPart: number;
   eliminationPos: number | null;
+  knockoutLines: KnockoutLine[];
   isQualifying: boolean;
 }
 
@@ -197,6 +198,7 @@ export interface LiveTimingContextType {
   rows: UITimingRow[];
   sessionPart: number;
   eliminationPos: number | null;
+  knockoutLines: KnockoutLine[];
   isQualifying: boolean;
   selectedDriver: string | null;
   setSelectedDriver: (driverNo: string | null) => void;

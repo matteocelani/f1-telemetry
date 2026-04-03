@@ -22,43 +22,62 @@ The replay server (`apps/backend/src/replay.ts`) does three things:
 
 When it reaches the end of the file, it loops back to the beginning. The server runs until you stop it.
 
-## Included recordings
+## Data quality in replay mode
 
-| File | Session | Size | Frames |
-| ---- | ------- | ---- | ------ |
-| `apps/backend/data/china.json` | 2025 Chinese Grand Prix | ~500 KB | 1146 |
+Replay recordings capture the raw F1 feed as-is. Depending on when the recording started (mid-session vs. from the beginning), some data may be incomplete:
+
+- **Micro-sector segments** may be missing for some drivers, causing track map dots to update less frequently
+- **`InPit` flags** may get stuck if the recording missed the corresponding `false` transition
+- **`NumberOfLaps`** may skip values if the F1 feed dropped those updates
+- **`Position` values** may temporarily show duplicates during asynchronous overtake updates
+
+During a **live session**, the data feed is significantly more complete and the dashboard behaves more accurately. These artifacts are a property of the sparse F1 delta protocol, not bugs in the application.
+
+## Recording sessions
+
+Use the built-in recorder to capture live sessions:
+
+```bash
+pnpm --filter backend record data/your-session.json
+```
+
+The recorder connects to the F1 SignalR feed, subscribes to all available channels, and saves every frame with its server timestamp. Press `Ctrl+C` to stop and save — the recording is written atomically on shutdown.
+
+> **Important:** Always stop the recorder with `Ctrl+C` (SIGINT). Killing the process without SIGINT will lose all data, as frames are held in memory until the graceful shutdown handler writes them to disk.
+
+Place recording files in `apps/backend/data/`. To replay a specific file:
+
+```bash
+pnpm --filter backend dev:replay -- data/your-session.json
+```
+
+If no file path is provided, the server uses the default recording configured in `replay.ts`.
 
 ## Recording format
 
-A recording file is a JSON array of frame objects. Each frame has a single `updates` key containing one or more channel payloads — the exact format the backend normally broadcasts over WebSocket:
+A recording file is a JSON array of frame objects. Each frame has a `timestamp` (ISO 8601 from the F1 server) and an `updates` object containing one or more channel payloads:
 
 ```json
 [
   {
+    "timestamp": "2026-03-29T05:14:10.233Z",
     "updates": {
-      "TimingData": {
+      "TimingDataF1": {
         "Lines": {
-          "44": {
-            "LastLapTime": { "Value": "1:32.456" }
+          "12": {
+            "Sectors": { "0": { "Segments": { "1": { "Status": 2049 } } } }
           }
         }
       }
     }
   },
   {
+    "timestamp": "2026-03-29T05:14:12.456Z",
     "updates": {
       "WeatherData": {
         "AirTemp": "28.3",
         "TrackTemp": "42.1",
         "Humidity": "55"
-      },
-      "TimingData": {
-        "Lines": {
-          "1": {
-            "Position": "1",
-            "GapToLeader": ""
-          }
-        }
       }
     }
   }
@@ -66,16 +85,6 @@ A recording file is a JSON array of frame objects. Each frame has a single `upda
 ```
 
 A single frame can contain updates for multiple channels simultaneously. The available channels are defined in `core/src/constants.ts` and documented in [live-timing-types.md](live-timing-types.md).
-
-## Adding your own recordings
-
-To record a session, connect to the backend WebSocket during a live event and capture the frames. Place the resulting JSON file in `apps/backend/data/` and run:
-
-```bash
-pnpm --filter backend dev:replay -- apps/backend/data/your-file.json
-```
-
-If no file path is provided, the server defaults to `apps/backend/data/china.json`.
 
 ## Configuration
 
@@ -97,4 +106,4 @@ PORT=9090 pnpm --filter backend dev:replay
 
 ## Contributing recordings
 
-If you captured a session and want to share it, open a PR adding the JSON file to `apps/backend/data/`. Keep the file name descriptive (e.g., `monaco-2025-qualifying.json`). Recordings under 5 MB are fine to commit directly.
+If you captured a session and want to share it, open a PR adding the JSON file to `apps/backend/data/`. Keep the file name descriptive (e.g., `monaco-2026-qualifying.json`). Recordings under 5 MB are fine to commit directly.

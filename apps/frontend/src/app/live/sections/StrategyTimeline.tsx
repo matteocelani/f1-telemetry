@@ -19,8 +19,6 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
   const { rows, currentLap, totalLaps } = useStrategyRows();
 
   const raceLaps = totalLaps > 0 ? totalLaps : DEFAULT_TOTAL_LAPS;
-  const nowPercent = raceLaps > 0 ? (currentLap / raceLaps) * 100 : 0;
-
   const hasData = rows.length > 0 && currentLap > 0;
 
   return (
@@ -33,7 +31,6 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
                 key={row.driverNo}
                 row={row}
                 raceLaps={raceLaps}
-                nowPercent={nowPercent}
               />
             ))}
           </div>
@@ -48,42 +45,45 @@ export function StrategyTimeline({ className }: StrategyTimelineProps) {
 interface DriverStintRowProps {
   row: StrategyDriverRow;
   raceLaps: number;
-  nowPercent: number;
 }
 
-function DriverStintRow({ row, raceLaps, nowPercent }: DriverStintRowProps) {
+function DriverStintRow({ row, raceLaps }: DriverStintRowProps) {
   const blocks = useMemo(
     () => buildStintBlocks(row.stints, raceLaps),
     [row.stints, raceLaps]
   );
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Driver label */}
-      <div className="flex w-10 shrink-0 items-center gap-1.5">
+    <div className="flex items-center gap-1">
+      {/* Team color bar */}
+      <div
+        className="h-5 w-1 shrink-0 rounded-full"
+        style={{ backgroundColor: row.teamColor }}
+      />
+
+      {/* Driver TLA — fixed width for column alignment */}
+      <span className="w-8 shrink-0 text-2xs font-bold tabular-nums text-foreground">
+        {row.tla}
+      </span>
+
+      {/* Mandatory stop dot — fixed column so all dots align vertically */}
+      <div className="flex w-3 shrink-0 items-center justify-center">
         <div
-          className="h-3 w-1 shrink-0 rounded-full"
-          style={{ backgroundColor: row.teamColor }}
+          className={`size-1.5 rounded-full ${row.hasMandatoryStop ? 'bg-red-500' : 'bg-green-500'}`}
+          title="Must pit: needs 2 different dry-weather tyre specs (FIA B6.3.6)"
         />
-        <span className="text-2xs font-bold tabular-nums text-foreground">
-          {row.tla}
-        </span>
       </div>
 
       {/* Timeline bar */}
       <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-muted/40">
-        {/* Stint blocks */}
         {blocks.map((block, i) => (
-          <StintBlock key={i} block={block} isLast={i === blocks.length - 1} isInPit={row.isInPit} />
-        ))}
-
-        {/* NOW marker */}
-        {nowPercent > 0 && nowPercent <= 100 && (
-          <div
-            className="absolute top-0 h-full w-px bg-foreground/70"
-            style={{ left: `${nowPercent}%` }}
+          <StintBlock
+            key={i}
+            block={block}
+            isFirst={i === 0}
+            isLast={i === blocks.length - 1}
           />
-        )}
+        ))}
       </div>
     </div>
   );
@@ -96,15 +96,16 @@ interface StintBlockData {
   isNew: boolean;
   leftPercent: number;
   widthPercent: number;
+  totalLaps: number;
 }
 
 interface StintBlockProps {
   block: StintBlockData;
+  isFirst: boolean;
   isLast: boolean;
-  isInPit: boolean;
 }
 
-function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
+function StintBlock({ block, isFirst, isLast }: StintBlockProps) {
   if (block.widthPercent <= 0) return null;
 
   return (
@@ -113,7 +114,8 @@ function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
         'absolute top-0 h-full flex items-center justify-center border-r border-background/60',
         block.bgClass,
         !block.isNew && 'opacity-70',
-        isLast && isInPit && 'animate-pulse',
+        isFirst && 'rounded-l-sm',
+        isLast && 'rounded-r-sm border-r-0'
       )}
       style={{
         left: `${block.leftPercent}%`,
@@ -123,7 +125,7 @@ function StintBlock({ block, isLast, isInPit }: StintBlockProps) {
     >
       {block.widthPercent > MIN_STINT_LABEL_WIDTH_PERCENT && (
         <span className="text-2xs font-black text-black/70 select-none">
-          {block.label}
+          {block.label} {block.totalLaps}
         </span>
       )}
     </div>
@@ -147,6 +149,7 @@ function buildStintBlocks(
       isNew: stint.isNew,
       leftPercent: Math.max(0, leftPercent),
       widthPercent: Math.max(0, Math.min(widthPercent, 100 - leftPercent)),
+      totalLaps: stint.totalLaps,
     };
   });
 }

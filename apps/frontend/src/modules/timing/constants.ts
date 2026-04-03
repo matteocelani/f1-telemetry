@@ -38,7 +38,7 @@ export const SESSION_SHORT: Record<string, string> = {
 export const COMPOUND_BG: Record<TyreCompound, string> = {
   SOFT: 'bg-red-500',
   MEDIUM: 'bg-yellow-500',
-  HARD: 'bg-white',
+  HARD: 'bg-stone-300 dark:bg-white',
   INTERMEDIATE: 'bg-emerald-500',
   WET: 'bg-blue-500',
   UNKNOWN: 'bg-muted-foreground',
@@ -59,6 +59,10 @@ export const DEFAULT_TOTAL_LAPS = 70;
 // Minimum stint block width (%) to render the compound label inside it
 export const MIN_STINT_LABEL_WIDTH_PERCENT = 6;
 
+// FIA B6.3.6: minimum dry-weather tyre specs required during a race.
+// Used to detect stuck InPit flags (if active stint has ≥ this many laps, driver is on track).
+export const MIN_PIT_CONFIRM_LAPS = 2;
+
 // Pace Radar metrics
 export const PACE_METRICS: readonly PaceMetricOption[] = [
   { key: 's1', label: 'S1', description: 'Sector 1 — Best Time' },
@@ -67,15 +71,6 @@ export const PACE_METRICS: readonly PaceMetricOption[] = [
   { key: 'st', label: 'ST', description: 'Speed Trap — Top Speed' },
   { key: 'fl', label: 'FL', description: 'Finish Line — Exit Speed' },
 ] as const;
-
-// Max lap history entries per driver for the sparkline
-export const MAX_LAP_HISTORY = 10;
-
-// Drivers shown in the lap trend sparkline
-export const LAP_TREND_DRIVER_COUNT = 3;
-
-// Drivers shown in the speed snapshot ranking
-export const SPEED_SNAPSHOT_COUNT = 5;
 
 // ISO 3166-1 alpha-3 → alpha-2 for F1 host countries
 export const ALPHA3_TO_ALPHA2: Record<string, string> = {

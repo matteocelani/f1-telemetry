@@ -232,39 +232,39 @@ Unlike qualifying, the conditions that make server `Position` unreliable are abs
 2. **Position updates are monotonic.** A driver's position can only improve (as they set faster laps) or remain stable. It never degrades during the session except when another driver sets a faster time, which is itself a separate update event.
 3. **No cross-session lap time mixing.** Each practice session is independent. There is no concept of a "current part" best vs. "previous part" best.
 
-The sort is therefore a direct delegation to the server:
+The sort delegates to the server's `Position` as the primary key, with a multi-key tie-breaker chain to resolve transient duplicate positions from the delta protocol:
 
 ```typescript
-// isQualifying = false branch (also applies to Race and Sprint)
 rows.sort((a, b) => {
-  if (a.position !== NO_POSITION && b.position !== NO_POSITION)
-    return a.position - b.position;
+  if (a.position !== NO_POSITION && b.position !== NO_POSITION) {
+    if (a.position !== b.position) return a.position - b.position;
+    // Tie-breaker for duplicate positions (transient F1 delta sync issue)
+    const gapA = parseGapToNumber(a.gap);
+    const gapB = parseGapToNumber(b.gap);
+    if (gapA !== gapB) return gapA - gapB;
+    if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+    const segsA = countCompletedSegments(a);
+    const segsB = countCompletedSegments(b);
+    if (segsA !== segsB) return segsB - segsA;
+    return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
+  }
   if (a.position !== NO_POSITION) return -1;
   if (b.position !== NO_POSITION) return 1;
-  // Pre-data skeleton: drivers with any timing data precede those with none
-  const aHasData =
-    a.lastLap !== '' ||
-    a.bestLap !== '' ||
-    a.sectors.some((s) => s.value !== '');
-  const bHasData =
-    b.lastLap !== '' ||
-    b.bestLap !== '' ||
-    b.sectors.some((s) => s.value !== '');
-  if (aHasData !== bHasData) return aHasData ? -1 : 1;
-  return a.tla.localeCompare(b.tla);
+  return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
 });
+```
+
+After sorting, positions are remapped to a clean 1–N sequence to eliminate any remaining server-side gaps or duplicates from the UI:
+
+```typescript
+const remapped = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
 ```
 
 ### Handling Drivers Without a Timed Lap
 
-A driver who does not leave the pit lane during a practice session has `BestLapTime.Value = ""` and no server-assigned `Position` (the field arrives as `NaN` after `parseInt`). The sort correctly places them below all classified drivers via the `NO_POSITION` sentinel (`999`) and the `hasData` heuristic.
+A driver who does not leave the pit lane during a practice session has `BestLapTime.Value = ""` and no server-assigned `Position` (the field arrives as `NaN` after `parseInt`). The sort correctly places them below all classified drivers via the `NO_POSITION` sentinel (`999`).
 
 FIA B2.1 requires these drivers be listed after all classified drivers — our implementation satisfies this by design.
-
-### Known Stream Limitations
-
-**⚠ Limitation — No Client-Side Duplicate-Position Resolution.**
-A transient duplicate `Position` value (two drivers at `"5"`) is possible during brief reconciliation windows following a new fastest lap. Unlike qualifying, we do not apply a client-side override because: (a) duplicate practice positions are rare and ephemeral, (b) we have no client-derivable sort key that accurately reflects FIA B2.1 ordering without trusting `BestLapTime.Value`, which the server already encodes in `Position`, and (c) adding a best-lap-time sort would require lap-time parsing overhead on every render cycle for minimal real-world gain. The collision is self-correcting within the next timing update.
 
 ---
 
@@ -283,17 +283,33 @@ Article 14.1 defines race classification:
 
 Race classification has no relationship to lap times. A driver who laps two seconds slower than their competitor but never pits and maintains track position will outrank the faster driver. The race sort key is purely **positional** (on-track order at any given moment), which the F1 timing system tracks with millisecond-level accuracy via transponder loops at every timing point on the circuit.
 
-The server's `Position` field in race sessions reflects the FIA 14.1 classification at every instant: it encodes laps completed, crossing time on the last timed loop, and any reclassifications from penalties, DSQ, or NC status. No client-side derivation can match this fidelity. The correct implementation is full server delegation.
+The server's `Position` field in race sessions reflects the FIA 14.1 classification at every instant. However, the F1 delta protocol introduces transient duplicate positions during overtakes (both drivers share the same `Position` value for 1–2 frames). The race sort applies the same multi-key tie-breaker used in practice (position → gap → laps → micro-sectors → driver number) followed by position remapping to ensure a clean 1–22 sequence.
+
+Additionally, retired drivers are explicitly sorted to the bottom by laps completed:
+
+```typescript
+// Retired drivers always sort to the bottom, ordered by laps completed (FIA B2.5.5).
+if (a.isRetired !== b.isRetired) return a.isRetired ? 1 : -1;
+if (a.isRetired && b.isRetired) {
+  if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+  return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
+}
+```
 
 ### Special State Handling
 
-**DNF (Did Not Finish).** When a driver retires, the stream sets `Retired: true` on their `DriverTiming` record. The server pushes their `Position` to the bottom of the classified order, reflecting FIA 14.1(c) or (b) depending on laps completed. The `isRetired` flag is available on `UITimingRow` for visual treatment in the UI but is not used as a sort key — the server `Position` already encodes the correct classification.
+**DNF (Did Not Finish) — The Retirement Latch.** F1 sends `Retired: true` and `Stopped: true` as transient flags that reset to `false` after a few seconds. A naive implementation that reads `timing.Retired` directly will miss retirements entirely (e.g., Bearman at Suzuka 2026 was `Stopped: true` for 16 seconds, then `false` for the rest of the race — never `Retired`).
 
-**⚠ Transient Display Artifact — Retired Driver Position Window.** There exists a sub-second window between the arrival of `Retired: true` and the subsequent `Position` update pushing the driver to the back. During this window, the driver renders at their last racing position with `isRetired = true` styling. This is **mathematically acceptable** because:
+The timing store maintains a permanent `retiredDrivers: Set<string>` that latches the first occurrence of either flag:
 
-1. The duration is bounded by the stream update frequency (~100ms at 10 Hz).
-2. The final state (after `Position` update) is correct and FIA-compliant.
-3. No persistent misclassification occurs — it is a transient cosmetic artifact, not an algorithmic error.
+```typescript
+if ((delta.Retired === true || delta.Stopped === true) && !nextRetired.has(driverNo)) {
+  nextRetired = new Set(nextRetired);
+  nextRetired.add(driverNo);
+}
+```
+
+The `isRetired` field on `UITimingRow` reads from this latched Set rather than the transient stream flag, ensuring all retired/stopped drivers are permanently dimmed and sorted to the bottom.
 
 **DSQ (Disqualification).** The `DriverTiming` interface exposes no `Disqualified` boolean. The stream carries no first-class DSQ signal on the timing channel. When a DSQ is issued post-race, the server eventually removes the driver from the `Position` ranking or reassigns positions. The client renders whatever `Position` the server provides. This is a **stream data limitation** with no client-side resolution path.
 
@@ -336,12 +352,15 @@ export const RACE_SESSION_TYPES = ['Race', 'Sprint'] as const;
 | No-time chronological tie-break  | Qualifying, SQ | B2.4.3(e)       | TLA alphabetical (stream limitation)                       | ⚠ Approximation |
 | Track-limits deleted time        | Qualifying, SQ | B2.4.3          | Indistinguishable from no-time (stream limitation)         | ⚠ Stream Gap    |
 | Q2-KO with no Q2 time (snapshot) | Qualifying, SQ | B2.4.3(b)       | Falls back to `BestLapTimes` heuristic                     | ⚠ Partial       |
-| Best lap time ranking            | Practice       | B2.1            | Server `Position` delegation                               | ✅ Compliant    |
-| DNS ordering in practice         | Practice       | B2.1            | `NO_POSITION` sentinel + `hasData` fallback                | ✅ Compliant    |
-| On-road race position            | Race, Sprint   | 14.1(a)(b)      | Server `Position` delegation                               | ✅ Compliant    |
-| DNF ordering by laps             | Race, Sprint   | 14.1(c)         | Server `Position` delegation                               | ✅ Compliant    |
-| DSQ removal                      | Race, Sprint   | 14.1(d)         | Server `Position` delegation (stream limitation)           | ⚠ Stream Gap    |
-| Retired transient window         | Race, Sprint   | 14.1            | Sub-100ms artifact, self-correcting                        | ✅ Acceptable   |
+| Best lap time ranking            | Practice       | B2.1            | Server `Position` delegation + multi-key tie-breaker       | ✅ Compliant    |
+| DNS ordering in practice         | Practice       | B2.1            | `NO_POSITION` sentinel                                     | ✅ Compliant    |
+| Position collision resolution    | Practice, Race | —               | Multi-key sort (pos → gap → laps → segments → driverNo)   | ✅ Compliant    |
+| Position remapping               | All            | —               | Sequential 1–N re-index after sort                         | ✅ Compliant    |
+| On-road race position            | Race, Sprint   | B2.5.5(a)(b)    | Server `Position` + multi-key tie-breaker                  | ✅ Compliant    |
+| DNF ordering by laps             | Race, Sprint   | B2.5.5(c)       | `retiredDrivers` latch + laps descending sort              | ✅ Compliant    |
+| DNF flag latching                | Race, Sprint   | —               | `Retired`/`Stopped` permanently latched in Zustand Set     | ✅ Compliant    |
+| DSQ removal                      | Race, Sprint   | B2.5.5          | Server `Position` delegation (stream limitation)           | ⚠ Stream Gap    |
+| Qualifying knockout separators   | Qualifying, SQ | B2.4.3          | `knockoutLines` computed from group transitions            | ✅ Compliant    |
 
 ---
 
