@@ -19,7 +19,7 @@ const SITE_URL = 'https://f1-telemetry.vercel.app';
 const TITLE = 'F1 Telemetry — Real-Time Formula 1 Live Timing Dashboard';
 const DESCRIPTION =
   'Open-source real-time Formula 1 telemetry dashboard. Live timing tower, interactive track map, race strategy, tyre analysis and car telemetry. Follow every F1 session live with sector times, gaps, pit stops and driver positions.';
-const PREVIEW_IMAGE = `${SITE_URL}/preview.png`;
+const PREVIEW_IMAGE = `${SITE_URL}/images/preview.png`;
 
 export const viewport: Viewport = {
   themeColor: '#09090b',
@@ -57,10 +57,10 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/256.png', sizes: '256x256', type: 'image/png' },
-      { url: '/512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/images/256.png', sizes: '256x256', type: 'image/png' },
+      { url: '/images/512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: { url: '/1024.png', sizes: '1024x1024', type: 'image/png' },
+    apple: { url: '/images/1024.png', sizes: '1024x1024', type: 'image/png' },
   },
   openGraph: {
     title: TITLE,
