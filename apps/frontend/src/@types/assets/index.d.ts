@@ -12,12 +12,6 @@ declare module '*.svg?component' {
   export default SVGComponent;
 }
 
-declare module '*.svg?component' {
-  import React from 'react';
-  const SVGComponent: React.FC<React.SVGProps<SVGSVGElement>>;
-  export default SVGComponent;
-}
-
 declare module '*.jpg' {
   const content: string;
   export default content;
