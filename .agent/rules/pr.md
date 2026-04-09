@@ -23,6 +23,9 @@ trigger: manual
    - Swallowed errors (`catch (e) { console.log(e) }`)
    - Raw `useQuery`/`useMutation` calls outside custom hooks
    - Wrong import order
+   - Comments with decorators, separators (`---`), bullet points, or non-English text
+   - `React.FC` or `React.FunctionComponent` usage
+   - Boolean variables missing `is`/`has`/`should`/`can` prefix
    Do NOT proceed to step 2 until you have confirmed zero violations. If violations are found: **fix them, commit the fix**, then re-check. If a fix is ambiguous, ask the user.
 2. **Run TypeScript Check:** Execute `pnpm --filter frontend lint` (or equivalent). If errors exist, fix and commit them before proceeding. Zero errors required.
 3. **Analyze ALL Changes (CRITICAL):** Execute `git diff origin/main...HEAD` to read the FULL diff of the current branch against `main`. Do NOT rely only on the latest commit or chat context. Your analysis must encompass every file changed across the entire lifespan of this branch.
