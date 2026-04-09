@@ -8,7 +8,9 @@ import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import type { RaceEntry } from '@/types/data';
 
-const LIVE_THRESHOLD_MS = 60 * 60 * 1000;
+import { MS_PER_HOUR } from '@/constants/numbers';
+
+const LIVE_THRESHOLD_MS = MS_PER_HOUR;
 
 const races = calendarData as unknown as RaceEntry[];
 
