@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/app/home/sections/Hero';
 import { Schedule } from '@/app/home/sections/Schedule';
+import { MS_PER_HOUR } from '@/constants/numbers';
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
 import type { RaceEntry } from '@/types/data';
-
-import { MS_PER_HOUR } from '@/constants/numbers';
 
 const LIVE_THRESHOLD_MS = MS_PER_HOUR;
 
