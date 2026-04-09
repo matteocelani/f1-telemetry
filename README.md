@@ -75,8 +75,11 @@ See [docs/replay-mode.md](docs/replay-mode.md) for details on recording your own
 
 - [Replay mode](docs/replay-mode.md) — how to develop and test the live dashboard without an active F1 session
 - [F1 Live Timing payload types](docs/live-timing-types.md) — field reference for all subscribed channels, 2026 regulation notes, and maintenance guide
+- [Timing tower sort architecture](docs/timing-sort-architecture.md) — how the client-side classification algorithm works, FIA regulation mapping, and known stream limitations
 
 ## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code standards, and PR guidelines.
 
 The live timing schema is reverse-engineered and may change between seasons. See [docs/live-timing-types.md](docs/live-timing-types.md) for guidance on keeping the types up to date.
 

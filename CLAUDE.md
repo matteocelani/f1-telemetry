@@ -160,7 +160,7 @@ We follow a strict "Modular Context-Based" architecture to prevent Prop Drilling
 
 - NEVER hallucinate, guess, or invent environment variable names.
 - Always check `.env.example` files before implementing logic that requires them.
-- Backend: `PORT` (WS server), `HEALTH_PORT` (HTTP health check).
+- Backend: `PORT` (WS server and health check endpoint).
 - Frontend: `NEXT_PUBLIC_API_URL` (backend health), `NEXT_PUBLIC_WS_URL` (WebSocket relay).
 
 ### State Management
@@ -202,7 +202,7 @@ When asked to open a PR (`/pr`):
 1. Analyze FULL diff against base branch (`git diff origin/main...HEAD`)
 2. Push branch if needed
 3. Professional PR title in English
-4. Body: max 250 char summary + bulleted changes `- [File/Component]: [Change]`
+4. Body: follow the template in `.github/pull_request_template.md`
 5. Execute `gh pr create --base main --title "<TITLE>" --body "<BODY>"`
 6. Target `main` branch by default unless explicitly asked otherwise
 7. Output ONLY the GitHub PR URL
