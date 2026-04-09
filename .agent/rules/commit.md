@@ -11,10 +11,7 @@ trigger: always_on
 **EXECUTION STEPS:**
 
 1. **Pre-flight Validation (BLOCKING — DO NOT SKIP):**
-   STOP. Read these three files NOW before doing anything else:
-   - `CLAUDE.md` — Primary source of truth for all coding and architecture rules.
-   - `.agent/rules/global.md` — Frontend coding standards (TypeScript, styling, patterns).
-   - `.agent/rules/project.md` — Architecture, folder structure, state management.
+   STOP. Read `CLAUDE.md` at the root of this repository NOW before doing anything else. It is the primary source of truth for all coding, architecture, and quality rules.
    Then run `git diff` + `git diff --staged` and scan EVERY changed line against those rules. Check for:
    - `any` usage in TypeScript
    - Relative imports (must be `@/` absolute)
@@ -46,4 +43,4 @@ trigger: always_on
 - **No Chatter:** Do not explain the diff to the user. Just execute the steps silently.
 - **Output:** Once complete, output ONLY: `✅ Committed and pushed (hash: a1b2c3d)`
 - **Empty Diff:** If `git diff --staged` returns nothing, do NOT create an empty commit. Inform the user there are no changes to commit.
-- **Validation First:** NEVER commit code that violates the rules in `global.md` or `project.md`. Fix first, commit after.
+- **Validation First:** NEVER commit code that violates the rules in `CLAUDE.md`. Fix first, commit after.
