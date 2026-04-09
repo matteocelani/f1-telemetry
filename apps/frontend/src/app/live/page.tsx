@@ -12,16 +12,25 @@ import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
+import { ServiceUnavailable } from '@/app/live/sections/ServiceUnavailable';
 import { SmartWidget } from '@/app/live/sections/SmartWidget';
-import { TrackMap } from '@/app/live/sections/TrackMap';
 import { TimingTower } from '@/app/live/sections/TimingTower';
+import { TrackMap } from '@/app/live/sections/TrackMap';
 import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useSession } from '@/store/session';
 
 type PanelId = 'map' | 'raceControl' | 'telemetry';
 
-function PanelContent({ id, className, hideTitle }: { id: PanelId; className?: string; hideTitle?: boolean }) {
+function PanelContent({
+  id,
+  className,
+  hideTitle,
+}: {
+  id: PanelId;
+  className?: string;
+  hideTitle?: boolean;
+}) {
   switch (id) {
     case 'map':
       return <TrackMap className={className} />;
@@ -38,11 +47,18 @@ function PanelSelector({
   onSelect,
 }: {
   selected: PanelId;
-  options: readonly { id: PanelId; label: string; Icon: React.ComponentType<{ className?: string }> }[];
+  options: readonly {
+    id: PanelId;
+    label: string;
+    Icon: React.ComponentType<{ className?: string }>;
+  }[];
   onSelect: (id: PanelId) => void;
 }) {
   return (
-    <div className="grid shrink-0 border-b border-border" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <div
+      className="grid shrink-0 border-b border-border"
+      style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
+    >
       {options.map((tab) => (
         <button
           key={tab.id}
@@ -63,7 +79,7 @@ function PanelSelector({
 }
 
 export default function LivePage() {
-  const { isLive, activeTab, setActiveTab } = useLiveTiming();
+  const { isBackendOnline, isLive, activeTab, setActiveTab } = useLiveTiming();
   const sessionType = useSession((s) => s.sessionInfo?.Type);
   const breakpoint = useBreakpoint();
 
@@ -71,25 +87,42 @@ export default function LivePage() {
     sessionType as (typeof RACE_SESSION_TYPES)[number]
   );
 
-  const panelOptions = useMemo(() => [
-    { id: 'map' as const, label: 'Map', Icon: Map },
-    { id: 'telemetry' as const, label: isRace ? 'Strategy' : 'Pace', Icon: isRace ? BarChart3 : Gauge },
-    { id: 'raceControl' as const, label: 'Control', Icon: Radio },
-  ], [isRace]);
+  const panelOptions = useMemo(
+    () => [
+      { id: 'map' as const, label: 'Map', Icon: Map },
+      {
+        id: 'telemetry' as const,
+        label: isRace ? 'Strategy' : 'Pace',
+        Icon: isRace ? BarChart3 : Gauge,
+      },
+      { id: 'raceControl' as const, label: 'Control', Icon: Radio },
+    ],
+    [isRace]
+  );
 
   const [tabletTop, setTabletTop] = useState<PanelId>('map');
   const [tabletBottom, setTabletBottom] = useState<PanelId>('telemetry');
 
   // Swap panels when selecting the same content as the other panel
-  const handleTabletTop = useCallback((id: PanelId) => {
-    if (id === tabletBottom) setTabletBottom(tabletTop);
-    setTabletTop(id);
-  }, [tabletBottom, tabletTop]);
+  const handleTabletTop = useCallback(
+    (id: PanelId) => {
+      if (id === tabletBottom) setTabletBottom(tabletTop);
+      setTabletTop(id);
+    },
+    [tabletBottom, tabletTop]
+  );
 
-  const handleTabletBottom = useCallback((id: PanelId) => {
-    if (id === tabletTop) setTabletTop(tabletBottom);
-    setTabletBottom(id);
-  }, [tabletTop, tabletBottom]);
+  const handleTabletBottom = useCallback(
+    (id: PanelId) => {
+      if (id === tabletTop) setTabletTop(tabletBottom);
+      setTabletBottom(id);
+    },
+    [tabletTop, tabletBottom]
+  );
+
+  if (!isBackendOnline) {
+    return <ServiceUnavailable />;
+  }
 
   if (!isLive) {
     return <LiveOfflineFallback />;
@@ -154,7 +187,11 @@ export default function LivePage() {
                       onSelect={handleTabletTop}
                     />
                     <div className="flex-1 min-h-0 overflow-hidden">
-                      <PanelContent id={tabletTop} className="h-full" hideTitle />
+                      <PanelContent
+                        id={tabletTop}
+                        className="h-full"
+                        hideTitle
+                      />
                     </div>
                   </div>
                 </ResizablePanel>
@@ -169,7 +206,11 @@ export default function LivePage() {
                       onSelect={handleTabletBottom}
                     />
                     <div className="flex-1 min-h-0 overflow-hidden">
-                      <PanelContent id={tabletBottom} className="h-full" hideTitle />
+                      <PanelContent
+                        id={tabletBottom}
+                        className="h-full"
+                        hideTitle
+                      />
                     </div>
                   </div>
                 </ResizablePanel>

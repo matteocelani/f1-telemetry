@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  MS_PER_SECOND,
+  MS_PER_MINUTE,
+  MS_PER_HOUR,
+  MS_PER_DAY,
+  SECONDS_PER_MINUTE,
+  MINUTES_PER_HOUR,
+  HOURS_PER_DAY,
+} from '@/constants/numbers';
 import { cn } from '@/lib/utils';
-
-const MS_PER_SECOND = 1000;
-const SECONDS_PER_MINUTE = 60;
-const MINUTES_PER_HOUR = 60;
-const HOURS_PER_DAY = 24;
-const MS_PER_MINUTE = MS_PER_SECOND * SECONDS_PER_MINUTE;
-const MS_PER_HOUR = MS_PER_MINUTE * MINUTES_PER_HOUR;
-const MS_PER_DAY = MS_PER_HOUR * HOURS_PER_DAY;
 
 interface TimeLeft {
   days: number;
@@ -58,7 +59,7 @@ export function CountdownTimer({
         onTimerZero();
         clearInterval(timer);
       }
-    }, 1000);
+    }, MS_PER_SECOND);
 
     return () => clearInterval(timer);
   }, [targetDate, onTimerZero]);

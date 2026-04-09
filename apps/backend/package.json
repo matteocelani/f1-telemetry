@@ -12,14 +12,14 @@
   },
   "dependencies": {
     "@f1-telemetry/core": "workspace:*",
-    "ws": "^8.16.0"
+    "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^25.5.2",
     "@types/ws": "^8.5.10",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.2"
   }
 }
