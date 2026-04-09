@@ -15,30 +15,29 @@ interface LiveTimingProviderProps {
 
 // Aggregates WS lifecycle, store data, and shared UI state for the live dashboard.
 export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
-  // --- External data hooks ---
   const { isError: isHealthError, failureCount } = useHealthCheck();
   const connectionStatus = useConnection((s) => s.status);
   const hasActivity = useConnection((s) => s.hasActivity);
   const header = useHeaderData();
   const { rows, sessionPart, eliminationPos, knockoutLines, isQualifying } = useTimingRows();
 
-  // --- Local UI state ---
+
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CenterTab>('map');
   const [isDetailedView, setIsDetailedView] = useState(false);
 
-  // --- Derived state ---
+
   const isBackendOnline = !isHealthError || failureCount === 0;
   const isConnected = connectionStatus === 'connected';
   const isLive = isConnected && hasActivity;
 
-  // --- Effects ---
+
   useEffect(() => {
     wsClient.connect();
     return () => wsClient.disconnect();
   }, []);
 
-  // --- Stable callbacks ---
+
   const handleSetSelectedDriver = useCallback(
     (driverNo: string | null) => setSelectedDriver(driverNo),
     []
@@ -54,7 +53,7 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
     []
   );
 
-  // --- Context value ---
+
   const value = useMemo<LiveTimingContextType>(
     () => ({
       isBackendOnline,
