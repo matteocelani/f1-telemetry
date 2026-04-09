@@ -192,6 +192,7 @@ export interface TimingRowsResult {
 }
 
 export interface LiveTimingContextType {
+  isBackendOnline: boolean;
   isConnected: boolean;
   isLive: boolean;
   header: UIHeaderData;
