@@ -11,10 +11,7 @@ trigger: manual
 **EXECUTION STEPS:**
 
 1. **Pre-flight Validation (BLOCKING — DO NOT SKIP):**
-   STOP. Read these three files NOW before doing anything else:
-   - `CLAUDE.md` — Primary source of truth for all coding and architecture rules.
-   - `.agent/rules/global.md` — Frontend coding standards (TypeScript, styling, patterns).
-   - `.agent/rules/project.md` — Architecture, folder structure, state management.
+   STOP. Read `CLAUDE.md` at the root of this repository NOW before doing anything else. It is the primary source of truth for all coding, architecture, and quality rules.
    Then run `git diff origin/main...HEAD` and scan EVERY changed line against those rules. Check for:
    - `any` usage in TypeScript
    - Relative imports (must be `@/` absolute)
@@ -58,4 +55,4 @@ feat | fix | refactor | chore | style | docs | test | ci | perf
 - **No Chatter:** Do not explain to the user what you are doing. Just execute the steps silently.
 - **Output:** Once executed, output ONLY the GitHub URL of the newly created Pull Request.
 - **Branch Check:** If already on `main`, warn the user and do NOT create a PR from `main` to `main`.
-- **Validation First:** NEVER open a PR with code that violates the rules in `global.md` or `project.md`. Fix first, PR after.
+- **Validation First:** NEVER open a PR with code that violates the rules in `CLAUDE.md`. Fix first, PR after.
