@@ -48,24 +48,26 @@ class F1WebSocketClient {
 
         if (!parsed.updates) return;
 
+        const channels = Object.keys(parsed.updates);
+        const hasSessionData = channels.some((ch) =>
+          SESSION_ACTIVITY_CHANNELS.has(ch)
+        );
+
         // Snapshot: reset all stores then apply full state synchronously (no delay buffer)
         if (parsed.snapshot) {
           resetAllStores();
           for (const [channel, data] of Object.entries(parsed.updates)) {
             dispatchToStores({ channel: channel as ChannelValue, data });
           }
-          useConnection.getState().setHasActivity(true);
+          if (hasSessionData) {
+            useConnection.getState().recordActivity();
+          }
           return;
         }
 
-        const channels = Object.keys(parsed.updates);
-        const hasSessionData = channels.some((ch) =>
-          SESSION_ACTIVITY_CHANNELS.has(ch)
-        );
-
         // Only flag live activity when the frame carries real session data
         if (hasSessionData) {
-          useConnection.getState().setHasActivity(true);
+          useConnection.getState().recordActivity();
         }
 
         for (const [channel, data] of Object.entries(parsed.updates)) {
@@ -79,7 +81,6 @@ class F1WebSocketClient {
 
     this.ws.onclose = () => {
       useConnection.getState().setStatus('reconnecting');
-      useConnection.getState().setHasActivity(false);
       this.scheduleReconnect();
     };
 
@@ -105,7 +106,7 @@ class F1WebSocketClient {
     const connStore = useConnection.getState();
     connStore.setStatus('disconnected');
     connStore.resetRetry();
-    connStore.setHasActivity(false);
+    connStore.clearActivity();
   }
 
   public setUrl(url: string): void {
