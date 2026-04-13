@@ -10,11 +10,12 @@ interface ConnectionState {
   status: ConnectionStatus;
   lastConnectedAt: number | null;
   lastHeartbeatAt: number | null;
+  lastActivityAt: number | null;
   retryCount: number;
-  hasActivity: boolean;
   setStatus: (status: ConnectionStatus) => void;
   setConnected: () => void;
-  setHasActivity: (hasActivity: boolean) => void;
+  recordActivity: () => void;
+  clearActivity: () => void;
   setLastHeartbeat: () => void;
   incrementRetry: () => void;
   resetRetry: () => void;
@@ -24,13 +25,14 @@ export const useConnection = create<ConnectionState>((set) => ({
   status: 'disconnected',
   lastConnectedAt: null,
   lastHeartbeatAt: null,
+  lastActivityAt: null,
   retryCount: 0,
-  hasActivity: false,
   setStatus: (status) => set({ status }),
   setConnected: () =>
     set({ status: 'connected', lastConnectedAt: Date.now(), retryCount: 0 }),
-  setHasActivity: (hasActivity) => set({ hasActivity }),
+  recordActivity: () => set({ lastActivityAt: Date.now() }),
+  clearActivity: () => set({ lastActivityAt: null }),
   setLastHeartbeat: () => set({ lastHeartbeatAt: Date.now() }),
   incrementRetry: () => set((state) => ({ retryCount: state.retryCount + 1 })),
-  resetRetry: () => set({ retryCount: 0, hasActivity: false }),
+  resetRetry: () => set({ retryCount: 0 }),
 }));

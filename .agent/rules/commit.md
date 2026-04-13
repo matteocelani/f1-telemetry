@@ -10,10 +10,10 @@ trigger: always_on
 
 **EXECUTION STEPS:**
 
-1. **Pre-flight Validation (BLOCKING — DO NOT SKIP):**
-   STOP. Read `CLAUDE.md` at the root of this repository NOW before doing anything else. It is the primary source of truth for all coding, architecture, and quality rules.
-   Then run `git diff` + `git diff --staged` and scan EVERY changed line against those rules. Check for:
-   - `any` usage in TypeScript
+1. **Pre-flight Validation (BLOCKING — DO NOT SKIP — THIS IS THE MOST IMPORTANT STEP):**
+   STOP. You MUST read `CLAUDE.md` NOW before doing anything else. Do NOT proceed from memory — re-read the file every single time.
+   Then run `git diff` + `git diff --staged` and scan EVERY changed line against CLAUDE.md rules. You must explicitly verify ALL of the following:
+   - `any` usage in TypeScript (PROHIBITED)
    - Relative imports (must be `@/` absolute)
    - Inline CSS (`style={{}}`) where Tailwind should be used
    - Arbitrary Tailwind values (`w-[50px]`, `h-[20px]`)
@@ -23,10 +23,12 @@ trigger: always_on
    - Swallowed errors (`catch (e) { console.log(e) }`)
    - Raw `useQuery`/`useMutation` calls outside custom hooks
    - Wrong import order
-   - Comments with decorators, separators (`---`), bullet points, or non-English text
+   - Comments longer than 2 lines, non-English, or with bullet points/dashes
    - `React.FC` or `React.FunctionComponent` usage
    - Boolean variables missing `is`/`has`/`should`/`can` prefix
-   Do NOT proceed to step 2 until you have confirmed zero violations. If violations are found: **fix them automatically**, then re-check. If a fix is ambiguous, ask the user.
+   - Reformatted or re-indented code that was NOT part of the task (surgical changes rule)
+   - Files in the diff that were NOT intentionally modified (auto-generated files, formatter artifacts)
+   Output a checklist confirming each rule was checked. Do NOT proceed to step 2 until you have confirmed zero violations. If violations are found: **fix them automatically**, then re-check. If a fix is ambiguous, ask the user.
 2. **Run TypeScript Check:** Execute `pnpm --filter frontend lint` (or equivalent). If errors exist, fix them before proceeding. Zero errors required.
 3. **Stage All Changes:** Execute `git add .` to stage all modified, deleted, and new files.
 4. **Analyze STAGED Changes (CRITICAL):** Execute `git diff --staged` to read the EXACT code differences. Base the commit message strictly on this output. Do NOT rely on chat history. Analyze EVERY file in the staged diff.

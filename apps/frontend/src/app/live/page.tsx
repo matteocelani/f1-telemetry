@@ -120,12 +120,8 @@ export default function LivePage() {
     [tabletTop, tabletBottom]
   );
 
-  if (!isBackendOnline) {
-    return <ServiceUnavailable />;
-  }
-
   if (!isLive) {
-    return <LiveOfflineFallback />;
+    return !isBackendOnline ? <ServiceUnavailable /> : <LiveOfflineFallback />;
   }
 
   return (
