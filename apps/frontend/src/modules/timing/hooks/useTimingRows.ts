@@ -325,7 +325,7 @@ export function useTimingRows(): TimingRowsResult {
         : undefined;
       const gap = isQualifying
         ? (qualiStats?.TimeDiffToFastest ?? '')
-        : (timing?.GapToLeader ?? '');
+        : (timing?.GapToLeader?.Value ?? '');
       const interval = isQualifying
         ? (qualiStats?.TimeDifftoPositionAhead ?? '')
         : (timing?.IntervalToPositionAhead?.Value ?? '');

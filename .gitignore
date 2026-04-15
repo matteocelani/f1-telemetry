@@ -22,6 +22,7 @@ node_modules
 # next.js
 .next
 out
+next-env.d.ts
 
 # environment — never commit real env files
 .env
