@@ -58,7 +58,9 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
   }, [sessionStartDate]);
 
   const isConnected = connectionStatus === 'connected';
-  const isLive = isActivityRecent && isSessionFresh;
+  // Skip session freshness check in dev so replay of old recordings works.
+  const isDev = process.env.NODE_ENV === 'development';
+  const isLive = isActivityRecent && (isDev || isSessionFresh);
 
   const header = useHeaderData();
   const { rows, sessionPart, eliminationPos, knockoutLines, isQualifying } = useTimingRows();
