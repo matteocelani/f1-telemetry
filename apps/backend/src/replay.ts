@@ -7,12 +7,13 @@ const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const REPLAY_INTERVAL_MS = parseInt(process.env.REPLAY_INTERVAL ?? '100', 10);
 
 interface ReplayFrame {
+  snapshot?: boolean;
   updates: Record<string, unknown>;
 }
 
 function loadReplayData(): ReplayFrame[] {
   const filePath =
-    process.argv[2] ?? resolve(__dirname, '../data/suzuka-race.json');
+    process.argv[2] ?? resolve(__dirname, '../data/suzuka-race-dev.json');
   Logger.info(`Loading replay data from ${filePath}`);
 
   const raw = readFileSync(filePath, 'utf-8');
@@ -29,8 +30,13 @@ function startReplay(socketServer: SocketServer, frames: ReplayFrame[]): void {
     const frame = frames[index];
 
     if (frame?.updates) {
-      for (const [channel, data] of Object.entries(frame.updates)) {
-        socketServer.broadcast(channel, data);
+      // Snapshot frames replace the entire server state atomically
+      if (frame.snapshot) {
+        socketServer.replaceState(frame.updates);
+      } else {
+        for (const [channel, data] of Object.entries(frame.updates)) {
+          socketServer.broadcast(channel, data);
+        }
       }
     }
 
@@ -38,6 +44,7 @@ function startReplay(socketServer: SocketServer, frames: ReplayFrame[]): void {
 
     if (index === 0) {
       Logger.info('Replay loop restarting from beginning');
+      socketServer.clearCache();
     }
   };
 

@@ -12,8 +12,9 @@
 import { writeFileSync, renameSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { WebSocket, ClientOptions } from 'ws';
-import { CHANNELS, F1_SERVER_URL, F1_HUB_NAME } from '@f1-telemetry/core';
+import { CHANNELS, F1_HUB_NAME, F1_SERVER_URL } from '@f1-telemetry/core';
 import { decompressPayload } from '@services/payload-parser';
+import { deepMerge } from '@utils/deepMerge';
 import { Logger } from '@utils/logger';
 
 const F1_ORIGIN_URL = 'https://www.formula1.com';
@@ -52,6 +53,8 @@ const SUBSCRIBE_CHANNELS = [
 ] as const;
 
 interface ReplayFrame {
+  timestamp: string;
+  snapshot?: boolean;
   updates: Record<string, unknown>;
 }
 
@@ -62,21 +65,25 @@ const OUTPUT_PATH = fileArg
   : resolve(__dirname, `../data/recording-${timestamp}.json`);
 
 const frames: ReplayFrame[] = [];
-let batchBuffer = new Map<string, unknown>();
+let batchQueue: Array<{ channel: string; data: unknown }> = [];
 let isRecording = false;
 let isSaved = false;
 let batchIntervalId: ReturnType<typeof setInterval> | null = null;
 let statusIntervalId: ReturnType<typeof setInterval> | null = null;
 
 function flushBatch(): void {
-  if (batchBuffer.size === 0) return;
+  if (batchQueue.length === 0) return;
 
-  const updates: Record<string, unknown> = {};
-  for (const [channel, data] of batchBuffer) {
-    updates[channel] = data;
+  const merged: Record<string, unknown> = {};
+  for (const { channel, data } of batchQueue) {
+    merged[channel] = channel in merged ? deepMerge(merged[channel], data) : data;
   }
-  frames.push({ updates });
-  batchBuffer = new Map();
+
+  frames.push({
+    timestamp: new Date().toISOString(),
+    updates: merged,
+  });
+  batchQueue = [];
 }
 
 function save(): void {
@@ -181,12 +188,21 @@ async function connect(): Promise<void> {
 
       const frame = JSON.parse(messageStr) as SignalRFrame;
 
-      // Handle initial subscribe snapshot (F1 sends full state in the R field)
+      // Subscribe response: F1 sends full state in the R field — mark as snapshot
       if (frame.R && typeof frame.R === 'object') {
-        for (const [channel, data] of Object.entries(frame.R)) {
-          processUpdate(channel, data);
-        }
         flushBatch();
+        const snapshotUpdates: Record<string, unknown> = {};
+        for (const [channel, rawData] of Object.entries(frame.R)) {
+          const resolved = resolveChannel(channel, rawData);
+          if (resolved) {
+            snapshotUpdates[resolved.channel] = resolved.data;
+          }
+        }
+        frames.push({
+          timestamp: new Date().toISOString(),
+          snapshot: true,
+          updates: snapshotUpdates,
+        });
       }
 
       if (!frame.M?.length) return;
@@ -238,14 +254,24 @@ async function connect(): Promise<void> {
   statusIntervalId.unref();
 }
 
-function processUpdate(channelName: string, rawData: unknown): void {
+// Decompresses .z channels and strips the .z suffix so the output matches
+// the channel names the frontend expects (e.g. "CarData" not "CarData.z").
+function resolveChannel(channelName: string, rawData: unknown): { channel: string; data: unknown } | null {
   if (channelName.endsWith('.z') && typeof rawData === 'string') {
     const decompressed = decompressPayload(rawData);
-    if (decompressed !== null) {
-      batchBuffer.set(channelName, decompressed);
+    if (decompressed === null) {
+      Logger.warn(`Decompression failed for ${channelName} — frame dropped`);
+      return null;
     }
-  } else {
-    batchBuffer.set(channelName, rawData);
+    return { channel: channelName.slice(0, -2), data: decompressed };
+  }
+  return { channel: channelName, data: rawData };
+}
+
+function processUpdate(channelName: string, rawData: unknown): void {
+  const resolved = resolveChannel(channelName, rawData);
+  if (resolved) {
+    batchQueue.push(resolved);
   }
 }
 

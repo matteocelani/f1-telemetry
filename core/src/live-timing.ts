@@ -134,7 +134,7 @@ export interface QualifyingStats {
 export interface DriverTiming {
   RacingNumber: string;
   Position: string;
-  GapToLeader: string;
+  GapToLeader?: { Value: string; Catching?: boolean };
   IntervalToPositionAhead?: { Value: string; Catching?: boolean };
   BestLapTime: LapTime;
   LastLapTime: LapTime;
