@@ -14,6 +14,7 @@ import { resolve, dirname } from 'path';
 import { WebSocket, ClientOptions } from 'ws';
 import { CHANNELS, F1_HUB_NAME, F1_SERVER_URL } from '@f1-telemetry/core';
 import { decompressPayload } from '@services/payload-parser';
+import { deepMerge } from '@utils/deepMerge';
 import { Logger } from '@utils/logger';
 
 const F1_ORIGIN_URL = 'https://www.formula1.com';
@@ -70,54 +71,12 @@ let isSaved = false;
 let batchIntervalId: ReturnType<typeof setInterval> | null = null;
 let statusIntervalId: ReturnType<typeof setInterval> | null = null;
 
-// Deep-merges delta objects instead of overwriting. F1 sends partial updates
-// like {Lines: {"1": {Position: "3"}}} followed by {Lines: {"4": {Sectors: ...}}}.
-// A naive overwrite loses the first update.
-function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
-  for (const key of Object.keys(source)) {
-    const srcVal = source[key];
-    const tgtVal = target[key];
-    if (
-      srcVal !== null &&
-      typeof srcVal === 'object' &&
-      !Array.isArray(srcVal) &&
-      tgtVal !== null &&
-      typeof tgtVal === 'object' &&
-      !Array.isArray(tgtVal)
-    ) {
-      target[key] = deepMerge(
-        tgtVal as Record<string, unknown>,
-        srcVal as Record<string, unknown>,
-      );
-    } else {
-      target[key] = srcVal;
-    }
-  }
-  return target;
-}
-
 function flushBatch(): void {
   if (batchQueue.length === 0) return;
 
-  // Merge all queued updates for the same channel using deepMerge
   const merged: Record<string, unknown> = {};
   for (const { channel, data } of batchQueue) {
-    if (
-      channel in merged &&
-      data !== null &&
-      typeof data === 'object' &&
-      !Array.isArray(data) &&
-      merged[channel] !== null &&
-      typeof merged[channel] === 'object' &&
-      !Array.isArray(merged[channel])
-    ) {
-      merged[channel] = deepMerge(
-        merged[channel] as Record<string, unknown>,
-        data as Record<string, unknown>,
-      );
-    } else {
-      merged[channel] = data;
-    }
+    merged[channel] = channel in merged ? deepMerge(merged[channel], data) : data;
   }
 
   frames.push({
