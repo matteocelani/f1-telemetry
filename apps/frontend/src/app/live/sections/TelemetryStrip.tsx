@@ -2,6 +2,13 @@
 
 import { useCallback, useState } from 'react';
 import { Activity } from 'lucide-react';
+import { TelemetryHud } from '@/app/live/components/TelemetryHud';
+import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
+import { MAX_VISIBLE_SERIES, SERIES_COLORS, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
+import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
+import { useTelemetryChart } from '@/modules/timing/hooks/useTelemetryChart';
+import type { TelemetrySeries } from '@/modules/timing/types';
+import { useUI } from '@/store/ui';
 import {
   Select,
   SelectContent,
@@ -10,12 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { TelemetryHud } from '@/app/live/components/TelemetryHud';
-import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
-import { MAX_VISIBLE_SERIES, SERIES_COLORS, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
-import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
-import { useTelemetryChart } from '@/modules/timing/hooks/useTelemetryChart';
-import type { TelemetrySeries } from '@/modules/timing/types';
 
 type ViewMode = 'hud' | 'trace';
 
@@ -27,7 +28,9 @@ interface TelemetryStripProps {
 }
 
 export function TelemetryStrip({ className, hideTitle }: TelemetryStripProps) {
-  const { rows, selectedDriver, setSelectedDriver } = useLiveTiming();
+  const { rows } = useLiveTiming();
+  const selectedDriver = useUI((s) => s.selectedDriver);
+  const setSelectedDriver = useUI((s) => s.setSelectedDriver);
   const [viewMode, setViewMode] = useState<ViewMode>('hud');
 
   const [visibleSeries, setVisibleSeries] = useState<Set<TelemetrySeries>>(

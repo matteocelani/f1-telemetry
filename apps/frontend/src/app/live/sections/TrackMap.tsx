@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Info, MapPin } from 'lucide-react';
 import type { TrackStatusCode } from '@f1-telemetry/core';
+import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
+import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
+import { useUI } from '@/store/ui';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
-import { useTrackMap } from '@/modules/timing/hooks/useTrackMap';
 
 interface TrackMapProps {
   className?: string;
@@ -39,7 +40,9 @@ const TRACK_STATUS_COLORS: Partial<Record<TrackStatusCode, string>> = {
 export function TrackMap({ className }: TrackMapProps) {
   const { drivers, circuit, isSegmentMode, startPercent, projectAll } =
     useTrackMap();
-  const { selectedDriver, setSelectedDriver, header } = useLiveTiming();
+  const { header } = useLiveTiming();
+  const selectedDriver = useUI((s) => s.selectedDriver);
+  const setSelectedDriver = useUI((s) => s.setSelectedDriver);
 
   const dotRefs = useRef<Map<string, SVGGElement>>(new Map());
   const frameIdRef = useRef(0);

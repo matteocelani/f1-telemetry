@@ -2,6 +2,11 @@
 
 import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { DriverRow } from '@/app/live/components/DriverRow';
+import { DriverRowExpanded } from '@/app/live/components/DriverRowExpanded';
+import { ROW_EXPAND_DURATION, ROW_LAYOUT_DURATION } from '@/constants/numbers';
+import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
+import { useUI } from '@/store/ui';
 import {
   Tooltip,
   TooltipContent,
@@ -9,10 +14,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { DriverRow } from '@/app/live/components/DriverRow';
-import { DriverRowExpanded } from '@/app/live/components/DriverRowExpanded';
-import { ROW_EXPAND_DURATION, ROW_LAYOUT_DURATION } from '@/constants/numbers';
-import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 
 const H =
   'text-xs font-bold uppercase tracking-widest text-muted-foreground cursor-help';
@@ -63,7 +64,9 @@ function ColumnHeader({
 }
 
 export function TimingTower({ className }: TimingTowerProps) {
-  const { rows, isDetailedView, eliminationPos, knockoutLines, setSelectedDriver } = useLiveTiming();
+  const { rows, eliminationPos, knockoutLines } = useLiveTiming();
+  const isDetailedView = useUI((s) => s.isDetailedView);
+  const setSelectedDriver = useUI((s) => s.setSelectedDriver);
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
 
   const isExpanded = expandedDriver !== null;

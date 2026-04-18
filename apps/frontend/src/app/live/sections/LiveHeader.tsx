@@ -12,13 +12,14 @@ import {
   Rows3,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { cn } from '@/lib/utils';
 import { LapTimer } from '@/app/live/components/LapTimer';
 import { TrackStatusBadge } from '@/app/live/components/TrackStatusBadge';
 import { INTL_LOCALE, WEATHER_FRACTION_DIGITS } from '@/constants/numbers';
 import { SESSION_SHORT } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { countryFlag } from '@/modules/timing/utils';
+import { useUI } from '@/store/ui';
+import { cn } from '@/lib/utils';
 
 const Q_PART_LABEL: Record<number, string> = {
   1: 'Q1',
@@ -32,11 +33,11 @@ export function LiveHeader() {
   const {
     isConnected,
     header,
-    isDetailedView,
-    setDetailedView,
     isQualifying,
     sessionPart,
   } = useLiveTiming();
+  const isDetailedView = useUI((s) => s.isDetailedView);
+  const setDetailedView = useUI((s) => s.setDetailedView);
   const { theme, setTheme } = useTheme();
   const {
     meetingName,
