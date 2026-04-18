@@ -201,10 +201,4 @@ export interface LiveTimingContextType {
   eliminationPos: number | null;
   knockoutLines: KnockoutLine[];
   isQualifying: boolean;
-  selectedDriver: string | null;
-  setSelectedDriver: (driverNo: string | null) => void;
-  activeTab: CenterTab;
-  setActiveTab: (tab: CenterTab) => void;
-  isDetailedView: boolean;
-  setDetailedView: (value: boolean) => void;
 }
