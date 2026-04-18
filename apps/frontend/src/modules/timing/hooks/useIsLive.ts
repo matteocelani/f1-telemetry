@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ACTIVITY_TIMEOUT_MS,
   GRACE_PERIOD_MS,
@@ -39,13 +39,21 @@ export function useIsLive(): boolean {
     computeIsLive(lastActivityAt, sessionStartDate)
   );
 
+  // Refs keep the timer stable across high-frequency WS updates while still reading fresh values.
+  const lastActivityAtRef = useRef(lastActivityAt);
+  const sessionStartDateRef = useRef(sessionStartDate);
+  lastActivityAtRef.current = lastActivityAt;
+  sessionStartDateRef.current = sessionStartDate;
+
   useEffect(() => {
     const update = () =>
-      setIsLive(computeIsLive(lastActivityAt, sessionStartDate));
+      setIsLive(
+        computeIsLive(lastActivityAtRef.current, sessionStartDateRef.current)
+      );
     update();
     const id = setInterval(update, MS_PER_SECOND);
     return () => clearInterval(id);
-  }, [lastActivityAt, sessionStartDate]);
+  }, []);
 
   return isLive;
 }
