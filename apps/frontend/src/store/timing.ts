@@ -40,7 +40,10 @@ export const useTiming = create<TimingState>((set) => ({
           nextKnockedOutParts[driverNo] = state.sessionPart - 1;
         }
         // DNF latch: once Retired or Stopped is true, remember permanently.
-        if ((delta.Retired === true || delta.Stopped === true) && !nextRetired.has(driverNo)) {
+        if (
+          (delta.Retired === true || delta.Stopped === true) &&
+          !nextRetired.has(driverNo)
+        ) {
           nextRetired = new Set(nextRetired);
           nextRetired.add(driverNo);
         }
@@ -49,7 +52,11 @@ export const useTiming = create<TimingState>((set) => ({
           delta
         ) as DriverTiming;
       }
-      return { lines: nextLines, knockedOutParts: nextKnockedOutParts, retiredDrivers: nextRetired };
+      return {
+        lines: nextLines,
+        knockedOutParts: nextKnockedOutParts,
+        retiredDrivers: nextRetired,
+      };
     }),
 
   setDriverList: (list) =>
@@ -63,5 +70,13 @@ export const useTiming = create<TimingState>((set) => ({
 
   setSessionMeta: (sessionPart, noEntries) => set({ sessionPart, noEntries }),
 
-  reset: () => set({ lines: {}, driverList: {}, sessionPart: 1, noEntries: [], knockedOutParts: {}, retiredDrivers: new Set<string>() }),
+  reset: () =>
+    set({
+      lines: {},
+      driverList: {},
+      sessionPart: 1,
+      noEntries: [],
+      knockedOutParts: {},
+      retiredDrivers: new Set<string>(),
+    }),
 }));

@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { cn } from '@/lib/utils';
 import {
   COMPOUND_BG,
   COMPOUND_LABEL,
@@ -10,6 +9,7 @@ import {
 } from '@/modules/timing/constants';
 import { useStrategyRows } from '@/modules/timing/hooks/useStrategyRows';
 import type { StrategyDriverRow, UIStint } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 interface StrategyTimelineProps {
   className?: string;

@@ -2,13 +2,6 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { BarChart3, Gauge, Map, Radio } from 'lucide-react';
-import { useBreakpoint } from '@/hooks/useBreakpoint';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
-import { cn } from '@/lib/utils';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
 import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
@@ -19,6 +12,14 @@ import { TrackMap } from '@/app/live/sections/TrackMap';
 import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useSession } from '@/store/session';
+import { useUI } from '@/store/ui';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { cn } from '@/lib/utils';
 
 type PanelId = 'map' | 'raceControl' | 'telemetry';
 
@@ -79,7 +80,9 @@ function PanelSelector({
 }
 
 export default function LivePage() {
-  const { isBackendOnline, isLive, activeTab, setActiveTab } = useLiveTiming();
+  const { isBackendOnline, isLive } = useLiveTiming();
+  const activeTab = useUI((s) => s.activeTab);
+  const setActiveTab = useUI((s) => s.setActiveTab);
   const sessionType = useSession((s) => s.sessionInfo?.Type);
   const breakpoint = useBreakpoint();
 

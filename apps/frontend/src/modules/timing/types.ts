@@ -165,7 +165,13 @@ export interface UIRaceControlMessage {
 
 // Telemetry
 
-export type TelemetrySeries = 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+export type TelemetrySeries =
+  | 'speed'
+  | 'throttle'
+  | 'brake'
+  | 'rpm'
+  | 'gear'
+  | 'activeAero';
 
 export interface TelemetrySeriesMeta {
   key: TelemetrySeries;
@@ -201,10 +207,4 @@ export interface LiveTimingContextType {
   eliminationPos: number | null;
   knockoutLines: KnockoutLine[];
   isQualifying: boolean;
-  selectedDriver: string | null;
-  setSelectedDriver: (driverNo: string | null) => void;
-  activeTab: CenterTab;
-  setActiveTab: (tab: CenterTab) => void;
-  isDetailedView: boolean;
-  setDetailedView: (value: boolean) => void;
 }

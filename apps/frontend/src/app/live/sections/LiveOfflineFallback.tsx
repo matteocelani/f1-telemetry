@@ -4,8 +4,6 @@ import { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { StatusDot } from '@/components/global/StatusDot';
-import { cn } from '@/lib/utils';
 import {
   MS_PER_DAY,
   MS_PER_HOUR,
@@ -15,9 +13,11 @@ import {
 } from '@/constants/numbers';
 import calendarData from '@/data/calendar.json';
 import circuitsData from '@/data/circuits.json';
-import { getNextSession } from '@/modules/timing/utils';
 import type { CircuitData } from '@/modules/timing/types';
+import { getNextSession } from '@/modules/timing/utils';
 import type { RaceEntry } from '@/types/data';
+import { StatusDot } from '@/components/global/StatusDot';
+import { cn } from '@/lib/utils';
 
 interface RacingDot {
   id: string;

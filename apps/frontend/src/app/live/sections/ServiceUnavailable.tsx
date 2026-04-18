@@ -33,8 +33,8 @@ export function ServiceUnavailable() {
             The telemetry server is in the garage right now.
           </p>
           <p className="max-w-xs text-xs text-muted-foreground/60">
-            Don&apos;t worry — we&apos;ll reconnect automatically when
-            it&apos;s back on track.
+            Don&apos;t worry — we&apos;ll reconnect automatically when it&apos;s
+            back on track.
           </p>
         </div>
 

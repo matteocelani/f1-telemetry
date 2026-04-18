@@ -1,4 +1,7 @@
-import { SESSION_ACTIVITY_CHANNELS, type ChannelValue } from '@f1-telemetry/core';
+import {
+  SESSION_ACTIVITY_CHANNELS,
+  type ChannelValue,
+} from '@f1-telemetry/core';
 import { useConnection } from '@/store/connection';
 import { delayBuffer } from '@/ws/wsBuffer';
 import { dispatchToStores, resetAllStores } from '@/ws/wsHandler';

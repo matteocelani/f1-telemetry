@@ -7,15 +7,18 @@ import { useLapCount } from '@/store/lap-count';
 import { useTiming } from '@/store/timing';
 import { useTimingApp } from '@/store/timing-app';
 
-const DRIVER_TLA_MAP = new Map(
-  driversData.map((d) => [d.driverNumber, d.tla])
-);
+const DRIVER_TLA_MAP = new Map(driversData.map((d) => [d.driverNumber, d.tla]));
 
 // Extracts only Position and InPit per driver; stabilizes the reference so
 // high-frequency timing updates (gaps, sectors) don't trigger stint re-renders.
-function usePositionMap(): Record<string, { position: number; isInPit: boolean }> {
+function usePositionMap(): Record<
+  string,
+  { position: number; isInPit: boolean }
+> {
   const timingLines = useTiming((s) => s.lines);
-  const prevRef = useRef<Record<string, { position: number; isInPit: boolean }>>({});
+  const prevRef = useRef<
+    Record<string, { position: number; isInPit: boolean }>
+  >({});
 
   return useMemo(() => {
     const next: Record<string, { position: number; isInPit: boolean }> = {};
@@ -95,7 +98,9 @@ export function useStrategyRows(): {
           : '#666666',
         // F1 sometimes sends InPit:true but never the corresponding false.
         // If the active stint has ≥2 laps, the driver is clearly on track.
-        isInPit: (pos?.isInPit ?? false) && (stints.at(-1)?.totalLaps ?? 0) < MIN_PIT_CONFIRM_LAPS,
+        isInPit:
+          (pos?.isInPit ?? false) &&
+          (stints.at(-1)?.totalLaps ?? 0) < MIN_PIT_CONFIRM_LAPS,
         stints,
         hasMandatoryStop,
       });

@@ -1,8 +1,8 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { PLACEHOLDER_DOT_COUNT } from '@/constants/numbers';
 import type { SegmentColorClass } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 const SEGMENT_CLASSES: Record<SegmentColorClass, string> = {
   purple: 'bg-purple-500',

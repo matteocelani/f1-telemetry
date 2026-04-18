@@ -398,8 +398,16 @@ export function useTimingRows(): TimingRowsResult {
       // Build knockout separator lines between active/Q2-KO/Q1-KO groups.
       const knockoutLines: { afterPosition: number; label: string }[] = [];
       for (let j = 1; j < remapped.length; j++) {
-        const prevGroup = getQualifyingGroup(remapped[j - 1], koPartIndices, effectiveSessionPart);
-        const currGroup = getQualifyingGroup(remapped[j], koPartIndices, effectiveSessionPart);
+        const prevGroup = getQualifyingGroup(
+          remapped[j - 1],
+          koPartIndices,
+          effectiveSessionPart
+        );
+        const currGroup = getQualifyingGroup(
+          remapped[j],
+          koPartIndices,
+          effectiveSessionPart
+        );
         if (currGroup > prevGroup && currGroup >= 2) {
           const partLabel = effectiveSessionPart - currGroup + 1;
           knockoutLines.push({
@@ -422,7 +430,8 @@ export function useTimingRows(): TimingRowsResult {
       // Retired drivers always sort to the bottom, ordered by laps completed (FIA B2.5.5).
       if (a.isRetired !== b.isRetired) return a.isRetired ? 1 : -1;
       if (a.isRetired && b.isRetired) {
-        if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+        if (a.numberOfLaps !== b.numberOfLaps)
+          return b.numberOfLaps - a.numberOfLaps;
         return parseInt(a.driverNo, 10) - parseInt(b.driverNo, 10);
       }
       // 1st key: F1 Position
@@ -432,7 +441,8 @@ export function useTimingRows(): TimingRowsResult {
         const gapA = parseGapToNumber(a.gap);
         const gapB = parseGapToNumber(b.gap);
         if (gapA !== gapB) return gapA - gapB;
-        if (a.numberOfLaps !== b.numberOfLaps) return b.numberOfLaps - a.numberOfLaps;
+        if (a.numberOfLaps !== b.numberOfLaps)
+          return b.numberOfLaps - a.numberOfLaps;
         // Same lap: driver with more completed micro-sectors is physically ahead.
         const segsA = countCompletedSegments(a);
         const segsB = countCompletedSegments(b);

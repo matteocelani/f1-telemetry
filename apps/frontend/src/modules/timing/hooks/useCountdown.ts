@@ -25,7 +25,10 @@ function formatHMS(totalSeconds: number): string {
 // Snap-and-tick: server frames anchor remaining time; client ticks fill gaps between frames.
 export function useCountdown(): string | null {
   const { clock, serverReceivedAt } = useClock(
-    useShallow((s) => ({ clock: s.clock, serverReceivedAt: s.serverReceivedAt }))
+    useShallow((s) => ({
+      clock: s.clock,
+      serverReceivedAt: s.serverReceivedAt,
+    }))
   );
 
   const [display, setDisplay] = useState<string | null>(null);

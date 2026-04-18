@@ -46,7 +46,9 @@ export const useSession = create<SessionState>((set) => ({
       const prev = state.sessionData;
       // Cast to the true wire shape: delta frames send StatusSeries/Series as keyed objects.
       const raw = incoming as unknown as {
-        StatusSeries?: SessionStatusEntry[] | Record<string, SessionStatusEntry>;
+        StatusSeries?:
+          | SessionStatusEntry[]
+          | Record<string, SessionStatusEntry>;
         Series?: SessionSeriesEntry[] | Record<string, SessionSeriesEntry>;
       };
       return {

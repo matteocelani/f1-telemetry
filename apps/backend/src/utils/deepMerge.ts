@@ -39,7 +39,9 @@ export function deepMerge(target: unknown, source: unknown): unknown {
     return source;
   }
 
-  const result: Record<string, unknown> = { ...(target as Record<string, unknown>) };
+  const result: Record<string, unknown> = {
+    ...(target as Record<string, unknown>),
+  };
   for (const key of Object.keys(sourceObj)) {
     result[key] = deepMerge(result[key], sourceObj[key]);
   }
