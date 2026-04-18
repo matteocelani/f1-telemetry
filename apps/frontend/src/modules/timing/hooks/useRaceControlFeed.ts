@@ -1,12 +1,20 @@
 import { useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { TRACK_STATUS, type RaceControlMessage, type TrackStatusCode } from '@f1-telemetry/core';
+import {
+  TRACK_STATUS,
+  type RaceControlMessage,
+  type TrackStatusCode,
+} from '@f1-telemetry/core';
 import {
   CRITICAL_TRACK_STATUSES,
   TOAST_CRITICAL_DURATION_MS,
   TOAST_WARNING_DURATION_MS,
 } from '@/constants/numbers';
-import type { RCBadgeVariant, RCIconVariant, UIRaceControlMessage } from '@/modules/timing/types';
+import type {
+  RCBadgeVariant,
+  RCIconVariant,
+  UIRaceControlMessage,
+} from '@/modules/timing/types';
 import { useRaceControl } from '@/store/race-control';
 
 const TRACK_STATUS_LABELS: Record<TrackStatusCode, string> = {
@@ -128,8 +136,5 @@ export function useRaceControlFeed(): UIRaceControlMessage[] {
     }
   }, [messages]);
 
-  return useMemo(
-    () => messages.map(toUIMessage).reverse(),
-    [messages]
-  );
+  return useMemo(() => messages.map(toUIMessage).reverse(), [messages]);
 }

@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDown, Radio } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { RaceControlMessage } from '@/app/live/components/RaceControlMessage';
 import { ROW_EXPAND_DURATION } from '@/constants/numbers';
 import { useDriverLookup } from '@/modules/timing/hooks/useDriverLookup';
 import { useRaceControlFeed } from '@/modules/timing/hooks/useRaceControlFeed';
+import { cn } from '@/lib/utils';
 
 // Distance from top (px) to consider the user "at the newest message".
 const AUTO_SCROLL_THRESHOLD = 60;

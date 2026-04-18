@@ -79,7 +79,9 @@ export function dispatchToStores(frame: F1Frame): void {
       useTiming.getState().updateLines(payload.Lines);
       // SessionPart/NoEntries only arrive on TimingDataF1, not on TimingData
       if (payload.SessionPart !== undefined) {
-        useTiming.getState().setSessionMeta(payload.SessionPart, payload.NoEntries ?? []);
+        useTiming
+          .getState()
+          .setSessionMeta(payload.SessionPart, payload.NoEntries ?? []);
       }
       break;
     }

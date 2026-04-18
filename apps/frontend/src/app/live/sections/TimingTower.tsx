@@ -71,12 +71,15 @@ export function TimingTower({ className }: TimingTowerProps) {
 
   const isExpanded = expandedDriver !== null;
 
-  const handleToggle = useCallback((driverNo: string) => {
-    const isDeselecting = expandedDriver === driverNo;
-    setExpandedDriver(isDeselecting ? null : driverNo);
-    // Sync with track map: selecting a driver in the tower highlights their dot.
-    setSelectedDriver(isDeselecting ? null : driverNo);
-  }, [expandedDriver, setSelectedDriver]);
+  const handleToggle = useCallback(
+    (driverNo: string) => {
+      const isDeselecting = expandedDriver === driverNo;
+      setExpandedDriver(isDeselecting ? null : driverNo);
+      // Sync with track map: selecting a driver in the tower highlights their dot.
+      setSelectedDriver(isDeselecting ? null : driverNo);
+    },
+    [expandedDriver, setSelectedDriver]
+  );
 
   return (
     <div className={cn('flex flex-col overflow-x-auto', className)}>

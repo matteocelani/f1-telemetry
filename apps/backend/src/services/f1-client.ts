@@ -247,7 +247,9 @@ export class F1Client {
 
     this.localSocketServer.replaceState(processed);
     this.localSocketServer.broadcastControl({ control: 'f1_reconnected' });
-    Logger.info(`Subscribe snapshot applied (${Object.keys(processed).length} channels)`);
+    Logger.info(
+      `Subscribe snapshot applied (${Object.keys(processed).length} channels)`
+    );
   }
 
   private processUpdate(channelName: string, rawData: unknown) {
@@ -348,7 +350,9 @@ export class F1Client {
     );
     this.reconnectAttempts++;
 
-    Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`);
+    Logger.info(
+      `Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`
+    );
     setTimeout(() => {
       this.isReconnecting = false;
       this.connect();

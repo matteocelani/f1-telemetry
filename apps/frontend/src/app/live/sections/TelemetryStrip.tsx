@@ -4,7 +4,11 @@ import { useCallback, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { TelemetryHud } from '@/app/live/components/TelemetryHud';
 import { TelemetrySettings } from '@/app/live/components/TelemetrySettings';
-import { MAX_VISIBLE_SERIES, SERIES_COLORS, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
+import {
+  MAX_VISIBLE_SERIES,
+  SERIES_COLORS,
+  TELEMETRY_SERIES_META,
+} from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { useTelemetryChart } from '@/modules/timing/hooks/useTelemetryChart';
 import type { TelemetrySeries } from '@/modules/timing/types';

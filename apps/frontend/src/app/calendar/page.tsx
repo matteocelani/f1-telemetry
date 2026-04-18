@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, Variants } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { Footer } from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
 import { RaceCard } from '@/app/calendar/components/RaceCard';
 import calendarData from '@/data/calendar.json';
 import type { RaceEntry } from '@/types/data';
+import { Footer } from '@/components/layout/Footer';
+import { Button } from '@/components/ui/button';
 
 const races = calendarData as unknown as RaceEntry[];
 

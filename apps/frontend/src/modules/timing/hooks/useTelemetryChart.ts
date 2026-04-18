@@ -20,12 +20,54 @@ interface SeriesDef {
 }
 
 const ALL_SERIES: readonly SeriesDef[] = [
-  { key: 'speed', field: 'speed', color: SERIES_COLORS.speed, fill: 'rgba(59,130,246,0.12)', scale: 'speed', width: 2 },
-  { key: 'throttle', field: 'throttle', color: SERIES_COLORS.throttle, fill: '', scale: 'pct', width: 1.5 },
-  { key: 'brake', field: 'brake', color: SERIES_COLORS.brake, fill: '', scale: 'pct', width: 1.5 },
-  { key: 'rpm', field: 'rpm', color: SERIES_COLORS.rpm, fill: '', scale: 'rpm', width: 1 },
-  { key: 'gear', field: 'gear', color: SERIES_COLORS.gear, fill: '', scale: 'gear', width: 2 },
-  { key: 'activeAero', field: 'activeAero', color: SERIES_COLORS.activeAero, fill: '', scale: 'aero', width: 2 },
+  {
+    key: 'speed',
+    field: 'speed',
+    color: SERIES_COLORS.speed,
+    fill: 'rgba(59,130,246,0.12)',
+    scale: 'speed',
+    width: 2,
+  },
+  {
+    key: 'throttle',
+    field: 'throttle',
+    color: SERIES_COLORS.throttle,
+    fill: '',
+    scale: 'pct',
+    width: 1.5,
+  },
+  {
+    key: 'brake',
+    field: 'brake',
+    color: SERIES_COLORS.brake,
+    fill: '',
+    scale: 'pct',
+    width: 1.5,
+  },
+  {
+    key: 'rpm',
+    field: 'rpm',
+    color: SERIES_COLORS.rpm,
+    fill: '',
+    scale: 'rpm',
+    width: 1,
+  },
+  {
+    key: 'gear',
+    field: 'gear',
+    color: SERIES_COLORS.gear,
+    fill: '',
+    scale: 'gear',
+    width: 2,
+  },
+  {
+    key: 'activeAero',
+    field: 'activeAero',
+    color: SERIES_COLORS.activeAero,
+    fill: '',
+    scale: 'aero',
+    width: 2,
+  },
 ];
 
 const COLOR_GRID = 'rgba(128,128,128,0.1)';

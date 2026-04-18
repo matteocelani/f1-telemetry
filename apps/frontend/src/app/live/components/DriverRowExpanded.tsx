@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 import { SectorBlock } from '@/app/live/components/SectorBlock';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { NO_POSITION } from '@/constants/numbers';
@@ -11,6 +10,7 @@ import type {
   SectorColorClass,
   UISpeedEntry,
 } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 const PLACEHOLDER = 'text-muted-foreground/20';
 

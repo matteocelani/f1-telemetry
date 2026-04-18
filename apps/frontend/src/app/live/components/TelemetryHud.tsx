@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
 import { MAX_RPM } from '@/constants/numbers';
 import { useTelemetry } from '@/store/telemetry';
+import { cn } from '@/lib/utils';
 
 const AERO_LABELS: Readonly<Record<number, string>> = {
   0: 'HIGH DOWNFORCE',

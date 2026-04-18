@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { motion, Variants } from 'framer-motion';
 import { CircuitSvg } from '@/app/home/components/CircuitSvg';
 import { CountdownTimer } from '@/app/home/components/CountdownTimer';
+import type { RaceEntry, CircuitInfo } from '@/types/data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { RaceEntry, CircuitInfo } from '@/types/data';
 
 const sessionLabels: Record<string, string> = {
   fp1: 'Practice 1',

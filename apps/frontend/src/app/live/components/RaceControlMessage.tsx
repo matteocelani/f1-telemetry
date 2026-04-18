@@ -2,13 +2,13 @@
 
 import { type ReactNode, useMemo } from 'react';
 import { Flag, Siren } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { DriverTag } from '@/modules/timing/hooks/useDriverLookup';
 import type {
   RCBadgeVariant,
   RCIconVariant,
   UIRaceControlMessage,
 } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 interface RaceControlMessageProps {
   message: UIRaceControlMessage;
@@ -45,7 +45,10 @@ const ICON_CONFIG: Record<
 
 const DRIVER_REF_PATTERN = /(\d{1,2})\s+\(([A-Z]{3})\)/g;
 
-export function RaceControlMessage({ message, driverMap }: RaceControlMessageProps) {
+export function RaceControlMessage({
+  message,
+  driverMap,
+}: RaceControlMessageProps) {
   const time = useMemo(() => {
     const date = new Date(message.utc);
     return date.toLocaleTimeString('en-GB', {
@@ -117,7 +120,10 @@ function parseMessageContent(
         <span
           key={start}
           className="inline-flex items-center rounded px-1.5 align-baseline leading-normal text-xs font-bold"
-          style={{ backgroundColor: `${driver.teamColor}20`, color: driver.teamColor }}
+          style={{
+            backgroundColor: `${driver.teamColor}20`,
+            color: driver.teamColor,
+          }}
         >
           {driverNo} {tla}
         </span>

@@ -76,7 +76,8 @@ function flushBatch(): void {
 
   const merged: Record<string, unknown> = {};
   for (const { channel, data } of batchQueue) {
-    merged[channel] = channel in merged ? deepMerge(merged[channel], data) : data;
+    merged[channel] =
+      channel in merged ? deepMerge(merged[channel], data) : data;
   }
 
   frames.push({
@@ -156,7 +157,11 @@ async function connect(): Promise<void> {
   const connectUrl = `${wsBase}/connect?clientProtocol=${CLIENT_PROTOCOL}&transport=${WS_TRANSPORT}&connectionToken=${connectionToken}&connectionData=${CONNECTION_DATA}`;
 
   const wsOptions: ClientOptions = {
-    headers: { 'User-Agent': 'BestHTTP', Origin: F1_ORIGIN_URL, Cookie: sessionCookie },
+    headers: {
+      'User-Agent': 'BestHTTP',
+      Origin: F1_ORIGIN_URL,
+      Cookie: sessionCookie,
+    },
   };
 
   const ws = new WebSocket(connectUrl, wsOptions);
@@ -175,7 +180,9 @@ async function connect(): Promise<void> {
     });
     ws.send(subscribeMsg);
     Logger.info(`Subscribed to: ${SUBSCRIBE_CHANNELS.join(', ')}`);
-    Logger.info(`Recording ${SUBSCRIBE_CHANNELS.length} channels... Press Ctrl+C to stop and save.`);
+    Logger.info(
+      `Recording ${SUBSCRIBE_CHANNELS.length} channels... Press Ctrl+C to stop and save.`
+    );
     isRecording = true;
   });
 
@@ -213,7 +220,11 @@ async function connect(): Promise<void> {
         const firstArg = message.A[0];
         const secondArg = message.A[1];
 
-        if (typeof firstArg === 'string' && secondArg !== undefined && message.A.length >= 2) {
+        if (
+          typeof firstArg === 'string' &&
+          secondArg !== undefined &&
+          message.A.length >= 2
+        ) {
           processUpdate(firstArg, secondArg);
           continue;
         }
@@ -256,7 +267,10 @@ async function connect(): Promise<void> {
 
 // Decompresses .z channels and strips the .z suffix so the output matches
 // the channel names the frontend expects (e.g. "CarData" not "CarData.z").
-function resolveChannel(channelName: string, rawData: unknown): { channel: string; data: unknown } | null {
+function resolveChannel(
+  channelName: string,
+  rawData: unknown
+): { channel: string; data: unknown } | null {
   if (channelName.endsWith('.z') && typeof rawData === 'string') {
     const decompressed = decompressPayload(rawData);
     if (decompressed === null) {

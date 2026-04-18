@@ -1,11 +1,11 @@
 'use client';
 
 import { BarChart3, Gauge } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { PaceRadar } from '@/app/live/sections/PaceRadar';
 import { StrategyTimeline } from '@/app/live/sections/StrategyTimeline';
 import { RACE_SESSION_TYPES } from '@/modules/timing/constants';
 import { useSession } from '@/store/session';
+import { cn } from '@/lib/utils';
 
 interface SmartWidgetProps {
   className?: string;

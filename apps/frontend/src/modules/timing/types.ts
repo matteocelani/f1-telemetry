@@ -165,7 +165,13 @@ export interface UIRaceControlMessage {
 
 // Telemetry
 
-export type TelemetrySeries = 'speed' | 'throttle' | 'brake' | 'rpm' | 'gear' | 'activeAero';
+export type TelemetrySeries =
+  | 'speed'
+  | 'throttle'
+  | 'brake'
+  | 'rpm'
+  | 'gear'
+  | 'activeAero';
 
 export interface TelemetrySeriesMeta {
   key: TelemetrySeries;

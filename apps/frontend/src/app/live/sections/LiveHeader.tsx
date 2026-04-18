@@ -30,12 +30,7 @@ const Q_PART_LABEL: Record<number, string> = {
 const LAYOUT_TRANSITION = { duration: 0.2, ease: 'easeOut' } as const;
 
 export function LiveHeader() {
-  const {
-    isConnected,
-    header,
-    isQualifying,
-    sessionPart,
-  } = useLiveTiming();
+  const { isConnected, header, isQualifying, sessionPart } = useLiveTiming();
   const isDetailedView = useUI((s) => s.isDetailedView);
   const setDetailedView = useUI((s) => s.setDetailedView);
   const { theme, setTheme } = useTheme();
@@ -185,7 +180,11 @@ export function LiveHeader() {
                 <div className="flex items-center gap-1.5">
                   <Navigation
                     className="size-3.5 text-sky-400 transform-[rotate(var(--wind-dir))]"
-                    style={{ '--wind-dir': `${weather.windDirection}deg` } as React.CSSProperties}
+                    style={
+                      {
+                        '--wind-dir': `${weather.windDirection}deg`,
+                      } as React.CSSProperties
+                    }
                   />
                   <span className="text-xs font-bold tabular-nums text-foreground">
                     {Math.round(weather.windDirection)}

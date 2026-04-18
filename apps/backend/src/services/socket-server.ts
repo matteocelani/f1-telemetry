@@ -40,23 +40,25 @@ export class SocketServer {
   }
 
   public start() {
-    this.httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
-      if (req.url === '/health' && req.method === 'GET') {
-        const isF1Connected = this.getIsF1Connected();
-        const payload = {
-          status: isF1Connected ? 'ok' : 'degraded',
-          uptime: Math.floor(process.uptime()),
-          connectedClients: this.clientCount,
-          isF1Connected,
-          timestamp: new Date().toISOString(),
-        };
-        res.writeHead(200, HEALTH_HEADERS);
-        res.end(JSON.stringify(payload));
-        return;
+    this.httpServer = createServer(
+      (req: IncomingMessage, res: ServerResponse) => {
+        if (req.url === '/health' && req.method === 'GET') {
+          const isF1Connected = this.getIsF1Connected();
+          const payload = {
+            status: isF1Connected ? 'ok' : 'degraded',
+            uptime: Math.floor(process.uptime()),
+            connectedClients: this.clientCount,
+            isF1Connected,
+            timestamp: new Date().toISOString(),
+          };
+          res.writeHead(200, HEALTH_HEADERS);
+          res.end(JSON.stringify(payload));
+          return;
+        }
+        res.writeHead(404);
+        res.end();
       }
-      res.writeHead(404);
-      res.end();
-    });
+    );
 
     this.wss = new WebSocketServer({ server: this.httpServer });
     this.httpServer.listen(this.port, () => {
@@ -108,7 +110,10 @@ export class SocketServer {
   // Deep-merges incoming deltas within the batch window to prevent overwrites.
   public broadcast(channel: string, data: unknown) {
     const existing = this.batchBuffer.get(channel);
-    this.batchBuffer.set(channel, existing !== undefined ? deepMerge(existing, data) : data);
+    this.batchBuffer.set(
+      channel,
+      existing !== undefined ? deepMerge(existing, data) : data
+    );
   }
 
   // Replaces the entire stateCache with a fresh F1 snapshot and broadcasts it
@@ -205,12 +210,15 @@ export class SocketServer {
     // Mark as snapshot so the frontend can reset stale stores before applying
     const frame = JSON.stringify({ snapshot: true, updates });
     ws.send(frame);
-    Logger.info(`Sent snapshot (${this.stateCache.size} channels) to new client`);
+    Logger.info(
+      `Sent snapshot (${this.stateCache.size} channels) to new client`
+    );
   }
 
   // Sends the full accumulated state to ALL connected clients (used after state replacement)
   private broadcastSnapshotToAll(): void {
-    if (!this.wss || this.wss.clients.size === 0 || this.stateCache.size === 0) return;
+    if (!this.wss || this.wss.clients.size === 0 || this.stateCache.size === 0)
+      return;
 
     const updates: Record<string, unknown> = {};
     for (const [channel, state] of this.stateCache) {
@@ -223,6 +231,8 @@ export class SocketServer {
       client.send(frame);
     }
 
-    Logger.info(`Broadcast snapshot (${this.stateCache.size} channels) to ${this.wss.clients.size} clients`);
+    Logger.info(
+      `Broadcast snapshot (${this.stateCache.size} channels) to ${this.wss.clients.size} clients`
+    );
   }
 }

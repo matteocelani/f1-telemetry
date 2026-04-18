@@ -1,4 +1,9 @@
-import { GRACE_PERIOD_MS, MS_PER_MINUTE, MS_PER_SECOND, REGIONAL_INDICATOR_OFFSET } from '@/constants/numbers';
+import {
+  GRACE_PERIOD_MS,
+  MS_PER_MINUTE,
+  MS_PER_SECOND,
+  REGIONAL_INDICATOR_OFFSET,
+} from '@/constants/numbers';
 import { ALPHA3_TO_ALPHA2 } from '@/modules/timing/constants';
 import type { RaceEntry } from '@/types/data';
 

@@ -2,6 +2,11 @@
 
 import { Info, Settings2 } from 'lucide-react';
 import {
+  MAX_VISIBLE_SERIES,
+  TELEMETRY_SERIES_META,
+} from '@/modules/timing/constants';
+import type { TelemetrySeries } from '@/modules/timing/types';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -15,8 +20,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { MAX_VISIBLE_SERIES, TELEMETRY_SERIES_META } from '@/modules/timing/constants';
-import type { TelemetrySeries } from '@/modules/timing/types';
 
 type ViewMode = 'hud' | 'trace';
 

@@ -62,7 +62,19 @@ const LAP_BOUNDARY_SEG_DROP = 3;
 
 // Sector/segment key arrays: avoids Object.keys().sort() on every call.
 const SECTOR_KEYS = ['0', '1', '2'] as const;
-const SEGMENT_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
+const SEGMENT_KEYS = [
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+] as const;
 
 // F1 segment completion statuses (2048=normal, 2049=purple, 2051=green+sector).
 // Status 2064 means "not yet reached" or "yellow flag" and must NOT count as completed.
@@ -85,17 +97,20 @@ for (const driver of driversData) {
 }
 
 // Precompute race date ranges so findCurrentRace avoids creating Date objects per call.
-const RACE_DATE_RANGES: { race: RaceEntry; earliest: number; latest: number }[] =
-  races.map((race) => {
-    const timestamps = Object.values(race.sessions).map((s) =>
-      new Date(s).getTime()
-    );
-    return {
-      race,
-      earliest: Math.min(...timestamps),
-      latest: Math.max(...timestamps),
-    };
-  });
+const RACE_DATE_RANGES: {
+  race: RaceEntry;
+  earliest: number;
+  latest: number;
+}[] = races.map((race) => {
+  const timestamps = Object.values(race.sessions).map((s) =>
+    new Date(s).getTime()
+  );
+  return {
+    race,
+    earliest: Math.min(...timestamps),
+    latest: Math.max(...timestamps),
+  };
+});
 
 // Geometry helpers
 
@@ -104,7 +119,10 @@ function findCurrentRace(): RaceEntry | undefined {
   const WEEKEND_BUFFER_MS = 2 * MS_PER_DAY;
 
   for (const { race, earliest, latest } of RACE_DATE_RANGES) {
-    if (now >= earliest - WEEKEND_BUFFER_MS && now <= latest + WEEKEND_BUFFER_MS) {
+    if (
+      now >= earliest - WEEKEND_BUFFER_MS &&
+      now <= latest + WEEKEND_BUFFER_MS
+    ) {
       return race;
     }
   }
@@ -458,10 +476,12 @@ export function useTrackMap(): TrackMapData {
         const currentLap = timing.NumberOfLaps ?? 0;
 
         const activeStints = appLines[driverNo]?.Stints ?? [];
-        const lastStintLaps = activeStints.length > 0
-          ? (activeStints[activeStints.length - 1]?.TotalLaps ?? 0)
-          : 0;
-        const isInPit = Boolean(timing.InPit) && lastStintLaps < MIN_PIT_CONFIRM_LAPS;
+        const lastStintLaps =
+          activeStints.length > 0
+            ? (activeStints[activeStints.length - 1]?.TotalLaps ?? 0)
+            : 0;
+        const isInPit =
+          Boolean(timing.InPit) && lastStintLaps < MIN_PIT_CONFIRM_LAPS;
 
         if (isInPit) {
           delete trackStateRef.current[driverNo];
@@ -480,9 +500,10 @@ export function useTrackMap(): TrackMapData {
         // Lap boundary guard: F1 resets segments to 0 BEFORE incrementing NumberOfLaps.
         // If completed drops significantly on the same lap, this is a segment reset — hold the old anchor.
         const segDrop = prev ? prev.completedSegments - completed : 0;
-        const isLapBoundaryReset = prev
-          && prev.lapCount === currentLap
-          && segDrop > LAP_BOUNDARY_SEG_DROP;
+        const isLapBoundaryReset =
+          prev &&
+          prev.lapCount === currentLap &&
+          segDrop > LAP_BOUNDARY_SEG_DROP;
 
         if (isLapBoundaryReset) {
           // Keep the previous state — don't move the dot backward
@@ -495,19 +516,26 @@ export function useTrackMap(): TrackMapData {
           continue;
         }
 
-        const anchorBoundary = completed < boundaries.length
-          ? boundaries[completed]
-          : boundaries[boundaries.length - 1];
+        const anchorBoundary =
+          completed < boundaries.length
+            ? boundaries[completed]
+            : boundaries[boundaries.length - 1];
         const anchorPercent = currentLap * PERCENT_PER_LAP + anchorBoundary;
 
         const nextIdx = Math.min(completed + 1, boundaries.length - 1);
-        const nextBoundaryPercent = currentLap * PERCENT_PER_LAP + boundaries[nextIdx];
+        const nextBoundaryPercent =
+          currentLap * PERCENT_PER_LAP + boundaries[nextIdx];
 
-        const lapTimeMs = parseLapTimeMs(timing.LastLapTime?.Value) ?? DEFAULT_LAP_TIME_MS;
+        const lapTimeMs =
+          parseLapTimeMs(timing.LastLapTime?.Value) ?? DEFAULT_LAP_TIME_MS;
         const totalSegs = boundaries.length - 1;
-        const estimatedDwellMs = totalSegs > 0 ? lapTimeMs / totalSegs : DEFAULT_LAP_TIME_MS;
+        const estimatedDwellMs =
+          totalSegs > 0 ? lapTimeMs / totalSegs : DEFAULT_LAP_TIME_MS;
 
-        const isNewAnchor = !prev || prev.completedSegments !== completed || prev.lapCount !== currentLap;
+        const isNewAnchor =
+          !prev ||
+          prev.completedSegments !== completed ||
+          prev.lapCount !== currentLap;
 
         trackStateRef.current[driverNo] = {
           anchorPercent,
@@ -536,7 +564,8 @@ export function useTrackMap(): TrackMapData {
 
     // Cheap structural change detection: increment revision on any change.
     const driverKeys = Object.keys(newDrivers);
-    let hasChanged = driverKeys.length !== Object.keys(driversRef.current).length;
+    let hasChanged =
+      driverKeys.length !== Object.keys(driversRef.current).length;
     if (!hasChanged) {
       for (const k of driverKeys) {
         const prev = driversRef.current[k];
@@ -569,49 +598,52 @@ export function useTrackMap(): TrackMapData {
 
   // Projects ALL drivers with forward projection + lerp. Zero allocations in the hot path.
   // Called once per rAF frame. NaN-safe: corrupted values fall back to anchor or 0.
-  const projectAll = useCallback(
-    (): Record<string, number> => {
-      const states = trackStateRef.current;
-      const now = Date.now();
-      const result = projectedRef.current;
+  const projectAll = useCallback((): Record<string, number> => {
+    const states = trackStateRef.current;
+    const now = Date.now();
+    const result = projectedRef.current;
 
-      // Clear previous keys that no longer exist
-      for (const key in result) {
-        if (!(key in states)) delete result[key];
+    // Clear previous keys that no longer exist
+    for (const key in result) {
+      if (!(key in states)) delete result[key];
+    }
+
+    for (const driverNo in states) {
+      const state = states[driverNo];
+
+      // Forward projection between segment boundaries using elapsed time
+      let targetPercent = state.anchorPercent;
+      if (state.estimatedDwellMs > 0) {
+        const elapsed = now - state.anchorTime;
+        const span = state.nextBoundaryPercent - state.anchorPercent;
+        const progress = Math.min(
+          elapsed / state.estimatedDwellMs,
+          MAX_PROJECTION_RATIO
+        );
+        targetPercent =
+          state.anchorPercent + span * (progress > 0 ? progress : 0);
       }
 
-      for (const driverNo in states) {
-        const state = states[driverNo];
-
-        // Forward projection between segment boundaries using elapsed time
-        let targetPercent = state.anchorPercent;
-        if (state.estimatedDwellMs > 0) {
-          const elapsed = now - state.anchorTime;
-          const span = state.nextBoundaryPercent - state.anchorPercent;
-          const progress = Math.min(elapsed / state.estimatedDwellMs, MAX_PROJECTION_RATIO);
-          targetPercent = state.anchorPercent + span * (progress > 0 ? progress : 0);
-        }
-
-        // Lerp toward the projected target
-        const delta = targetPercent - state.visualPercent;
-        if (Math.abs(delta) < LERP_SNAP_THRESHOLD) {
-          state.visualPercent = targetPercent;
-        } else {
-          state.visualPercent += delta * LERP_FACTOR;
-        }
-
-        // NaN guard
-        if (!Number.isFinite(state.visualPercent)) {
-          state.visualPercent = Number.isFinite(state.anchorPercent) ? state.anchorPercent : 0;
-        }
-
-        result[driverNo] = state.visualPercent;
+      // Lerp toward the projected target
+      const delta = targetPercent - state.visualPercent;
+      if (Math.abs(delta) < LERP_SNAP_THRESHOLD) {
+        state.visualPercent = targetPercent;
+      } else {
+        state.visualPercent += delta * LERP_FACTOR;
       }
 
-      return result;
-    },
-    []
-  );
+      // NaN guard
+      if (!Number.isFinite(state.visualPercent)) {
+        state.visualPercent = Number.isFinite(state.anchorPercent)
+          ? state.anchorPercent
+          : 0;
+      }
+
+      result[driverNo] = state.visualPercent;
+    }
+
+    return result;
+  }, []);
 
   return {
     circuit,

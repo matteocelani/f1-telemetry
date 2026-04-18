@@ -30,7 +30,8 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
   const isLive = useIsLive();
 
   const header = useHeaderData();
-  const { rows, sessionPart, eliminationPos, knockoutLines, isQualifying } = useTimingRows();
+  const { rows, sessionPart, eliminationPos, knockoutLines, isQualifying } =
+    useTimingRows();
 
   const value = useMemo<LiveTimingContextType>(
     () => ({
@@ -57,9 +58,5 @@ export function LiveTimingProvider({ children }: LiveTimingProviderProps) {
     ]
   );
 
-  return (
-    <LiveTimingContext value={value}>
-      {children}
-    </LiveTimingContext>
-  );
+  return <LiveTimingContext value={value}>{children}</LiveTimingContext>;
 }

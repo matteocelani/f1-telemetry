@@ -11,9 +11,7 @@ export const useLapCount = create<LapCountState>((set) => ({
   lapCount: null,
   setLapCount: (incoming) =>
     set((state) => ({
-      lapCount: state.lapCount
-        ? { ...state.lapCount, ...incoming }
-        : incoming,
+      lapCount: state.lapCount ? { ...state.lapCount, ...incoming } : incoming,
     })),
   reset: () => set({ lapCount: null }),
 }));

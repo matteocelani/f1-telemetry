@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { Gauge } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { TyreIcon } from '@/app/live/components/TyreIcon';
 import { PACE_METRICS } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import type { PaceMetricKey, SectorColorClass } from '@/modules/timing/types';
 import type { UITimingRow } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 const VALUE_COLOR: Record<SectorColorClass, string> = {
   purple: 'text-violet-500',
@@ -94,7 +94,12 @@ export function PaceRadar({ className }: PaceRadarProps) {
 
   if (!hasData) {
     return (
-      <div className={cn('flex h-full flex-col items-center justify-center gap-2 p-6 text-center', className)}>
+      <div
+        className={cn(
+          'flex h-full flex-col items-center justify-center gap-2 p-6 text-center',
+          className
+        )}
+      >
         <Gauge className="size-5 text-muted-foreground/40" />
         <p className="text-xs text-muted-foreground">
           Pace data will appear once drivers set lap times
@@ -145,23 +150,27 @@ export function PaceRadar({ className }: PaceRadarProps) {
                 className={cn(
                   'group relative flex h-10 items-center gap-2 rounded-sm px-2 transition-colors hover:bg-foreground/5',
                   isOverallBest && 'bg-violet-500/5',
-                  isPersonalBest && 'bg-emerald-500/5',
+                  isPersonalBest && 'bg-emerald-500/5'
                 )}
               >
                 <div
                   className={cn(
                     'absolute inset-y-0.5 left-0 rounded-sm transition-all',
-                    isOverallBest ? 'bg-violet-500/10' : 'bg-foreground/3',
+                    isOverallBest ? 'bg-violet-500/10' : 'bg-foreground/3'
                   )}
                   style={{ width: `${entry.barPercent}%` }}
                 />
 
                 <div className="relative flex w-full items-center gap-1.5">
                   {/* Rank */}
-                  <span className={cn(
-                    'w-4 shrink-0 text-right text-xs font-bold tabular-nums',
-                    isOverallBest ? 'text-violet-500' : 'text-muted-foreground',
-                  )}>
+                  <span
+                    className={cn(
+                      'w-4 shrink-0 text-right text-xs font-bold tabular-nums',
+                      isOverallBest
+                        ? 'text-violet-500'
+                        : 'text-muted-foreground'
+                    )}
+                  >
                     {i + 1}
                   </span>
 
@@ -172,10 +181,7 @@ export function PaceRadar({ className }: PaceRadarProps) {
                       style={{ backgroundColor: entry.row.teamColor }}
                     />
                     <span
-                      className={cn(
-                        'text-xs font-bold',
-                        'text-foreground'
-                      )}
+                      className={cn('text-xs font-bold', 'text-foreground')}
                     >
                       {entry.row.tla}
                     </span>
@@ -188,14 +194,23 @@ export function PaceRadar({ className }: PaceRadarProps) {
 
                   {/* Tyre compound */}
                   <div className="shrink-0 scale-75 origin-left">
-                    <TyreIcon compound={entry.row.currentTyre} showAge={false} />
+                    <TyreIcon
+                      compound={entry.row.currentTyre}
+                      showAge={false}
+                    />
                   </div>
 
                   {/* Value — right-aligned */}
                   <span
                     className={cn(
                       'ml-auto text-right text-xs font-bold tabular-nums',
-                      VALUE_COLOR[isOverallBest ? 'purple' : entry.color === 'purple' ? 'green' : entry.color],
+                      VALUE_COLOR[
+                        isOverallBest
+                          ? 'purple'
+                          : entry.color === 'purple'
+                            ? 'green'
+                            : entry.color
+                      ]
                     )}
                   >
                     {entry.value}

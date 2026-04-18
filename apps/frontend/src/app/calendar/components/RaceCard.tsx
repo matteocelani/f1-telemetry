@@ -2,10 +2,10 @@
 
 import { motion, Variants } from 'framer-motion';
 import { Calendar as CalendarIcon, MapPin, Sparkles } from 'lucide-react';
+import type { RaceEntry } from '@/types/data';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { RaceEntry } from '@/types/data';
 
 interface RaceCardProps {
   race: RaceEntry;

@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { SegmentDots } from '@/app/live/components/SegmentDots';
 import { DEFAULT_SECTOR_TIME } from '@/constants/numbers';
 import type { SectorColorClass, UISector } from '@/modules/timing/types';
+import { cn } from '@/lib/utils';
 
 const SECTOR_COLOR: Record<SectorColorClass, string> = {
   purple: 'text-violet-500',
