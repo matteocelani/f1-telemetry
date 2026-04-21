@@ -3,6 +3,7 @@ import {
   SESSION_ACTIVITY_CHANNELS,
   type ChannelValue,
 } from '@f1-telemetry/core';
+import { MS_PER_SECOND } from '@/constants/numbers';
 import { useConnection } from '@/store/connection';
 import { useSync } from '@/store/sync';
 import { delayBuffer } from '@/ws/wsBuffer';
@@ -161,3 +162,39 @@ class F1WebSocketClient {
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8080/ws';
 
 export const wsClient = new F1WebSocketClient(WS_URL);
+
+const SLEEP_BASE_THRESHOLD_MS = 30_000;
+const SLEEP_MARGIN_MS = 5_000;
+
+let hiddenSince: number | null = null;
+
+// Gaps longer than the active delay window mean the buffer is stale on return, so reset to live.
+function handleVisibilityChange(): void {
+  if (document.hidden) {
+    hiddenSince = Date.now();
+    return;
+  }
+  if (hiddenSince === null) return;
+
+  const gap = Date.now() - hiddenSince;
+  hiddenSince = null;
+
+  const delaySeconds = useSync.getState().delaySeconds;
+  if (delaySeconds === 0) return;
+
+  const threshold = Math.max(
+    SLEEP_BASE_THRESHOLD_MS,
+    delaySeconds * MS_PER_SECOND + SLEEP_MARGIN_MS
+  );
+
+  if (gap > threshold) {
+    console.info('[Sync] reset on long sleep, gap:', gap, 'ms');
+    useSync.getState().goLive();
+    toast.info('Sync reset after inactivity', { id: 'sync-reset' });
+  }
+}
+
+// Guarded for SSR: module top-level code runs on the server during prerender.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+}
