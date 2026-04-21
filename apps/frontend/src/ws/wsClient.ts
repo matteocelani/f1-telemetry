@@ -1,8 +1,10 @@
+import { toast } from 'sonner';
 import {
   SESSION_ACTIVITY_CHANNELS,
   type ChannelValue,
 } from '@f1-telemetry/core';
 import { useConnection } from '@/store/connection';
+import { useSync } from '@/store/sync';
 import { delayBuffer } from '@/ws/wsBuffer';
 import { dispatchToStores, resetAllStores } from '@/ws/wsHandler';
 
@@ -39,6 +41,12 @@ class F1WebSocketClient {
     this.ws.onopen = () => {
       useConnection.getState().setConnected();
       delayBuffer.start();
+      // Restore user-chosen delay after reconnect so it survives navigation and brief WS drops.
+      const restoredDelay = useSync.getState().delaySeconds;
+      if (restoredDelay > 0) {
+        console.info('[Sync] restored delay on connect:', restoredDelay);
+        delayBuffer.setDelay(restoredDelay);
+      }
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -58,6 +66,15 @@ class F1WebSocketClient {
 
         // Snapshot: reset all stores then apply full state synchronously (no delay buffer)
         if (parsed.snapshot) {
+          // Reset sync BEFORE resetAllStores so the loop does not release stale frames mid-snapshot.
+          const prevDelay = useSync.getState().delaySeconds;
+          if (prevDelay > 0) {
+            console.info('[Sync] reset on snapshot, was:', prevDelay);
+            useSync.getState().goLive();
+            toast.info('Sync reset — new snapshot received', {
+              id: 'sync-reset',
+            });
+          }
           resetAllStores();
           for (const [channel, data] of Object.entries(parsed.updates)) {
             dispatchToStores({ channel: channel as ChannelValue, data });
