@@ -51,7 +51,7 @@ class F1WebSocketClient {
         delayBuffer.setDelay(restoredDelay);
       }
       // If the tab was opened in background, visibilitychange never fired — kick off drain manually.
-      if (typeof document !== 'undefined' && document.hidden) {
+      if (document.hidden) {
         hiddenSince = Date.now();
         startBackgroundDrain();
       }
@@ -120,6 +120,9 @@ class F1WebSocketClient {
 
   public disconnect(): void {
     this.clearReconnect();
+    // Stop the background drain driver first so it cannot keep calling tick() on a torn-down buffer.
+    stopBackgroundDrain();
+    hiddenSince = null;
     delayBuffer.stop();
     delayBuffer.flush();
 

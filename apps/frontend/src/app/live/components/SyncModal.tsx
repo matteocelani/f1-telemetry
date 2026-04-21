@@ -98,8 +98,8 @@ export function SyncModal({ open, onOpenChange }: SyncModalProps) {
                 max={sliderMax}
                 step={1}
                 value={[draft]}
-                onValueChange={(v: number[]) => setDraft(v[0] ?? 0)}
-                onValueCommit={(v: number[]) => setDelay(v[0] ?? 0)}
+                onValueChange={(v: number[]) => setDraft(v[0])}
+                onValueCommit={(v: number[]) => setDelay(v[0])}
                 aria-label="Broadcast delay"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
