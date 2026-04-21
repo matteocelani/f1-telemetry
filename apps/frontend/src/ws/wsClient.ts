@@ -11,6 +11,8 @@ import { dispatchToStores, resetAllStores } from '@/ws/wsHandler';
 
 const MAX_RETRY_DELAY_MS = 10_000;
 const BASE_RETRY_DELAY_MS = 1_000;
+// Shared toast id so snapshot-based and sleep-based resets replace each other instead of stacking.
+const TOAST_SYNC_RESET_ID = 'sync-reset';
 
 /**
  * Singleton WebSocket client living entirely outside React.
@@ -190,7 +192,7 @@ function handleVisibilityChange(): void {
   if (gap > threshold) {
     console.info('[Sync] reset on long sleep, gap:', gap, 'ms');
     useSync.getState().goLive();
-    toast.info('Sync reset after inactivity', { id: 'sync-reset' });
+    toast.info('Sync reset after inactivity', { id: TOAST_SYNC_RESET_ID });
   }
 }
 

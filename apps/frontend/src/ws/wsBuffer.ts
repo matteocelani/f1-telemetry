@@ -1,7 +1,7 @@
 import type { ChannelValue } from '@f1-telemetry/core';
+import { MS_PER_SECOND } from '@/constants/numbers';
 import { dispatchToStores } from '@/ws/wsHandler';
 
-const MS_PER_SECOND = 1000;
 // Drop frames older than offset + margin, so the buffer never outgrows the active delay window.
 const BUFFER_MARGIN_MS = 5_000;
 // Cap dispatch per rAF tick to avoid render storms when the delay shrinks with a full buffer.
@@ -82,22 +82,39 @@ class StreamDelayBuffer {
     this.buffer = [];
   }
 
-  private loop(): void {
-    if (!this.isRunning) return;
+  // Pause the rAF loop without tearing down state, so an external driver (e.g. setInterval) can run tick().
+  public pauseRaf(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+  }
 
+  public resumeRaf(): void {
+    if (this.isRunning && this.rafId === null) {
+      this.rafId = requestAnimationFrame(this.loop);
+    }
+  }
+
+  // Runs one drain cycle; callers outside rAF (e.g. background setInterval) can omit the cap.
+  public tick(maxDispatch: number = Infinity): void {
     const targetTime = Date.now() - this.offsetMs;
     let dispatched = 0;
 
     while (
       this.buffer.length > 0 &&
       this.buffer[0].localTimestamp <= targetTime &&
-      dispatched < MAX_DISPATCH_PER_FRAME
+      dispatched < maxDispatch
     ) {
       const frame = this.buffer.shift()!;
       dispatchToStores(frame.payload);
       dispatched++;
     }
+  }
 
+  private loop(): void {
+    if (!this.isRunning) return;
+    this.tick(MAX_DISPATCH_PER_FRAME);
     this.rafId = requestAnimationFrame(this.loop);
   }
 }

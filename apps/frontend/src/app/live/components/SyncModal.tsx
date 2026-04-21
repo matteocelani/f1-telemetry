@@ -21,9 +21,6 @@ interface SyncModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Refresh the "stream history available" hint while the modal is open.
-const POLL_INTERVAL_MS = MS_PER_SECOND;
-
 // Produces human-readable durations ("1 minute 30 seconds") because bare numbers confuse non-technical users.
 function formatDelay(seconds: number): string {
   if (seconds === 0) return 'Live';
@@ -51,7 +48,7 @@ export function SyncModal({ open, onOpenChange }: SyncModalProps) {
     if (!open) return;
     const read = () => setMaxAvailable(useSync.getState().getMaxDelaySeconds());
     read();
-    const id = setInterval(read, POLL_INTERVAL_MS);
+    const id = setInterval(read, MS_PER_SECOND);
     return () => clearInterval(id);
   }, [open]);
 
