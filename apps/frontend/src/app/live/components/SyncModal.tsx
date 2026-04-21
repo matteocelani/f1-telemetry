@@ -13,9 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
 interface SyncModalProps {
   open: boolean;
@@ -25,10 +24,18 @@ interface SyncModalProps {
 // Refresh the "stream history available" hint while the modal is open.
 const POLL_INTERVAL_MS = MS_PER_SECOND;
 
-function formatStreamHistory(seconds: number): string {
+// Produces human-readable durations ("1 minute 30 seconds") because bare numbers confuse non-technical users.
+function formatDelay(seconds: number): string {
+  if (seconds === 0) return 'Live';
+  if (seconds < SECONDS_PER_MINUTE) {
+    return seconds === 1 ? '1 second' : `${seconds} seconds`;
+  }
   const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
   const remaining = seconds % SECONDS_PER_MINUTE;
-  return minutes === 0 ? `${remaining}s` : `${minutes}m ${remaining}s`;
+  const minPart = minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  if (remaining === 0) return minPart;
+  const secPart = remaining === 1 ? '1 second' : `${remaining} seconds`;
+  return `${minPart} ${secPart}`;
 }
 
 export function SyncModal({ open, onOpenChange }: SyncModalProps) {
@@ -55,11 +62,7 @@ export function SyncModal({ open, onOpenChange }: SyncModalProps) {
 
   const sliderMax = Math.min(MAX_DELAY_SECONDS, maxAvailable);
   const hasStream = maxAvailable > 0;
-  const isDraftChanged = draft !== currentDelay;
-
-  const handleApply = () => {
-    setDelay(draft);
-  };
+  const isDraftLive = draft === 0;
 
   const handleGoLive = () => {
     goLive();
@@ -68,37 +71,45 @@ export function SyncModal({ open, onOpenChange }: SyncModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xs sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Broadcast Sync</DialogTitle>
+          <DialogTitle>Broadcast Delay</DialogTitle>
           <DialogDescription>
-            Delay the dashboard to match your TV broadcast.
+            Hold back the dashboard so it stays in sync with your broadcast.
           </DialogDescription>
         </DialogHeader>
 
         {hasStream ? (
-          <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-col gap-6 py-4">
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {isDraftLive ? 'Currently' : 'Showing events from'}
+              </p>
+              <p
+                className={cn(
+                  'mt-1 text-xl font-bold tabular-nums sm:text-3xl',
+                  isDraftLive ? 'text-emerald-500' : 'text-yellow-500'
+                )}
+              >
+                {isDraftLive ? 'Live' : `${formatDelay(draft)} ago`}
+              </p>
+            </div>
+
             <div className="flex flex-col gap-2">
-              <Label htmlFor="sync-delay-input">Delay (seconds)</Label>
-              <Input
-                id="sync-delay-input"
-                type="number"
+              <Slider
                 min={0}
                 max={sliderMax}
-                value={draft}
-                onChange={(e) => setDraft(Number(e.target.value))}
+                step={1}
+                value={[draft]}
+                onValueChange={(v: number[]) => setDraft(v[0] ?? 0)}
+                onValueCommit={(v: number[]) => setDelay(v[0] ?? 0)}
+                aria-label="Broadcast delay"
               />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Live</span>
+                <span>up to {formatDelay(sliderMax)}</span>
+              </div>
             </div>
-            <Slider
-              min={0}
-              max={sliderMax}
-              step={1}
-              value={[draft]}
-              onValueChange={(v: number[]) => setDraft(v[0] ?? 0)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Stream history available: {formatStreamHistory(maxAvailable)}
-            </p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
@@ -113,14 +124,6 @@ export function SyncModal({ open, onOpenChange }: SyncModalProps) {
         )}
 
         <DialogFooter>
-          <Button
-            variant="default"
-            onClick={handleApply}
-            disabled={!hasStream || !isDraftChanged}
-            aria-label="Apply delay"
-          >
-            Apply
-          </Button>
           <Button
             variant="secondary"
             onClick={handleGoLive}

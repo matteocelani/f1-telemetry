@@ -232,13 +232,13 @@ export function LiveHeader() {
           <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
         </button>
 
-        {/* Live indicator — click opens the broadcast sync modal. */}
+        {/* Live indicator — click opens the broadcast delay modal. */}
         <button
           type="button"
           onClick={() => setIsSyncModalOpen(true)}
           className="flex items-center gap-1.5"
-          aria-label="Open broadcast sync settings"
-          title="Open broadcast sync settings"
+          aria-label="Open broadcast delay settings"
+          title="Open broadcast delay settings"
         >
           <span
             className={cn(
@@ -257,11 +257,16 @@ export function LiveHeader() {
               isDelayed && 'text-yellow-500'
             )}
           >
-            {!isConnected
-              ? 'Off'
-              : isLive
-                ? 'Live'
-                : `Delayed ${delaySeconds}s`}
+            {!isConnected ? (
+              'Off'
+            ) : isLive ? (
+              'Live'
+            ) : (
+              <>
+                <span className="hidden sm:inline">Delayed </span>
+                {delaySeconds}s
+              </>
+            )}
           </span>
         </button>
       </div>
