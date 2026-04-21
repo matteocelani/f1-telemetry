@@ -4,6 +4,8 @@ import { dispatchToStores } from '@/ws/wsHandler';
 const MS_PER_SECOND = 1000;
 // Drop frames older than offset + margin, so the buffer never outgrows the active delay window.
 const BUFFER_MARGIN_MS = 5_000;
+// Cap dispatch per rAF tick to avoid render storms when the delay shrinks with a full buffer.
+const MAX_DISPATCH_PER_FRAME = 20;
 
 interface BufferedFrame {
   localTimestamp: number;
@@ -84,13 +86,16 @@ class StreamDelayBuffer {
     if (!this.isRunning) return;
 
     const targetTime = Date.now() - this.offsetMs;
+    let dispatched = 0;
 
     while (
       this.buffer.length > 0 &&
-      this.buffer[0].localTimestamp <= targetTime
+      this.buffer[0].localTimestamp <= targetTime &&
+      dispatched < MAX_DISPATCH_PER_FRAME
     ) {
       const frame = this.buffer.shift()!;
       dispatchToStores(frame.payload);
+      dispatched++;
     }
 
     this.rafId = requestAnimationFrame(this.loop);
