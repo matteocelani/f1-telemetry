@@ -137,14 +137,21 @@ function buildStintHistory(
   stintsRaw: Record<string, StintData> | undefined
 ): UIStint[] {
   if (!stintsRaw) return [];
+  // Sparse delta merges can leave keys with undefined values, so skip them instead of crashing.
   return Object.keys(stintsRaw)
     .sort((a, b) => Number(a) - Number(b))
-    .map((key) => ({
-      compound: stintsRaw[key].Compound ?? 'UNKNOWN',
-      isNew: stintsRaw[key].New ?? false,
-      totalLaps: stintsRaw[key].TotalLaps ?? 0,
-      startLap: stintsRaw[key].StartLaps ?? 0,
-    }));
+    .flatMap((key) => {
+      const stint = stintsRaw[key];
+      if (!stint) return [];
+      return [
+        {
+          compound: stint.Compound ?? 'UNKNOWN',
+          isNew: stint.New ?? false,
+          totalLaps: stint.TotalLaps ?? 0,
+          startLap: stint.StartLaps ?? 0,
+        },
+      ];
+    });
 }
 
 // Infers qualifying part from knocked-out count — more reliable than waiting for SessionPart in stream.
