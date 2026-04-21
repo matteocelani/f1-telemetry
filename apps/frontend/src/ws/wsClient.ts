@@ -50,6 +50,11 @@ class F1WebSocketClient {
         console.info('[Sync] restored delay on connect:', restoredDelay);
         delayBuffer.setDelay(restoredDelay);
       }
+      // If the tab was opened in background, visibilitychange never fired — kick off drain manually.
+      if (typeof document !== 'undefined' && document.hidden) {
+        hiddenSince = Date.now();
+        startBackgroundDrain();
+      }
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -75,7 +80,7 @@ class F1WebSocketClient {
             console.info('[Sync] reset on snapshot, was:', prevDelay);
             useSync.getState().goLive();
             toast.info('Sync reset — new snapshot received', {
-              id: 'sync-reset',
+              id: TOAST_SYNC_RESET_ID,
             });
           }
           resetAllStores();
@@ -173,24 +178,32 @@ const BACKGROUND_DRAIN_INTERVAL_MS = 500;
 let hiddenSince: number | null = null;
 let backgroundDrainId: number | null = null;
 
+// Kept as top-level helpers so onopen can kick them off when the tab was already hidden at connect time.
+function startBackgroundDrain(): void {
+  if (backgroundDrainId !== null) return;
+  delayBuffer.pauseRaf();
+  backgroundDrainId = window.setInterval(
+    () => delayBuffer.tick(),
+    BACKGROUND_DRAIN_INTERVAL_MS
+  );
+}
+
+function stopBackgroundDrain(): void {
+  if (backgroundDrainId === null) return;
+  window.clearInterval(backgroundDrainId);
+  backgroundDrainId = null;
+  delayBuffer.resumeRaf();
+}
+
 // Gaps longer than the active delay window mean the buffer is stale on return, so reset to live.
 function handleVisibilityChange(): void {
   if (document.hidden) {
     hiddenSince = Date.now();
-    // Switch from rAF (throttled in background) to setInterval so the buffer keeps draining.
-    delayBuffer.pauseRaf();
-    backgroundDrainId = window.setInterval(
-      () => delayBuffer.tick(),
-      BACKGROUND_DRAIN_INTERVAL_MS
-    );
+    startBackgroundDrain();
     return;
   }
 
-  if (backgroundDrainId !== null) {
-    window.clearInterval(backgroundDrainId);
-    backgroundDrainId = null;
-  }
-  delayBuffer.resumeRaf();
+  stopBackgroundDrain();
 
   if (hiddenSince === null) return;
   const gap = Date.now() - hiddenSince;
