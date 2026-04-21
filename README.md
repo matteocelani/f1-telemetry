@@ -23,6 +23,10 @@ The goal is to give anyone a clean, fast, and accurate view into what is happeni
 - **Qualifying Support** — Q1/Q2/Q3 knockout detection with elimination line and separator labels between eliminated groups
 - **Data Resilience** — handles F1's lossy feed gracefully: stuck `InPit` flags are cross-referenced with stint data, `Retired`/`Stopped` states are permanently latched, and segment status `2064` (not-yet-reached) is correctly excluded from position calculations
 
+## Broadcast Delay
+
+The dashboard can be held back by up to three minutes so it stays in sync with your TV broadcast and does not spoil what you are watching. The UI pauses briefly while the delay buffer fills. Full guide in [docs/broadcast-delay.md](docs/broadcast-delay.md).
+
 ## Architecture
 
 This is a [pnpm](https://pnpm.io) monorepo with three packages:
@@ -73,6 +77,7 @@ See [docs/replay-mode.md](docs/replay-mode.md) for details on recording your own
 
 ## Documentation
 
+- [Broadcast delay](docs/broadcast-delay.md) — how the delay feature works, when to use it, and its current limitations
 - [Replay mode](docs/replay-mode.md) — how to develop and test the live dashboard without an active F1 session
 - [F1 Live Timing payload types](docs/live-timing-types.md) — field reference for all subscribed channels, 2026 regulation notes, and maintenance guide
 - [Timing tower sort architecture](docs/timing-sort-architecture.md) — how the client-side classification algorithm works, FIA regulation mapping, and known stream limitations

@@ -1,13 +1,18 @@
+import { toast } from 'sonner';
 import {
   SESSION_ACTIVITY_CHANNELS,
   type ChannelValue,
 } from '@f1-telemetry/core';
+import { MS_PER_SECOND } from '@/constants/numbers';
 import { useConnection } from '@/store/connection';
+import { useSync } from '@/store/sync';
 import { delayBuffer } from '@/ws/wsBuffer';
 import { dispatchToStores, resetAllStores } from '@/ws/wsHandler';
 
 const MAX_RETRY_DELAY_MS = 10_000;
 const BASE_RETRY_DELAY_MS = 1_000;
+// Shared toast id so snapshot-based and sleep-based resets replace each other instead of stacking.
+const TOAST_SYNC_RESET_ID = 'sync-reset';
 
 /**
  * Singleton WebSocket client living entirely outside React.
@@ -39,6 +44,17 @@ class F1WebSocketClient {
     this.ws.onopen = () => {
       useConnection.getState().setConnected();
       delayBuffer.start();
+      // Restore user-chosen delay after reconnect so it survives navigation and brief WS drops.
+      const restoredDelay = useSync.getState().delaySeconds;
+      if (restoredDelay > 0) {
+        console.info('[Sync] restored delay on connect:', restoredDelay);
+        delayBuffer.setDelay(restoredDelay);
+      }
+      // If the tab was opened in background, visibilitychange never fired — kick off drain manually.
+      if (document.hidden) {
+        hiddenSince = Date.now();
+        startBackgroundDrain();
+      }
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -58,6 +74,15 @@ class F1WebSocketClient {
 
         // Snapshot: reset all stores then apply full state synchronously (no delay buffer)
         if (parsed.snapshot) {
+          // Reset sync BEFORE resetAllStores so the loop does not release stale frames mid-snapshot.
+          const prevDelay = useSync.getState().delaySeconds;
+          if (prevDelay > 0) {
+            console.info('[Sync] reset on snapshot, was:', prevDelay);
+            useSync.getState().goLive();
+            toast.info('Sync reset — new snapshot received', {
+              id: TOAST_SYNC_RESET_ID,
+            });
+          }
           resetAllStores();
           for (const [channel, data] of Object.entries(parsed.updates)) {
             dispatchToStores({ channel: channel as ChannelValue, data });
@@ -95,6 +120,9 @@ class F1WebSocketClient {
 
   public disconnect(): void {
     this.clearReconnect();
+    // Stop the background drain driver first so it cannot keep calling tick() on a torn-down buffer.
+    stopBackgroundDrain();
+    hiddenSince = null;
     delayBuffer.stop();
     delayBuffer.flush();
 
@@ -144,3 +172,62 @@ class F1WebSocketClient {
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8080/ws';
 
 export const wsClient = new F1WebSocketClient(WS_URL);
+
+const SLEEP_BASE_THRESHOLD_MS = 30_000;
+const SLEEP_MARGIN_MS = 5_000;
+// Background drain cadence: browsers throttle setInterval to ~1Hz in hidden tabs, so this gets clamped in practice.
+const BACKGROUND_DRAIN_INTERVAL_MS = 500;
+
+let hiddenSince: number | null = null;
+let backgroundDrainId: number | null = null;
+
+// Kept as top-level helpers so onopen can kick them off when the tab was already hidden at connect time.
+function startBackgroundDrain(): void {
+  if (backgroundDrainId !== null) return;
+  delayBuffer.pauseRaf();
+  backgroundDrainId = window.setInterval(
+    () => delayBuffer.tick(),
+    BACKGROUND_DRAIN_INTERVAL_MS
+  );
+}
+
+function stopBackgroundDrain(): void {
+  if (backgroundDrainId === null) return;
+  window.clearInterval(backgroundDrainId);
+  backgroundDrainId = null;
+  delayBuffer.resumeRaf();
+}
+
+// Gaps longer than the active delay window mean the buffer is stale on return, so reset to live.
+function handleVisibilityChange(): void {
+  if (document.hidden) {
+    hiddenSince = Date.now();
+    startBackgroundDrain();
+    return;
+  }
+
+  stopBackgroundDrain();
+
+  if (hiddenSince === null) return;
+  const gap = Date.now() - hiddenSince;
+  hiddenSince = null;
+
+  const delaySeconds = useSync.getState().delaySeconds;
+  if (delaySeconds === 0) return;
+
+  const threshold = Math.max(
+    SLEEP_BASE_THRESHOLD_MS,
+    delaySeconds * MS_PER_SECOND + SLEEP_MARGIN_MS
+  );
+
+  if (gap > threshold) {
+    console.info('[Sync] reset on long sleep, gap:', gap, 'ms');
+    useSync.getState().goLive();
+    toast.info('Sync reset after inactivity', { id: TOAST_SYNC_RESET_ID });
+  }
+}
+
+// Guarded for SSR: module top-level code runs on the server during prerender.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+}
