@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Moon,
@@ -13,11 +14,13 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { LapTimer } from '@/app/live/components/LapTimer';
+import { SyncModal } from '@/app/live/components/SyncModal';
 import { TrackStatusBadge } from '@/app/live/components/TrackStatusBadge';
 import { INTL_LOCALE, WEATHER_FRACTION_DIGITS } from '@/constants/numbers';
 import { SESSION_SHORT } from '@/modules/timing/constants';
 import { useLiveTiming } from '@/modules/timing/hooks/useLiveTiming';
 import { countryFlag } from '@/modules/timing/utils';
+import { useSync } from '@/store/sync';
 import { useUI } from '@/store/ui';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +36,10 @@ export function LiveHeader() {
   const { isConnected, header, isQualifying, sessionPart } = useLiveTiming();
   const isDetailedView = useUI((s) => s.isDetailedView);
   const setDetailedView = useUI((s) => s.setDetailedView);
+  const delaySeconds = useSync((s) => s.delaySeconds);
+  const isLive = isConnected && delaySeconds === 0;
+  const isDelayed = isConnected && delaySeconds > 0;
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const {
     meetingName,
@@ -48,7 +55,8 @@ export function LiveHeader() {
   const flag = countryFlag(countryCode);
 
   return (
-    <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
+    <>
+      <header className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-3 md:h-14 md:px-5">
       {/* LEFT — badge + session identity.
           overflow-hidden is kept on the outer div; layout animation is applied to
           the inner siblings so they slide smoothly when the badge appears/clears. */}
@@ -224,28 +232,41 @@ export function LiveHeader() {
           <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
         </button>
 
-        {/* Live indicator */}
+        {/* Live indicator — click opens the broadcast sync modal. */}
         <button
           type="button"
+          onClick={() => setIsSyncModalOpen(true)}
           className="flex items-center gap-1.5"
-          title={isConnected ? 'Connected' : 'Disconnected'}
+          aria-label="Open broadcast sync settings"
+          title="Open broadcast sync settings"
         >
           <span
             className={cn(
               'size-2.5 shrink-0 rounded-full',
-              isConnected ? 'bg-emerald-500 animate-heartbeat' : 'bg-red-500'
+              !isConnected && 'bg-red-500',
+              isLive && 'bg-emerald-500 animate-heartbeat',
+              isDelayed && 'bg-yellow-500 animate-heartbeat'
             )}
           />
           <span
+            aria-live="polite"
             className={cn(
               'text-2xs font-extrabold uppercase tracking-wider',
-              isConnected ? 'text-emerald-500' : 'text-red-500'
+              !isConnected && 'text-red-500',
+              isLive && 'text-emerald-500',
+              isDelayed && 'text-yellow-500'
             )}
           >
-            {isConnected ? 'Live' : 'Off'}
+            {!isConnected
+              ? 'Off'
+              : isLive
+                ? 'Live'
+                : `Delayed ${delaySeconds}s`}
           </span>
         </button>
       </div>
-    </header>
+      </header>
+      <SyncModal open={isSyncModalOpen} onOpenChange={setIsSyncModalOpen} />
+    </>
   );
 }
