@@ -167,17 +167,32 @@ export const wsClient = new F1WebSocketClient(WS_URL);
 
 const SLEEP_BASE_THRESHOLD_MS = 30_000;
 const SLEEP_MARGIN_MS = 5_000;
+// Background drain cadence: browsers throttle setInterval to ~1Hz in hidden tabs, so this gets clamped in practice.
+const BACKGROUND_DRAIN_INTERVAL_MS = 500;
 
 let hiddenSince: number | null = null;
+let backgroundDrainId: number | null = null;
 
 // Gaps longer than the active delay window mean the buffer is stale on return, so reset to live.
 function handleVisibilityChange(): void {
   if (document.hidden) {
     hiddenSince = Date.now();
+    // Switch from rAF (throttled in background) to setInterval so the buffer keeps draining.
+    delayBuffer.pauseRaf();
+    backgroundDrainId = window.setInterval(
+      () => delayBuffer.tick(),
+      BACKGROUND_DRAIN_INTERVAL_MS
+    );
     return;
   }
-  if (hiddenSince === null) return;
 
+  if (backgroundDrainId !== null) {
+    window.clearInterval(backgroundDrainId);
+    backgroundDrainId = null;
+  }
+  delayBuffer.resumeRaf();
+
+  if (hiddenSince === null) return;
   const gap = Date.now() - hiddenSince;
   hiddenSince = null;
 
