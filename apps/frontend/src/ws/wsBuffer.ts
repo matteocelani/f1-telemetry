@@ -2,7 +2,8 @@ import type { ChannelValue } from '@f1-telemetry/core';
 import { dispatchToStores } from '@/ws/wsHandler';
 
 const MS_PER_SECOND = 1000;
-const MAX_BUFFER_SIZE = 1000;
+// Drop frames older than offset + margin, so the buffer never outgrows the active delay window.
+const BUFFER_MARGIN_MS = 5_000;
 
 interface BufferedFrame {
   localTimestamp: number;
@@ -19,6 +20,8 @@ class StreamDelayBuffer {
   private offsetMs = 0;
   private isRunning = false;
   private rafId: number | null = null;
+  // Tracks when we started receiving frames, used to clamp the UI delay slider to available history.
+  private firstFrameAt: number | null = null;
 
   constructor() {
     this.loop = this.loop.bind(this);
@@ -32,13 +35,23 @@ class StreamDelayBuffer {
     return this.offsetMs / MS_PER_SECOND;
   }
 
+  public getMaxDelaySeconds(): number {
+    if (this.firstFrameAt === null) return 0;
+    return Math.floor((Date.now() - this.firstFrameAt) / MS_PER_SECOND);
+  }
+
   public push(channel: ChannelValue, data: unknown): void {
+    if (this.firstFrameAt === null) {
+      this.firstFrameAt = Date.now();
+    }
     if (this.offsetMs === 0) {
       // Zero-delay bypass: dispatch immediately for minimum latency
       dispatchToStores({ channel, data });
       return;
     }
-    if (this.buffer.length >= MAX_BUFFER_SIZE) {
+    // Time-based cap: drop frames already outside the active delay window.
+    const cutoff = Date.now() - (this.offsetMs + BUFFER_MARGIN_MS);
+    while (this.buffer.length > 0 && this.buffer[0].localTimestamp < cutoff) {
       this.buffer.shift();
     }
     this.buffer.push({
@@ -55,6 +68,8 @@ class StreamDelayBuffer {
 
   public stop(): void {
     this.isRunning = false;
+    // Reset the stream-history tracker on disconnect, but keep it across flush() calls.
+    this.firstFrameAt = null;
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
