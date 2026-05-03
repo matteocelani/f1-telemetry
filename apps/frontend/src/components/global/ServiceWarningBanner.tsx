@@ -11,6 +11,7 @@ export function ServiceWarningBanner() {
     toast.warning('F1 Telemetry is currently unavailable', {
       id: SERVICE_WARNING_TOAST_ID,
       duration: Infinity,
+      closeButton: true,
       description: (
         <span>
           Due to IP blocking by Formula 1, the hosted version is currently
