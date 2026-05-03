@@ -33,7 +33,7 @@ export function Footer() {
 
         <div className="flex items-center gap-6">
           <Link
-            href="https://github.com"
+            href="https://github.com/matteocelani/f1-telemetry"
             target="_blank"
             rel="noreferrer"
             className="text-muted-foreground transition-colors hover:text-foreground"

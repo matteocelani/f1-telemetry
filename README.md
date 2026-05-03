@@ -2,6 +2,11 @@
 
 An open-source real-time dashboard for Formula 1 live timing and telemetry data.
 
+> [!WARNING]
+> **F1 Telemetry is currently unavailable.**
+>
+> Due to IP blocking measures introduced by Formula 1, the hosted version is currently down. You can selfhost the project by following the [Getting started](#getting-started) instructions below.
+
 ![F1 Telemetry Dashboard](apps/frontend/public/images/desktop_1.jpeg)
 
 > More screenshots: [Desktop](apps/frontend/public/images/desktop_2.jpeg) · [Tablet](apps/frontend/public/images/tablet.jpeg) · [Mobile](apps/frontend/public/images/mobile_1.jpeg)
