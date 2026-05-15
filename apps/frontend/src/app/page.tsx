@@ -17,7 +17,10 @@ function getCurrentGrandPrix(): RaceEntry {
       new Date(s).getTime()
     );
     const lastSession = new Date(Math.max(...sessionDates));
-    return lastSession > now;
+    // Keep the GP active for the rest of its last session's local day.
+    const endOfLastDay = new Date(lastSession);
+    endOfLastDay.setHours(23, 59, 59, 999);
+    return endOfLastDay.getTime() > now.getTime();
   });
   return current || races[races.length - 1];
 }
