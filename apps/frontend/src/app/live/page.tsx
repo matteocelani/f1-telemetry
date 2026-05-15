@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { BarChart3, Gauge, Map, Radio } from 'lucide-react';
 import { LiveHeader } from '@/app/live/sections/LiveHeader';
-import { LiveOfflineFallback } from '@/app/live/sections/LiveOfflineFallback';
 import { RaceControlFeed } from '@/app/live/sections/RaceControlFeed';
 import { ServiceUnavailable } from '@/app/live/sections/ServiceUnavailable';
 import { SmartWidget } from '@/app/live/sections/SmartWidget';
@@ -80,7 +79,7 @@ function PanelSelector({
 }
 
 export default function LivePage() {
-  const { isBackendOnline, isLive } = useLiveTiming();
+  const { isBackendOnline } = useLiveTiming();
   const activeTab = useUI((s) => s.activeTab);
   const setActiveTab = useUI((s) => s.setActiveTab);
   const sessionType = useSession((s) => s.sessionInfo?.Type);
@@ -123,8 +122,8 @@ export default function LivePage() {
     [tabletTop, tabletBottom]
   );
 
-  if (!isLive) {
-    return !isBackendOnline ? <ServiceUnavailable /> : <LiveOfflineFallback />;
+  if (!isBackendOnline) {
+    return <ServiceUnavailable />;
   }
 
   return (

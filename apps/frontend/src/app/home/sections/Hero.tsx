@@ -35,7 +35,6 @@ interface HeroProps {
   currentGp: RaceEntry;
   targetDate: Date;
   nextSession: [string, string] | undefined;
-  isLiveActive: boolean;
   isClient: boolean;
   circuitInfo?: CircuitInfo;
 }
@@ -44,7 +43,6 @@ export function Hero({
   currentGp,
   targetDate,
   nextSession,
-  isLiveActive,
   isClient,
   circuitInfo,
 }: HeroProps) {
@@ -160,27 +158,12 @@ export function Hero({
           <Link href="/calendar">View Full Calendar</Link>
         </Button>
 
-        {isLiveActive ? (
-          <Button
-            asChild
-            className="h-12 w-full sm:w-48 rounded-full bg-foreground text-background font-medium tracking-wide hover:bg-foreground/90 transition-all shadow-lg hover:scale-[1.02]"
-          >
-            <Link href="/live">Enter Live Session</Link>
-          </Button>
-        ) : (
-          <div className="relative group w-full sm:w-48 cursor-not-allowed">
-            <button
-              type="button"
-              className="h-12 w-full rounded-full bg-secondary border border-border text-muted-foreground font-medium tracking-wide cursor-not-allowed opacity-100 shadow-inner hover:bg-secondary pointer-events-none transition-colors"
-              disabled
-            >
-              Enter Live Session
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-1.5 bg-popover border border-border shadow-md rounded-md text-xs tracking-wide font-medium text-popover-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-              Opens 1h before session
-            </div>
-          </div>
-        )}
+        <Button
+          asChild
+          className="h-12 w-full sm:w-48 rounded-full bg-foreground text-background font-medium tracking-wide hover:bg-foreground/90 transition-all shadow-lg hover:scale-[1.02]"
+        >
+          <Link href="/live">Enter Live Session</Link>
+        </Button>
       </motion.div>
     </motion.div>
   );
