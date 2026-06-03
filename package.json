@@ -30,5 +30,8 @@
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "typescript-eslint": "^8.58.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["unrs-resolver"]
   }
 }
