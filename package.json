@@ -2,6 +2,7 @@
   "name": "f1-telemetry",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@10.10.0",
   "description": "Open-source real-time Formula 1 telemetry dashboard",
   "author": "Matteo Celani",
   "license": "MIT",
@@ -30,8 +31,5 @@
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "typescript-eslint": "^8.58.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["unrs-resolver"]
   }
 }

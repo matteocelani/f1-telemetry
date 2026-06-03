@@ -1,5 +1,5 @@
 FROM node:22-slim AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 WORKDIR /app
 
 # Copy lockfile and package manifests for layer caching
@@ -22,7 +22,7 @@ RUN pnpm --filter @f1-telemetry/core build && pnpm --filter backend build
 
 # --- Production stage ---
 FROM node:22-slim AS production
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json ./
