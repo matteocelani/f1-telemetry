@@ -43,3 +43,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Converted archive sessions and live recordings are large derived data
+# (~20MB per race) and regenerate with `pnpm archive` or `pnpm record`.
+# The bundled suzuka fixtures stay tracked.
+apps/backend/data/*.json
+!apps/backend/data/suzuka-*.json

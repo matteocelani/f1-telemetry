@@ -9,10 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "composite": true,
+    "types": ["node"],
     "paths": {
       "@services/*": ["./src/services/*"],
       "@utils/*": ["./src/utils/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
 }

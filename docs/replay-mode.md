@@ -22,6 +22,36 @@ The replay server (`apps/backend/src/replay.ts`) does three things:
 
 When it reaches the end of the file, it loops back to the beginning. The server runs until you stop it.
 
+## Watching a completed race
+
+F1 publishes every finished session to a public archive. `pnpm archive` downloads one and converts it into a replayable file — no recording required, and it works long after the race.
+
+```bash
+pnpm --filter backend archive --list       # what is available this season
+pnpm --filter backend archive monaco       # match on meeting name, case-insensitive
+pnpm --filter backend archive --round 10   # or by round number
+pnpm --filter backend archive --all        # every Grand Prix (~220 MB)
+```
+
+Rounds are counted in calendar order over sessions that actually ran, which will not always match the published round numbers. Use `--list` to confirm.
+
+Sprints are opt-in, since some weekends have both a sprint and a Grand Prix:
+
+```bash
+pnpm --filter backend archive chinese --sprint    # the sprint, not the GP
+pnpm --filter backend archive --all --sprints     # every session
+```
+
+Files are written to `apps/backend/data/` as `{date}_{meeting}_{session}.json`. A race is roughly 20 MB and converts in about 15 seconds. Play one back:
+
+```bash
+pnpm --filter backend dev:replay data/2026-06-07_monaco_race.json
+```
+
+Playback is real time, so a full session runs its true length — including the pre-race build-up. Speed it up with `REPLAY_INTERVAL` (see [Configuration](#configuration)).
+
+> Converted files are gitignored; they are large and regenerate in seconds. The bundled `suzuka-*.json` fixtures stay tracked.
+
 ## Data quality in replay mode
 
 Replay recordings capture the raw F1 feed as-is. Depending on when the recording started (mid-session vs. from the beginning), some data may be incomplete:
