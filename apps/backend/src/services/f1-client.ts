@@ -88,12 +88,6 @@ export class F1Client {
       this.awsAlbCors = awsMatch?.[1] ?? '';
 
       // Step 2: POST negotiate to get connection token
-      // F1_BEARER_TOKEN is optional and unset by default — /signalrcore does not
-      // authenticate. Negotiate returns 200 with no Authorization header and with
-      // a deliberately invalid one alike, so the header is ignored rather than
-      // validated, and a token-less connection still receives the full Subscribe
-      // snapshot. Kept only as an escape hatch should F1 start enforcing auth.
-      const bearerToken = process.env['F1_BEARER_TOKEN'];
       const negotiateHeaders: Record<string, string> = {
         'User-Agent': 'BestHTTP',
         Origin: F1_ORIGIN_URL,
@@ -101,9 +95,6 @@ export class F1Client {
       };
       if (this.awsAlbCors) {
         negotiateHeaders['Cookie'] = `AWSALBCORS=${this.awsAlbCors}`;
-      }
-      if (bearerToken) {
-        negotiateHeaders['Authorization'] = `Bearer ${bearerToken}`;
       }
 
       const negotiateResp = await fetch(
@@ -118,11 +109,13 @@ export class F1Client {
       const negotiateData = (await negotiateResp.json()) as NegotiateResponse;
       const connectionToken = encodeURIComponent(negotiateData.connectionToken);
 
-      // Step 3: Build WebSocket URL — access_token appended as query param per SignalR Core spec
-      let wsUrl = `${F1_WS_URL}?id=${connectionToken}`;
-      if (bearerToken) {
-        wsUrl += `&access_token=${encodeURIComponent(bearerToken)}`;
-      }
+      // Step 3: Build WebSocket URL. The endpoint is unauthenticated — no
+      // Authorization header and no access_token query param. What the upgrade
+      // does require is the AWS ALB sticky cookie from the negotiate above:
+      // without it the upgrade lands on a target that never issued this
+      // connectionToken and is rejected, which looks like an auth failure but
+      // is not. See issue #24.
+      const wsUrl = `${F1_WS_URL}?id=${connectionToken}`;
 
       const wsHeaders: Record<string, string> = {
         'User-Agent': 'BestHTTP',
