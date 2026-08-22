@@ -1,33 +1,29 @@
 import { WebSocket, ClientOptions } from 'ws';
-import { CHANNELS, F1_SERVER_URL, F1_HUB_NAME } from '@f1-telemetry/core';
+import { CHANNELS } from '@f1-telemetry/core';
 import { decompressPayload } from '@services/payload-parser';
 import { SocketServer } from '@services/socket-server';
 import { Logger } from '@utils/logger';
 
-// F1 Live Timing runs on legacy ASP.NET SignalR — Origin must match the official site
+// F1 migrated from legacy ASP.NET SignalR to SignalR Core in 2025
 const F1_ORIGIN_URL = 'https://www.formula1.com';
+const F1_HTTP_URL = 'https://livetiming.formula1.com/signalrcore';
+const F1_WS_URL = 'wss://livetiming.formula1.com/signalrcore';
+
 const BASE_RECONNECT_DELAY_MS = 5_000;
 const MAX_RECONNECT_DELAY_MS = 60_000;
-const CLIENT_PROTOCOL = '1.5';
-const WS_TRANSPORT = 'webSockets';
+const NEGOTIATE_VERSION = '1';
 const SESSION_INFO_CHANNEL = 'SessionInfo';
+const SUBSCRIBE_INVOCATION_ID = '0';
 
-// Pre-encoded once at module load to avoid runtime encodeURIComponent on every reconnect
-const CONNECTION_DATA = encodeURIComponent(`[{"name":"${F1_HUB_NAME}"}]`);
+// SignalR Core text protocol: messages delimited by record separator (0x1E)
+const RECORD_SEP = '\x1e';
 
-const NEGOTIATE_HEADERS: HeadersInit = {
-  'User-Agent': 'BestHTTP',
-  'Accept-Encoding': 'gzip, deflate',
-  Origin: F1_ORIGIN_URL,
-  Referer: `${F1_ORIGIN_URL}/`,
-};
+// SignalR Core message type constants per spec
+const MSG_INVOCATION = 1;
+const MSG_COMPLETION = 3;
+const MSG_PING = 6;
+const MSG_CLOSE = 7;
 
-const WS_BASE_HEADERS: Record<string, string> = {
-  'User-Agent': 'BestHTTP',
-  Origin: F1_ORIGIN_URL,
-};
-
-// All available F1 Live Timing channels — extend CHANNELS in @f1-telemetry/core to add more
 const SUBSCRIBE_CHANNELS = [
   CHANNELS.TELEMETRY,
   CHANNELS.POSITION,
@@ -46,187 +42,199 @@ const SUBSCRIBE_CHANNELS = [
   CHANNELS.HEARTBEAT,
 ] as const;
 
-// Pre-serialised SignalR invocation message — built once, sent on every (re)connect
-const SUBSCRIBE_MESSAGE = JSON.stringify({
-  H: F1_HUB_NAME,
-  M: 'Subscribe',
-  A: [SUBSCRIBE_CHANNELS],
-  I: 1,
-});
-
-type NegotiateResponse = {
-  ConnectionToken: string;
-};
-
-type SignalRMessage = {
-  M: string;
-  A: [string, ...unknown[]];
-};
+// Handshake is sent once after WebSocket open to agree on JSON text protocol
+const HANDSHAKE_MESSAGE = `{"protocol":"json","version":1}${RECORD_SEP}`;
 
 type SignalRFrame = {
-  M?: SignalRMessage[];
-  R?: Record<string, unknown>;
+  type?: number;
+  invocationId?: string;
+  target?: string;
+  arguments?: unknown[];
+  result?: Record<string, unknown>;
+  error?: string;
+};
+
+type NegotiateResponse = {
+  connectionToken: string;
+  connectionId: string;
 };
 
 export class F1Client {
   private ws: WebSocket | null = null;
-  private connectionToken: string = '';
-  private sessionCookie: string = '';
-  private isReconnecting: boolean = false;
+  private isHandshakeComplete: boolean = false;
   private isConnected: boolean = false;
+  private isReconnecting: boolean = false;
   private reconnectAttempts: number = 0;
-  private readonly localSocketServer: SocketServer;
-
-  // Session watchdog: tracks the current F1 session path to detect session transitions
+  private awsAlbCors: string = '';
   private currentSessionPath: string = '';
+  private readonly localSocketServer: SocketServer;
 
   constructor(localSocketServer: SocketServer) {
     this.localSocketServer = localSocketServer;
   }
 
-  public async connect() {
+  public async connect(): Promise<void> {
     if (this.isReconnecting) return;
 
     try {
-      Logger.info(`Negotiating with F1 SignalR at ${F1_SERVER_URL}...`);
-
-      const negotiateUrl = `${F1_SERVER_URL}/negotiate?clientProtocol=${CLIENT_PROTOCOL}&connectionData=${CONNECTION_DATA}`;
-      const negotiateResponse = await fetch(negotiateUrl, {
-        method: 'GET',
-        headers: NEGOTIATE_HEADERS,
+      // Step 1: OPTIONS pre-negotiate to obtain AWS ALB sticky session cookie
+      Logger.info('Pre-negotiating with F1 SignalR Core...');
+      const preNegResp = await fetch(`${F1_HTTP_URL}/negotiate`, {
+        method: 'OPTIONS',
+        headers: { 'User-Agent': 'BestHTTP', Origin: F1_ORIGIN_URL },
       });
+      const rawCookie = preNegResp.headers.get('set-cookie') ?? '';
+      const awsMatch = rawCookie.match(/AWSALBCORS=([^;]+)/);
+      this.awsAlbCors = awsMatch?.[1] ?? '';
 
-      if (!negotiateResponse.ok) {
-        throw new Error(`Negotiate failed — HTTP ${negotiateResponse.status}`);
-      }
-
-      // The Set-Cookie from negotiate must be forwarded to authenticate the WS upgrade
-      const setCookieHeader = negotiateResponse.headers.get('set-cookie');
-      this.sessionCookie = setCookieHeader ? setCookieHeader.split(';')[0] : '';
-
-      const negotiateData =
-        (await negotiateResponse.json()) as NegotiateResponse;
-      if (!negotiateData.ConnectionToken) {
-        throw new Error('Missing ConnectionToken in negotiate response');
-      }
-
-      this.connectionToken = encodeURIComponent(negotiateData.ConnectionToken);
-
-      const wsBase = F1_SERVER_URL.replace('http', 'ws');
-      const connectUrl = `${wsBase}/connect?clientProtocol=${CLIENT_PROTOCOL}&transport=${WS_TRANSPORT}&connectionToken=${this.connectionToken}&connectionData=${CONNECTION_DATA}`;
-
-      const wsOptions: ClientOptions = {
-        headers: { ...WS_BASE_HEADERS, Cookie: this.sessionCookie },
+      // Step 2: POST negotiate to get connection token
+      const negotiateHeaders: Record<string, string> = {
+        'User-Agent': 'BestHTTP',
+        Origin: F1_ORIGIN_URL,
+        'Content-Type': 'text/plain',
       };
+      if (this.awsAlbCors) {
+        negotiateHeaders['Cookie'] = `AWSALBCORS=${this.awsAlbCors}`;
+      }
 
-      this.ws = new WebSocket(connectUrl, wsOptions);
+      const negotiateResp = await fetch(
+        `${F1_HTTP_URL}/negotiate?negotiateVersion=${NEGOTIATE_VERSION}`,
+        { method: 'POST', headers: negotiateHeaders },
+      );
+
+      if (!negotiateResp.ok) {
+        throw new Error(`Negotiate failed — HTTP ${negotiateResp.status}`);
+      }
+
+      const negotiateData = (await negotiateResp.json()) as NegotiateResponse;
+      const connectionToken = encodeURIComponent(negotiateData.connectionToken);
+
+      // Step 3: Build WebSocket URL. The endpoint is unauthenticated — no
+      // Authorization header and no access_token query param. What the upgrade
+      // does require is the AWS ALB sticky cookie from the negotiate above:
+      // without it the upgrade lands on a target that never issued this
+      // connectionToken and is rejected, which looks like an auth failure but
+      // is not. See issue #24.
+      const wsUrl = `${F1_WS_URL}?id=${connectionToken}`;
+
+      const wsHeaders: Record<string, string> = {
+        'User-Agent': 'BestHTTP',
+        Origin: F1_ORIGIN_URL,
+      };
+      if (this.awsAlbCors) {
+        wsHeaders['Cookie'] = `AWSALBCORS=${this.awsAlbCors}`;
+      }
+
+      const wsOptions: ClientOptions = { headers: wsHeaders };
+
+      Logger.info('Connecting to F1 SignalR Core WebSocket...');
+      this.ws = new WebSocket(wsUrl, wsOptions);
+      this.isHandshakeComplete = false;
       this.setupListeners();
     } catch (err) {
-      Logger.error('Failed to connect to F1 SignalR', err);
+      Logger.error('Failed to connect to F1 SignalR Core', err);
       this.scheduleReconnect();
     }
   }
 
-  private setupListeners() {
+  private setupListeners(): void {
     if (!this.ws) return;
 
-    this.ws.on('open', async () => {
-      Logger.info('Connected to F1 SignalR WebSocket.');
-      this.isReconnecting = false;
-      this.isConnected = true;
-      this.reconnectAttempts = 0;
-
-      try {
-        // SignalR requires an explicit /start call after the WebSocket is open
-        const startUrl = `${F1_SERVER_URL}/start?clientProtocol=${CLIENT_PROTOCOL}&transport=${WS_TRANSPORT}&connectionToken=${this.connectionToken}&connectionData=${CONNECTION_DATA}`;
-        const startResponse = await fetch(startUrl, {
-          headers: { Cookie: this.sessionCookie },
-        });
-
-        if (!startResponse.ok) {
-          throw new Error(
-            `SignalR /start failed — HTTP ${startResponse.status}`
-          );
-        }
-
-        Logger.info('SignalR transport started.');
-        this.sendSubscribe();
-      } catch (err) {
-        Logger.error('Failed to start SignalR transport', err);
-      }
+    this.ws.on('open', () => {
+      Logger.info('WebSocket open — sending SignalR Core handshake...');
+      this.ws?.send(HANDSHAKE_MESSAGE);
     });
 
     this.ws.on('message', (data: Buffer) => {
       try {
-        const messageStr = data.toString('utf-8');
-
-        // SignalR sends '{}' as a keep-alive heartbeat — discard silently
-        if (messageStr.length < 3) return;
-
-        const frame = JSON.parse(messageStr) as SignalRFrame;
-
-        // Subscribe response: F1 sends full state in the R field.
-        // Replace (not merge) the entire stateCache to prevent ghost data from
-        // stale sessions or pre-reconnect state leaking through.
-        if (frame.R && typeof frame.R === 'object') {
-          this.handleSubscribeSnapshot(frame.R);
-        }
-
-        if (!frame.M?.length) return;
-
-        for (const message of frame.M) {
-          if (!message.A?.length) continue;
-
-          const firstArg = message.A[0];
-          const secondArg = message.A[1];
-
-          // Case 1: Direct channel update [ChannelName, Payload]
-          if (
-            typeof firstArg === 'string' &&
-            secondArg !== undefined &&
-            message.A.length >= 2
-          ) {
-            this.processUpdate(firstArg, secondArg);
-            continue;
-          }
-
-          // Case 2: Bulk feed payload [JSON_String_of_Object]
-          if (typeof firstArg === 'string' && firstArg.startsWith('{')) {
-            try {
-              const feedPayload = JSON.parse(firstArg) as Record<
-                string,
-                unknown
-              >;
-              for (const channelName in feedPayload) {
-                this.processUpdate(channelName, feedPayload[channelName]);
-              }
-            } catch (err) {
-              Logger.error(
-                `Failed to parse bulk feed payload: ${firstArg.substring(0, 50)}...`,
-                err
-              );
-            }
-          }
+        const raw = data.toString('utf-8');
+        // Messages are delimited by RECORD_SEP; filter empty segments
+        for (const segment of raw.split(RECORD_SEP)) {
+          if (segment.length === 0) continue;
+          const frame = JSON.parse(segment) as SignalRFrame;
+          this.handleFrame(frame);
         }
       } catch (err) {
-        Logger.error('Error processing SignalR message', err);
+        Logger.error('Error processing SignalR Core message', err);
       }
     });
 
     this.ws.on('close', (code: number) => {
       this.isConnected = false;
-      Logger.warn(`F1 SignalR closed (code ${code}). Scheduling reconnect...`);
+      Logger.warn(`F1 SignalR Core closed (code ${code}). Scheduling reconnect...`);
       this.localSocketServer.broadcastControl({ control: 'f1_disconnected' });
       this.scheduleReconnect();
     });
 
     this.ws.on('error', (err: Error) => {
-      // 'error' is always followed by 'close' — log here, reconnect there
+      // 'error' always precedes 'close' — log here, reconnect there
       Logger.error('F1 WebSocket error', err);
     });
   }
 
-  // Handles the Subscribe R-field snapshot: decompresses .z channels, then
+  private handleFrame(frame: SignalRFrame): void {
+    // First message after open is the handshake response ({} or {error:...})
+    if (!this.isHandshakeComplete) {
+      if (frame.error) {
+        Logger.error(`SignalR Core handshake rejected: ${frame.error}`);
+        this.ws?.close();
+        return;
+      }
+      this.isHandshakeComplete = true;
+      this.isConnected = true;
+      this.isReconnecting = false;
+      this.reconnectAttempts = 0;
+      Logger.info('SignalR Core handshake complete. Subscribing...');
+      this.sendSubscribe();
+      return;
+    }
+
+    if (frame.type === MSG_PING) return;
+
+    if (frame.type === MSG_CLOSE) {
+      Logger.warn(`F1 sent Close: ${frame.error ?? 'no message'}`);
+      return;
+    }
+
+    // Completion of our Subscribe invoke — carries the initial state snapshot in result
+    if (frame.type === MSG_COMPLETION && frame.invocationId === SUBSCRIBE_INVOCATION_ID) {
+      if (frame.result) {
+        this.handleSubscribeSnapshot(frame.result);
+      }
+      return;
+    }
+
+    // Server-push invocation: incremental update [channelName, data, timestamp]
+    if (frame.type === MSG_INVOCATION && frame.target === 'feed') {
+      const args = frame.arguments;
+      if (!args || args.length < 2) return;
+      const channelName = args[0];
+      const rawData = args[1];
+      if (typeof channelName === 'string') {
+        this.processUpdate(channelName, rawData);
+      }
+    }
+  }
+
+  private sendSubscribe(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+    const msg = JSON.stringify({
+      type: MSG_INVOCATION,
+      invocationId: SUBSCRIBE_INVOCATION_ID,
+      target: 'Subscribe',
+      arguments: [SUBSCRIBE_CHANNELS],
+    });
+
+    try {
+      this.ws.send(`${msg}${RECORD_SEP}`);
+      Logger.info(`Subscribed to ${SUBSCRIBE_CHANNELS.length} channels`);
+    } catch (err) {
+      Logger.error('Failed to send Subscribe', err);
+    }
+  }
+
+  // Handles the Subscribe completion snapshot: decompresses .z channels, then
   // atomically replaces the entire server state and notifies all clients.
   private handleSubscribeSnapshot(snapshot: Record<string, unknown>): void {
     const processed: Record<string, unknown> = {};
@@ -242,23 +250,17 @@ export class F1Client {
       }
     }
 
-    // Extract session path for the watchdog before replacing state
     this.updateSessionPath(processed[SESSION_INFO_CHANNEL]);
-
     this.localSocketServer.replaceState(processed);
     this.localSocketServer.broadcastControl({ control: 'f1_reconnected' });
-    Logger.info(
-      `Subscribe snapshot applied (${Object.keys(processed).length} channels)`
-    );
+    Logger.info(`Subscribe snapshot applied (${Object.keys(processed).length} channels)`);
   }
 
-  private processUpdate(channelName: string, rawData: unknown) {
-    // Session watchdog: detect session transitions on incremental updates
+  private processUpdate(channelName: string, rawData: unknown): void {
     if (channelName === SESSION_INFO_CHANNEL) {
       this.checkSessionChange(rawData);
     }
 
-    // Channels ending in '.z' are raw DEFLATE-compressed blobs
     if (channelName.endsWith('.z') && typeof rawData === 'string') {
       const decompressed = decompressPayload(rawData);
       if (decompressed !== null) {
@@ -269,7 +271,6 @@ export class F1Client {
     }
   }
 
-  // Extracts and stores the session path from a SessionInfo payload
   private updateSessionPath(sessionInfo: unknown): void {
     if (
       sessionInfo !== null &&
@@ -284,17 +285,9 @@ export class F1Client {
     }
   }
 
-  // Compares incoming SessionInfo.Path to the stored value. If it changed,
-  // the F1 timing system switched sessions (e.g. Qualifying → Race).
-  // Clear all state and reconnect to get a clean snapshot for the new session.
+  // Compares incoming SessionInfo.Path to stored value; reconnects on session transition.
   private checkSessionChange(rawData: unknown): void {
-    if (
-      rawData === null ||
-      rawData === undefined ||
-      typeof rawData !== 'object'
-    ) {
-      return;
-    }
+    if (rawData === null || rawData === undefined || typeof rawData !== 'object') return;
 
     const data = rawData as Record<string, unknown>;
     if (!('Path' in data) || typeof data['Path'] !== 'string') return;
@@ -305,15 +298,12 @@ export class F1Client {
       return;
     }
 
-    Logger.warn(
-      `Session changed: "${this.currentSessionPath}" → "${newPath}". Clearing state and reconnecting.`
-    );
+    Logger.warn(`Session changed: "${this.currentSessionPath}" → "${newPath}". Reconnecting...`);
     this.currentSessionPath = newPath;
     this.localSocketServer.clearCache();
     this.forceReconnect();
   }
 
-  // Tears down the current F1 connection and initiates a fresh reconnect
   private forceReconnect(): void {
     if (this.ws) {
       this.ws.removeAllListeners();
@@ -326,19 +316,7 @@ export class F1Client {
     this.connect();
   }
 
-  private sendSubscribe() {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-
-    try {
-      // SUBSCRIBE_MESSAGE is pre-serialised at module load to avoid per-call JSON.stringify
-      this.ws.send(SUBSCRIBE_MESSAGE);
-      Logger.info(`Subscribed to: ${SUBSCRIBE_CHANNELS.join(', ')}`);
-    } catch (err) {
-      Logger.error('Failed to send Subscribe message', err);
-    }
-  }
-
-  private scheduleReconnect() {
+  private scheduleReconnect(): void {
     if (this.isReconnecting) return;
     this.isReconnecting = true;
     this.isConnected = false;
@@ -346,13 +324,11 @@ export class F1Client {
 
     const delay = Math.min(
       BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts),
-      MAX_RECONNECT_DELAY_MS
+      MAX_RECONNECT_DELAY_MS,
     );
     this.reconnectAttempts++;
 
-    Logger.info(
-      `Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`
-    );
+    Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts})...`);
     setTimeout(() => {
       this.isReconnecting = false;
       this.connect();
